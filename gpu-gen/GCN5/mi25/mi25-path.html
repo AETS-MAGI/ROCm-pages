@@ -34,6 +34,16 @@
     </section>
 
     <section class="card">
+      <h2>言えること（条件つき）</h2>
+      <ul><li>anchor 条件で <code>fallback_confirmed</code> と <code>dispatch_confirmed</code> を複数回観測しています。</li><li><code>direct</code> 可視性は workload 依存で分岐する、という整理が現時点の観測事実です。</li></ul>
+    </section>
+
+    <section class="card">
+      <h2>まだ言えないこと</h2>
+      <ul><li>catalog-read と個別 kernel dispatch の 1:1 対応は、まだ断定できません。</li><li>「見えない=実行されていない」とは限らないため、可視性だけで不実行とは結論しません。</li></ul>
+    </section>
+
+    <section class="card">
       <h2>準備中 / Coming soon</h2>
       <ul><li>phase-windowによる定量整理の追記。</li></ul>
     </section>

@@ -34,6 +34,16 @@
     </section>
 
     <section class="card">
+      <h2>言えること（条件つき）</h2>
+      <ul><li>現 anchor 条件では、trace 非空かつ direct GEMM 可視 0 という状態を再現しています。</li><li>legacy rocprof で operation trace を取得し、dispatch 観測の足場を確保しています。</li></ul>
+    </section>
+
+    <section class="card">
+      <h2>まだ言えないこと</h2>
+      <ul><li>direct GEMM 名が見えないことをもって「実行されていない」とは断定しません。</li><li>operation trace と個別 shape / phase の厳密対応は未確定です。</li></ul>
+    </section>
+
+    <section class="card">
       <h2>準備中 / Coming soon</h2>
       <ul><li>phase_set・shape候補の確定を追記。</li></ul>
     </section>
