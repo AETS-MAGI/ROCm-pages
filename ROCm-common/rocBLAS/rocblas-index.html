@@ -34,6 +34,16 @@
     </section>
 
     <section class="card">
+      <h2>言えること（条件つき）</h2>
+      <ul><li>MI25 では、lane 比較により rocBLAS/Tensile 側の観測差と実行差を条件つきで確認しています。</li><li>direct 可視性は workload 依存であるため、単一モデルの結果で一般化しません。</li></ul>
+    </section>
+
+    <section class="card">
+      <h2>まだ言えないこと</h2>
+      <ul><li>rocBLAS ログの可視性だけで実行経路の全体を断定しません。</li><li>特定 kernel への因果帰属は、追加観測なしでは保留します。</li></ul>
+    </section>
+
+    <section class="card">
       <h2>準備中 / Coming soon</h2>
       <ul><li>ワークロード依存の可視性差（direct/indirect）の体系化。</li><li>再現条件つき比較表の整備。</li></ul>
     </section>
