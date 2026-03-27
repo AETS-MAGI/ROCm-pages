@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MIOpen | ROCm-pages</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', Meiryo, sans-serif; margin: 0; background:#f6f8fb; color:#1f2937; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
+    .hero { background:#0b3a66; color:#fff; border-radius:12px; padding:16px; }
+    .hero h1 { margin:0; font-size:1.6rem; }
+    .hero p { margin:.5rem 0 0; line-height:1.6; color:#dbe8f6; }
+    .card { background:#fff; border:1px solid #d8e1ea; border-radius:12px; padding:16px; margin-top:12px; }
+    h2 { font-size:1.05rem; margin:0 0 8px 0; }
+    p { line-height:1.65; margin:8px 0; }
+    ul { margin: 8px 0; padding-left: 20px; line-height:1.6; }
+    .toplinks { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+    .btn { display:inline-block; text-decoration:none; color:#0b5394; background:#fff; border:1px solid #d8e1ea; border-radius:999px; padding:6px 12px; font-size:.9rem; }
+    .warn { color:#8a4b00; background:#fff7e6; border-left:4px solid #f0a500; padding:10px 12px; border-radius:8px; }
+    code { background:#eef3f8; padding:2px 6px; border-radius:6px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="toplinks"><a class="btn" href="../rocm-index.html">ROCm Common</a></div>
+    <section class="hero">
+      <h1>MIOpen</h1>
+      <p>MIOpen関連の観測メモ置き場です（本ワークスペースでは補助線として扱う）。</p>
+    </section>
+
+    <section class="card">
+      <h2>いま分かっていること（このワークスペース）</h2>
+      <ul><li>現行LLM推論経路の主観測対象は rocBLAS/Tensile 側。</li><li>MIOpenは必要時の比較対象として記録し、断定を避ける。</li></ul>
+    </section>
+
+    <section class="card">
+      <h2>準備中 / Coming soon</h2>
+      <ul><li>LLM実行での関与有無を追加検証。</li></ul>
+    </section>
+
+    <section class="card warn">
+      <strong>注記:</strong> 未確認事項は断定しません。観測済み事実と未確定事項を分離して更新します。
+    </section>
+  </div>
+</body>
+</html>
