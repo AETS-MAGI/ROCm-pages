@@ -35,12 +35,12 @@
 
     <section class="card">
       <h2>言えること（条件つき）</h2>
-      <ul><li>ここに記載する結論は、ページ内で明示した条件・観測範囲に限定されます。</li><li>再現条件が変わる場合、同じ結果になるとは限りません。</li></ul>
+      <ul><li>現在の anchor probe 条件では、ROCm 経路と operation trace の観測は成立しています。</li><li>direct GEMM 可視性は未確定のままですが、dispatch-safe observer 候補が取れた点は再現事実です。</li></ul>
     </section>
 
     <section class="card">
       <h2>まだ言えないこと</h2>
-      <ul><li>kernel / solver レベルの厳密な因果を、ページ単独では断定しません。</li><li>未観測のケースや他ワークロードへの一般化は保留します。</li></ul>
+      <ul><li>MI25 と同じ可視化軸（direct GEMM 名）を、現条件で得られるとはまだ言えません。</li><li>operation trace と個別 shape / phase の厳密因果は未確定です。</li></ul>
     </section>
 
     <section class="card">
