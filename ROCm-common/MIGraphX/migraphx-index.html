@@ -1,56 +1,56 @@
 <!doctype html>
-<html lang="ja">
+<html lang="ja" data-lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>MIGraphX | ROCm-pages</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', Meiryo, sans-serif; margin: 0; background:#f6f8fb; color:#1f2937; }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
-    .hero { background:#0b3a66; color:#fff; border-radius:12px; padding:16px; }
-    .hero h1 { margin:0; font-size:1.6rem; }
-    .hero p { margin:.5rem 0 0; line-height:1.6; color:#dbe8f6; }
-    .card { background:#fff; border:1px solid #d8e1ea; border-radius:12px; padding:16px; margin-top:12px; }
-    h2 { font-size:1.05rem; margin:0 0 8px 0; }
-    p { line-height:1.65; margin:8px 0; }
-    ul { margin: 8px 0; padding-left: 20px; line-height:1.6; }
-    .toplinks { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
-    .btn { display:inline-block; text-decoration:none; color:#0b5394; background:#fff; border:1px solid #d8e1ea; border-radius:999px; padding:6px 12px; font-size:.9rem; }
-    .warn { color:#8a4b00; background:#fff7e6; border-left:4px solid #f0a500; padding:10px 12px; border-radius:8px; }
-    code { background:#eef3f8; padding:2px 6px; border-radius:6px; }
-  </style>
+  <link rel="stylesheet" href="../../assets/css/style.css" />
 </head>
 <body>
   <div class="wrap">
-    <div class="toplinks"><a class="btn" href="../rocm-index.html">ROCm Common</a></div>
+
+    <div class="nav-bar">
+      <nav class="breadcrumb">
+        <a href="../../index.html">Top</a>
+        <span class="sep">›</span>
+        <a href="../rocm-index.html"><span class="ja">ROCm 共通コンポーネント</span><span class="en">ROCm Components</span></a>
+        <span class="sep">›</span>
+        <span class="current">MIGraphX</span>
+      </nav>
+      <div class="lang-toggle">
+        <button class="lang-btn active" data-lang="ja">JA</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+    </div>
+
     <section class="hero">
       <h1>MIGraphX</h1>
-      <p>MIGraphXページの雛形です。</p>
+      <p class="ja">MIGraphX のページです。ページ枠を先行配置しています。</p>
+      <p class="en">MIGraphX page. Scaffold placed in advance.</p>
     </section>
 
     <section class="card">
-      <h2>いま分かっていること（このワークスペース）</h2>
-      <ul><li>ページ枠と更新ポリシーを準備済み。</li></ul>
+      <h2><span class="ja">現状</span><span class="en">Current Status</span></h2>
+      <p class="ja">コンポーネント分類と導線を準備済みです。観測データが蓄積されたあとに内容を追記します。</p>
+      <p class="en">Component classification and navigation scaffold prepared. Content will be added as observation data is collected.</p>
     </section>
 
     <section class="card">
-      <h2>言えること（条件つき）</h2>
-      <ul><li>ここに記載する結論は、ページ内で明示した条件・観測範囲に限定されます。</li><li>再現条件が変わる場合、同じ結果になるとは限りません。</li></ul>
+      <h2><span class="ja">追記予定</span><span class="en">Planned</span></h2>
+      <ul class="ja">
+        <li>対象世代との接続点、実測有無、利用状況を追記。</li>
+      </ul>
+      <ul class="en">
+        <li>Connection points with target GPU generations, measurement status, and usage details to be added.</li>
+      </ul>
     </section>
 
-    <section class="card">
-      <h2>まだ言えないこと</h2>
-      <ul><li>kernel / solver レベルの厳密な因果を、ページ単独では断定しません。</li><li>未観測のケースや他ワークロードへの一般化は保留します。</li></ul>
-    </section>
+    <div class="note">
+      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
+      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+    </div>
 
-    <section class="card">
-      <h2>準備中 / Coming soon</h2>
-      <ul><li>対象世代との接続点、実測有無、利用状況を追記。</li></ul>
-    </section>
-
-    <section class="card warn">
-      <strong>注記:</strong> 未確認事項は断定しません。観測済み事実と未確定事項を分離して更新します。
-    </section>
   </div>
+  <script src="../../assets/js/main.js"></script>
 </body>
 </html>
