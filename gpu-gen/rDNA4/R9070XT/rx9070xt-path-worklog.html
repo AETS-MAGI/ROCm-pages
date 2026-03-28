@@ -31,51 +31,186 @@
 
     <section class="hero">
       <h1>RX9070XT Path Worklog</h1>
-      <p class="ja">RX9070XT 経路観測の作業ログ要約です。runtime proof-of-life から bundle/disassembly/runtime correlation へ進んだ節目だけを抜粋します。</p>
-      <p class="en">Summary worklog for RX9070XT path observation sessions. This page extracts the turning points from runtime proof-of-life to bundle/disassembly/runtime correlation.</p>
+      <p class="ja">RX9070XT 経路観測の作業ログ要約です。各フェーズの転換点を日付付きで記録しています。</p>
+      <p class="en">Summary worklog for RX9070XT path observation. Records the turning point of each phase with dates.</p>
+      <div class="hero-meta">
+        <span class="badge badge-env ja">調査開始: 2026-03-27</span>
+        <span class="badge badge-env en">Started: 2026-03-27</span>
+        <span class="badge badge-phase ja">Phase A–F 完了</span>
+        <span class="badge badge-phase en">Phase A–F Complete</span>
+      </div>
     </section>
 
+    <!-- タイムライン -->
     <section class="card">
-      <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
+      <h2><span class="ja">調査タイムライン</span><span class="en">Investigation Timeline</span></h2>
+      <ul class="timeline">
+
+        <li>
+          <span class="tl-date">2026-03-27</span>
+          <div class="tl-body">
+            <div class="tl-phase"><span class="ja">Phase A — ソース footing 確立</span><span class="en">Phase A — Source Footing</span></div>
+            <div class="tl-text ja">
+              一次コードソースを <code>ollama-upstream/</code>（commit <code>4fda6980</code>）に固定。
+              runtime truth を <code>/usr/local/lib/ollama/rocm/</code>、参照ツリーを <code>ROCm-repos/</code>（rocBLAS / hipBLAS / hipBLASLt / rocm-systems）に設定しました。
+              rocminfo で <code>gfx1201</code> / device id <code>0x7550</code> / 16.7 GiB pool を確認。
+            </div>
+            <div class="tl-text en">
+              Fixed primary code source to <code>ollama-upstream/</code> (commit <code>4fda6980</code>).
+              Set runtime truth as <code>/usr/local/lib/ollama/rocm/</code> and reference trees as <code>ROCm-repos/</code> (rocBLAS / hipBLAS / hipBLASLt / rocm-systems).
+              Confirmed <code>gfx1201</code> / device id <code>0x7550</code> / 16.7 GiB pool via rocminfo.
+            </div>
+          </div>
+        </li>
+
+        <li>
+          <span class="tl-date">2026-03-27</span>
+          <div class="tl-body">
+            <div class="tl-phase"><span class="ja">Phase B — ソース経路追跡</span><span class="en">Phase B — Source Path Trace</span></div>
+            <div class="tl-text ja">
+              Ollama → ggml HIP backend の呼び出しチェーンを追跡し、<code>GGML_OP_MUL_MAT</code> dispatch 分岐を確定しました。
+              <code>Q4_K_M</code> ワークロードに対する候補経路：<br>
+              (1) <code>mul_mat_vec_q</code>（ne11 ≤ 8 / MMVQ）<br>
+              (2) <code>mul_mat_q</code>（ne11 ≤ 256 for Q4_K / MMQ）<br>
+              (3) hipBLAS/rocBLAS fallback<br>
+              Flash Attention が有効の場合は <code>ggml_flash_attn_ext</code> に分岐することも確認。
+            </div>
+            <div class="tl-text en">
+              Traced Ollama → ggml HIP backend call chain and fixed the <code>GGML_OP_MUL_MAT</code> dispatch branches.
+              Candidate paths for <code>Q4_K_M</code> workload:<br>
+              (1) <code>mul_mat_vec_q</code> (ne11 ≤ 8 / MMVQ)<br>
+              (2) <code>mul_mat_q</code> (ne11 ≤ 256 for Q4_K / MMQ)<br>
+              (3) hipBLAS/rocBLAS fallback<br>
+              Confirmed that Flash Attention enabled routes to <code>ggml_flash_attn_ext</code>.
+            </div>
+          </div>
+        </li>
+
+        <li>
+          <span class="tl-date">2026-03-27</span>
+          <div class="tl-body">
+            <div class="tl-phase"><span class="ja">Phase B 実機確認 — plain ROCm path 到達</span><span class="en">Phase B Live — Plain ROCm Path Reached</span></div>
+            <div class="tl-text ja">
+              plain <code>ollama serve</code>（port <code>18568</code>）で <code>deepseek-r1-distill-qwen-7b:q4_k_m</code> を実行し、ROCm path を確認：
+              <code>inference compute library=ROCm compute=gfx1201</code>・<code>offloaded 29/29 layers to GPU</code>・<code>Flash Attention was auto, set to enabled</code>・<code>graph splits = 2</code>。
+              cold generate: load 17.455s / prompt_eval 0.0238s / eval 0.306s。
+              hot（resident）generate: load 0.083s / prompt_eval 0.0248s / eval 0.149s。
+              <code>rocprofv3</code> wrap は bootstrap を壊し CPU fallback に落ちることを確認。<code>rocprofv3 --attach</code> は ptrace_scope=1 でブロック。
+            </div>
+            <div class="tl-text en">
+              Ran <code>deepseek-r1-distill-qwen-7b:q4_k_m</code> via plain <code>ollama serve</code> (port <code>18568</code>), confirming the ROCm path:
+              <code>inference compute library=ROCm compute=gfx1201</code>, <code>offloaded 29/29 layers to GPU</code>, <code>Flash Attention was auto, set to enabled</code>, <code>graph splits = 2</code>.
+              Cold generate: load 17.455s / prompt_eval 0.0238s / eval 0.306s.
+              Hot (resident) generate: load 0.083s / prompt_eval 0.0248s / eval 0.149s.
+              Confirmed that <code>rocprofv3</code> wrap breaks bootstrap (CPU fallback). <code>rocprofv3 --attach</code> blocked by ptrace_scope=1.
+            </div>
+          </div>
+        </li>
+
+        <li>
+          <span class="tl-date">2026-03-27</span>
+          <div class="tl-body">
+            <div class="tl-phase"><span class="ja">Phase C — 共有ライブラリ依存追跡</span><span class="en">Phase C — Shared Library Map</span></div>
+            <div class="tl-text ja">
+              <code>ldd</code> で runtime 依存チェーンを確定：
+              <code>libggml-hip.so</code> → <code>libhipblas.so.2.3.60303</code> → <code>librocblas.so.4.3.60303</code> → <code>libamdhip64.so.6</code> → <code>hsa-runtime64</code>。
+              <code>rocblas/library/</code> 下に gfx1201 対象ファイル 56 本を確認（<code>Kernels.so-000-gfx1201.hsaco</code> を含む）。
+            </div>
+            <div class="tl-text en">
+              Fixed runtime dependency chain via <code>ldd</code>:
+              <code>libggml-hip.so</code> → <code>libhipblas.so.2.3.60303</code> → <code>librocblas.so.4.3.60303</code> → <code>libamdhip64.so.6</code> → <code>hsa-runtime64</code>.
+              Confirmed 56 gfx1201-targeted files under <code>rocblas/library/</code> (including <code>Kernels.so-000-gfx1201.hsaco</code>).
+            </div>
+          </div>
+        </li>
+
+        <li>
+          <span class="tl-date">2026-03-27</span>
+          <div class="tl-body">
+            <div class="tl-phase"><span class="ja">Phase D — コードオブジェクト目録</span><span class="en">Phase D — Code Object Inventory</span></div>
+            <div class="tl-text ja">
+              <code>libggml-hip.so</code> の <code>.hip_fatbin</code> セクション（587 MiB）を調査。
+              custom 側のシンボル群：<code>ggml_cuda_op_mul_mat_q</code>・<code>ggml_cuda_op_mul_mat_vec_q</code>・<code>mul_mat_q_case&lt;Q4_K/Q5_K/Q6_K&gt;</code>・Flash Attention variants・RoPE など。
+              external rocBLAS 側に <code>Cijk_*</code> contraction family が共存することも確認。
+            </div>
+            <div class="tl-text en">
+              Surveyed the <code>.hip_fatbin</code> section (587 MiB) in <code>libggml-hip.so</code>.
+              Custom-side symbols include: <code>ggml_cuda_op_mul_mat_q</code>, <code>ggml_cuda_op_mul_mat_vec_q</code>, <code>mul_mat_q_case&lt;Q4_K/Q5_K/Q6_K&gt;</code>, Flash Attention variants, RoPE, and others.
+              Also confirmed that external rocBLAS ships a coexisting <code>Cijk_*</code> contraction family.
+            </div>
+          </div>
+        </li>
+
+        <li>
+          <span class="tl-date">2026-03-27</span>
+          <div class="tl-body">
+            <div class="tl-phase"><span class="ja">Phase E — 逆アセンブリによる絞り込み</span><span class="en">Phase E — Disassembly-Assisted Narrowing</span></div>
+            <div class="tl-text ja">
+              <code>llvm-objdump</code>（ROCm 7.2.0 付属）と <code>clang-offload-bundler</code> を使用し、<code>.hip_fatbin</code> から 28+ 個の gfx1201 hsaco を抽出。
+              主な binary anchor を確定：<code>bundle_0030</code>（Q4_K MMVQ, 1019 KB）・<code>bundle_0096</code>（exact Q4_K MMQ, 918 KB）・<code>bundle_0037</code>（MMQ repack）・<code>bundle_0039</code>（RoPE）・<code>bundle_0019</code>（Flash Attn）・<code>bundle_0012</code>（Q4_K dequant）。
+              現行 inspect ウィンドウでは <code>v_mfma</code> 命令は検出されていません。
+            </div>
+            <div class="tl-text en">
+              Used <code>llvm-objdump</code> (bundled with ROCm 7.2.0) and <code>clang-offload-bundler</code> to extract 28+ gfx1201 hsacos from <code>.hip_fatbin</code>.
+              Fixed key binary anchors: <code>bundle_0030</code> (Q4_K MMVQ, 1019 KB), <code>bundle_0096</code> (exact Q4_K MMQ, 918 KB), <code>bundle_0037</code> (MMQ repack), <code>bundle_0039</code> (RoPE), <code>bundle_0019</code> (Flash Attn), <code>bundle_0012</code> (Q4_K dequant).
+              No <code>v_mfma</code> instructions detected in the current inspection window.
+            </div>
+          </div>
+        </li>
+
+        <li>
+          <span class="tl-date">2026-03-28</span>
+          <div class="tl-body">
+            <div class="tl-phase"><span class="ja">Phase F — ランタイム・逆アセンブリ相関（初回パス）</span><span class="en">Phase F — Runtime–Disassembly Correlation (First Pass)</span></div>
+            <div class="tl-text ja">
+              Phase B–E の証拠を統合し、初回相関パスを実施：
+              (1) decode 側は custom <code>Q4_K MMVQ</code> と最も強く整合 / (2) Attention は custom Flash family で自然に説明可 / (3) RoPE は custom gfx1201 family として確定 / (4) prompt 側（11〜12 token）は MMQ-eligible。
+              また resident phase-proxy probe を追加し、<code>prompt_eval_count = 3</code>（MMVQ）・<code>11</code>（MMQ-eligible）・<code>290</code>（境界候補）を記録。
+              short resident case が pure-MMVQ ではなく mixed-by-phase だと判明。
+            </div>
+            <div class="tl-text en">
+              Integrated evidence from Phases B–E and ran the first correlation pass:
+              (1) Decode-side aligns most strongly with custom <code>Q4_K MMVQ</code>. (2) Attention is naturally explained by the custom Flash family. (3) RoPE is confirmed as a custom gfx1201 family. (4) Prompt-side (~11–12 tokens) is MMQ-eligible.
+              Also added the resident phase-proxy probe: recorded <code>prompt_eval_count = 3</code> (MMVQ), <code>11</code> (MMQ-eligible), <code>290</code> (boundary candidate).
+              Found that the short resident case is mixed-by-phase, not pure-MMVQ.
+            </div>
+          </div>
+        </li>
+
+      </ul>
+    </section>
+
+    <!-- 未確定事項 -->
+    <section class="card">
+      <h2><span class="ja">未確定事項（現時点）</span><span class="en">Open Questions (Current)</span></h2>
       <ul class="ja">
-        <li>source footing を固定し、runtime truth を <code>/usr/local/lib/ollama/rocm</code>、code truth を <code>ollama-upstream</code> / shared <code>ggml-cuda</code> lineage に置きました。</li>
-        <li>disassembly で <code>bundle_0030</code> (<code>Q4_K mul_mat_vec_q</code>)、<code>bundle_0037</code> (MMQ repack)、<code>bundle_0039</code> (RoPE)、<code>bundle_0096</code> (exact <code>Q4_K mul_mat_q</code>) を isolate しました。</li>
-        <li>resident phase-proxy probe を追加し、<code>prompt_eval_count = 3</code> は MMVQ-compatible、<code>11-12</code> は MMQ-eligible、<code>290</code> は fallback/chunking 境界候補と整理しました。</li>
+        <li>short resident case が <code>bundle_0096</code> MMQ family を実際にどの程度踏んだか。</li>
+        <li>BLAS-side <code>Cijk_*</code> family の live phase ownership（short case での参加有無）。</li>
+        <li><code>prompt_eval_count = 290</code> 境界：MMQ heuristic 超過（fallback）か internal chunking か。</li>
       </ul>
       <ul class="en">
-        <li>We fixed the source footing, using <code>/usr/local/lib/ollama/rocm</code> as runtime truth and <code>ollama-upstream</code> plus the shared <code>ggml-cuda</code> lineage as code truth.</li>
-        <li>Disassembly isolated <code>bundle_0030</code> (<code>Q4_K mul_mat_vec_q</code>), <code>bundle_0037</code> (MMQ repack), <code>bundle_0039</code> (RoPE), and <code>bundle_0096</code> (exact <code>Q4_K mul_mat_q</code>).</li>
-        <li>A resident phase-proxy probe was added: <code>prompt_eval_count = 3</code> is treated as MMVQ-compatible, <code>11-12</code> as MMQ-eligible, and <code>290</code> as a fallback/chunking boundary candidate.</li>
+        <li>How much the short resident case exercised the <code>bundle_0096</code> MMQ family.</li>
+        <li>Live phase ownership of the BLAS-side <code>Cijk_*</code> family (whether it participated in the short case).</li>
+        <li>The <code>prompt_eval_count = 290</code> boundary: MMQ heuristic overflow (fallback) or internal chunking?</li>
       </ul>
     </section>
 
-    <section class="card">
-      <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
-      <ul class="ja">
-        <li>short resident case が pure-MMVQ ではなく mixed-by-phase だと分かってきましたが、MMQ/BLAS の live ownership はまだ直接確定していません。</li>
-        <li>long prompt boundary が fallback なのか internal chunking なのかは未確定です。</li>
-      </ul>
-      <ul class="en">
-        <li>The short resident case now looks mixed-by-phase rather than pure MMVQ, but live MMQ/BLAS ownership is still not directly fixed.</li>
-        <li>It remains unresolved whether the long-prompt boundary is fallback-driven or due to internal chunking.</li>
-      </ul>
-    </section>
-
+    <!-- 追記予定 -->
     <section class="card">
       <h2><span class="ja">追記予定</span><span class="en">Planned</span></h2>
       <ul class="ja">
-        <li><code>bundle_0096</code> の live phase ownership をさらに詰めます。</li>
-        <li>BLAS-side <code>Cijk_*</code> participation の有無を、非破壊 observer が得られた時点で再確認します。</li>
+        <li>Phase G 以降：non-distorting observer 確保後に BLAS side / bundle_0096 live ownership を再確認。</li>
+        <li>long prompt boundary（fallback vs chunking）の切り分け。</li>
       </ul>
       <ul class="en">
-        <li>We will narrow the live phase ownership of <code>bundle_0096</code> further.</li>
-        <li>We will re-check BLAS-side <code>Cijk_*</code> participation once a non-distorting observer is available.</li>
+        <li>Phase G+: Re-check BLAS-side and <code>bundle_0096</code> live ownership once a non-distorting observer is available.</li>
+        <li>Separate long-prompt boundary: fallback vs. chunking.</li>
       </ul>
     </section>
 
     <div class="note">
-      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
-      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+      <span class="ja">掲載情報は観測記録に基づきます。「未確定事項」は確定次第更新します。</span>
+      <span class="en">Content is grounded in observation logs. "Open Questions" are updated as findings solidify.</span>
     </div>
 
   </div>
