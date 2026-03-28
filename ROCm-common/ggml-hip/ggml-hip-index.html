@@ -25,49 +25,87 @@
 
     <section class="hero">
       <h1>ggml-hip</h1>
-      <p class="ja">ggml-hip（Ollama の HIP バックエンド）の経路確認状況を記録します。</p>
-      <p class="en">Records ggml-hip (Ollama's HIP backend) path confirmation status.</p>
+      <p class="ja">ggml の HIP バックエンドです。Ollama が推論時にロードする <code>libggml-hip.so</code> として配布され、quantized matmul・Flash Attention・RoPE などの custom kernel を gfx1201 を含む複数 AMD GPU ターゲット向けに内包しています。</p>
+      <p class="en">The HIP backend for ggml. Distributed as <code>libggml-hip.so</code> loaded by Ollama at inference time. Embeds custom kernels for quantized matmul, Flash Attention, RoPE, and more, targeting multiple AMD GPU architectures including gfx1201.</p>
+      <div class="hero-meta">
+        <span class="badge badge-env">libggml-hip.so</span>
+        <span class="badge badge-env">.hip_fatbin 587 MiB</span>
+        <span class="badge badge-confirmed ja">RX9070XT: 実機観測済み</span>
+        <span class="badge badge-confirmed en">RX9070XT: Observed live</span>
+      </div>
     </section>
 
+    <!-- 位置づけ -->
     <section class="card">
-      <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
+      <h2><span class="ja">ROCm スタックにおける位置づけ</span><span class="en">Position in the ROCm Stack</span></h2>
+      <p class="ja">ggml-hip は ggml の backend abstraction 上に実装された HIP 特化バックエンドです。CUDA 側の <code>ggml-cuda</code> と同一ソース系統（<code>ggml-cuda.cu</code> / <code>mmq.cu</code> / <code>mmvq.cu</code> など）から HIP ビルドされます。<code>vendors/hip.h</code> が <code>cublasCreate</code> 等の CUDA API を hipBLAS 等価物にリマップし、コードの共通化を実現しています。</p>
+      <p class="en">ggml-hip is the HIP-specialized backend implemented on top of ggml's backend abstraction. It shares the same source family as <code>ggml-cuda</code> (<code>ggml-cuda.cu</code>, <code>mmq.cu</code>, <code>mmvq.cu</code>, etc.), built with HIP. <code>vendors/hip.h</code> remaps <code>cublasCreate</code> and related CUDA APIs to hipBLAS equivalents, enabling a shared codebase across both platforms.</p>
+      <div class="call-chain">
+<span class="ja">Ollama runner</span><span class="en">Ollama runner</span>
+  <span class="arrow">↓</span> ml.NewBackend(<span class="target">"ggml"</span>) → ggml_backend_load_all_from_path()
+  <span class="arrow">↓</span> <span class="target">libggml-hip.so</span>  <span class="branch ja">（/usr/local/lib/ollama/rocm/ から優先ロード）</span><span class="branch en">(loaded with priority from /usr/local/lib/ollama/rocm/)</span>
+  <span class="arrow">↓</span> GGML_OP_MUL_MAT dispatch
+      <span class="branch">ne11 ≤ 8</span>       <span class="arrow">→</span>  <span class="target">mul_mat_vec_q</span>  <span class="branch">(custom hsaco / MMVQ)</span>
+      <span class="branch">ne11 ≤ 256 Q4_K</span> <span class="arrow">→</span>  <span class="target">mul_mat_q</span>      <span class="branch">(custom hsaco / MMQ)</span>
+      <span class="branch ja">その他</span><span class="branch en">otherwise</span>       <span class="arrow">→</span>  <span class="alt">hipBLAS → rocBLAS</span>
+  <span class="arrow">↓</span> Flash Attn <span class="arrow">→</span> <span class="target">flash_attn_ext_f16</span>  <span class="branch">(custom hsaco)</span>
+      </div>
+    </section>
+
+    <!-- 観測済み事実 -->
+    <section class="card">
+      <h2><span class="ja">観測済み事実（RX9070XT / gfx1201）</span><span class="en">Observed Facts (RX9070XT / gfx1201)</span></h2>
       <ul class="ja">
-        <li>MI25 では <code>libggml-hip.so</code> 読み込み確認が重要な証跡の 1 つ。</li>
-        <li>RX9070XT pilot でも HIP 経路観測を先に固定している。</li>
-        <li>MI25 / RX9070XT の両方で、HIP backend 読み込み確認は経路観測の基本証跡として有効。</li>
+        <li><code>/usr/local/lib/ollama/rocm/libggml-hip.so</code> を <code>ldd</code> で確認。依存チェーン：<code>libhipblas.so.2.3.60303</code> → <code>librocblas.so.4.3.60303</code> → <code>libamdhip64.so.6</code> → <code>hsa-runtime64</code>。</li>
+        <li><code>.hip_fatbin</code> セクションは 587 MiB。<code>__CLANG_OFFLOAD_BUNDLE__</code> が連結されたストリームであり、単一の per-target blob ではありません。</li>
+        <li><code>clang-offload-bundler --list</code> で <code>hipv4-amdgcn-amd-amdhsa--gfx1201</code> ターゲットの存在を確認。</li>
+        <li>gfx1201 固有の全 bundle は wavefront_size = 32。現行 inspect ウィンドウでは <code>v_mfma</code> 命令は検出されていません。</li>
       </ul>
       <ul class="en">
-        <li>For MI25, confirming <code>libggml-hip.so</code> loading is one of the key evidence points.</li>
-        <li>In the RX9070XT pilot, HIP path observation is fixed first.</li>
-        <li>For both MI25 and RX9070XT, HIP backend load confirmation is valid as a basic path observation evidence.</li>
+        <li>Confirmed <code>/usr/local/lib/ollama/rocm/libggml-hip.so</code> via <code>ldd</code>. Dependency chain: <code>libhipblas.so.2.3.60303</code> → <code>librocblas.so.4.3.60303</code> → <code>libamdhip64.so.6</code> → <code>hsa-runtime64</code>.</li>
+        <li>The <code>.hip_fatbin</code> section is 587 MiB, a concatenated <code>__CLANG_OFFLOAD_BUNDLE__</code> stream — not a single per-target blob.</li>
+        <li>Confirmed <code>hipv4-amdgcn-amd-amdhsa--gfx1201</code> target presence via <code>clang-offload-bundler --list</code>.</li>
+        <li>All gfx1201-targeted bundles have wavefront_size = 32. No <code>v_mfma</code> instructions detected in the current inspection window.</li>
       </ul>
+      <table class="data-table" style="margin-top:10px;">
+        <thead>
+          <tr>
+            <th>Bundle</th>
+            <th><span class="ja">サイズ</span><span class="en">Size</span></th>
+            <th><span class="ja">主なシンボル</span><span class="en">Key Symbols</span></th>
+            <th><span class="ja">役割</span><span class="en">Role</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>bundle_0012</code></td><td>173 KB</td><td><code>dequantize_block_q4_K&lt;float&gt;</code></td><td><span class="ja">Q4_K dequant (v_fma:130, global_load:325)</span><span class="en">Q4_K dequant (v_fma:130, global_load:325)</span></td></tr>
+          <tr><td><code>bundle_0014</code></td><td>210 KB</td><td><code>cpy_f32_q&lt;q4_0&gt;</code></td><td><span class="ja">quantized copy / transpose helper</span><span class="en">quantized copy / transpose helper</span></td></tr>
+          <tr><td><code>bundle_0019</code></td><td>337 KB</td><td><code>flash_attn_ext_f16&lt;...&gt;</code></td><td><span class="ja">Flash Attention（多数 template variant）</span><span class="en">Flash Attention (many template variants)</span></td></tr>
+          <tr><td><code>bundle_0030</code></td><td>1019 KB</td><td><code>mul_mat_vec_q&lt;Q4_K,1,false&gt;</code></td><td><span class="ja">Q4_K MMVQ anchor (sgpr:32–34, vgpr:26–61)</span><span class="en">Q4_K MMVQ anchor (sgpr:32–34, vgpr:26–61)</span></td></tr>
+          <tr><td><code>bundle_0037</code></td><td>17 KB</td><td><code>quantize_mmq_q8_1&lt;layout0/1/2&gt;</code></td><td><span class="ja">MMQ repack helper</span><span class="en">MMQ repack helper</span></td></tr>
+          <tr><td><code>bundle_0039</code></td><td>332 KB</td><td><code>rope_multi/rope_neox/rope_norm</code></td><td><span class="ja">RoPE family (sgpr:19–29, vgpr:19–20)</span><span class="en">RoPE family (sgpr:19–29, vgpr:19–20)</span></td></tr>
+          <tr><td><code>bundle_0096</code></td><td>918 KB</td><td><code>mul_mat_q&lt;Q4_K,8,false&gt;</code></td><td><span class="ja">exact Q4_K MMQ anchor (sgpr:36, vgpr:51)</span><span class="en">exact Q4_K MMQ anchor (sgpr:36, vgpr:51)</span></td></tr>
+        </tbody>
+      </table>
     </section>
 
+    <!-- 未確定事項 -->
     <section class="card">
       <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
       <ul class="ja">
-        <li>backend 読み込み確認のみで性能要因を確定しません。</li>
-        <li>GPU 世代差の要因を ggml-hip 単独で説明し切ることは保留します。</li>
+        <li><code>.hip_fatbin</code> のスキャンは bounded であり、後半に未抽出の <code>mul_mat_q</code> cluster が残っている可能性があります。</li>
+        <li>live short case での各 bundle の実際の参加比率は、dispatch-safe observer なしには確定しません。</li>
+        <li>Flash Attention entry の一部は helper trampoline であり、1シンボル＝1 kernel body の単純解釈が成立しない箇所があります。</li>
       </ul>
       <ul class="en">
-        <li>Backend load confirmation alone is not used to confirm performance factors.</li>
-        <li>Explaining GPU generation differences solely from ggml-hip is withheld.</li>
-      </ul>
-    </section>
-
-    <section class="card">
-      <h2><span class="ja">追記予定</span><span class="en">Planned</span></h2>
-      <ul class="ja">
-        <li>世代別に観測条件差を追加。</li>
-      </ul>
-      <ul class="en">
-        <li>Per-generation observation condition differences to be added.</li>
+        <li>The <code>.hip_fatbin</code> scan was bounded; additional <code>mul_mat_q</code> clusters may remain in later sections.</li>
+        <li>The actual participation ratio of each bundle in the live short case cannot be determined without a dispatch-safe observer.</li>
+        <li>Some Flash Attention entries are helper trampolines; the simple one-symbol-to-one-kernel-body interpretation does not hold for those cases.</li>
       </ul>
     </section>
 
     <div class="note">
-      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
-      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は確定次第更新します。</span>
+      <span class="en">Content is grounded in observation logs. Open questions are updated as findings solidify.</span>
     </div>
 
   </div>
