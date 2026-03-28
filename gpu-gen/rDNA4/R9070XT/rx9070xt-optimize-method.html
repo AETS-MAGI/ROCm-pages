@@ -31,49 +31,150 @@
 
     <section class="hero">
       <h1>RX9070XT Optimization Method</h1>
-      <p class="ja">RX9070XT への方法論移植の記録です。MI25 手順を可視性制約に合わせて調整しています。</p>
-      <p class="en">Records methodology transplantation to RX9070XT, adapting MI25 procedures to RX9070XT's visibility constraints.</p>
+      <p class="ja">RX9070XT への方法論移植の記録です。MI25 で確立した「観測してから最適化する」手順を rDNA4 固有の可視性制約に合わせて調整しています。</p>
+      <p class="en">Records methodology transplantation to RX9070XT. The MI25 "observe first, then optimize" procedure is adapted to rDNA4's specific visibility constraints.</p>
     </section>
 
+    <!-- 方法論の原則 -->
     <section class="card">
-      <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
+      <h2><span class="ja">方法論の原則（MI25 由来・rDNA4 適用）</span><span class="en">Methodology Principles (MI25 Origin, rDNA4 Adaptation)</span></h2>
       <ul class="ja">
-        <li>MI25 由来の手順（lane comparison / single-knob）を RX9070XT 向けに移植中。</li>
-        <li>MI25 の手順をそのまま複製せず、RX9070XT の可視性制約に合わせて順序を調整。</li>
-        <li>「観測できることを増やしてから最適化へ進む」原則は維持。</li>
+        <li><strong>観測クラスを先に確立する。</strong>観測できない状態で最適化を始めると、改善を証明できないだけでなく、退化も見逃す。</li>
+        <li><strong>多層証拠で経路を固める。</strong>ソース → 共有ライブラリ → バンドル分離 → 逆アセンブリ → ランタイム相関の順に証拠を積み上げ、各層の限界を明示する。</li>
+        <li><strong>observer の影響を分離する。</strong>observer が runtime path を変えるなら、その observer は無効。observer によって path が変化したことが確認された場合は、そのデータを「observer 汚染」として記録し使用しない。</li>
+        <li><strong>MI25 の signature を rDNA4 に転写しない。</strong>wavefront_size や kernel family が異なるため、MI25 の可視性をそのまま成功条件にしない。RDNA4 固有の見え方を別途確立する。</li>
+        <li><strong>単発 run で再現性を確定しない。</strong>複数 run で条件を明示した上での比較結果のみを観測事実として保持する。</li>
       </ul>
       <ul class="en">
-        <li>MI25-origin procedures (lane comparison / single-knob) being transplanted for RX9070XT.</li>
-        <li>Order adjusted to fit RX9070XT's visibility constraints rather than directly copying MI25.</li>
-        <li>Principle of "expand what can be observed before optimizing" is maintained.</li>
+        <li><strong>Establish an observation class first.</strong> Starting optimization without observability means you cannot prove improvements — and cannot detect regressions either.</li>
+        <li><strong>Layer evidence progressively.</strong> Build evidence across source → shared library → bundle isolation → disassembly → runtime correlation, making each layer's limits explicit.</li>
+        <li><strong>Isolate observer effects.</strong> If an observer changes the runtime path, that observer is invalid for measurement. Data from an observer that changes path is recorded as "observer-contaminated" and not used.</li>
+        <li><strong>Do not transfer MI25 signatures to rDNA4.</strong> wavefront_size and kernel families differ; MI25 visibility cannot be used as a success criterion for rDNA4. Establish rDNA4-specific observability separately.</li>
+        <li><strong>Do not confirm reproducibility from a single run.</strong> Only comparison results with stated conditions across multiple runs are retained as observed facts.</li>
       </ul>
     </section>
 
+    <!-- 調査フェーズの設計 -->
+    <section class="card">
+      <h2><span class="ja">調査フェーズの設計（C14 pilot 6 層）</span><span class="en">Investigation Phase Design (C14 Pilot 6 Layers)</span></h2>
+      <div class="phase-grid">
+        <div class="phase-item done">
+          <div class="phase-label">Phase A</div>
+          <div class="phase-status ja">ソース footing 確立。一次コードソース・runtime truth・参照ツリーを固定。</div>
+          <div class="phase-status en">Fix primary code source, runtime truth, and reference trees.</div>
+        </div>
+        <div class="phase-item done">
+          <div class="phase-label">Phase B</div>
+          <div class="phase-status ja">ソースレベル経路追跡。呼び出しチェーンと dispatch 分岐候補を確定。実機 runtime 確認も含む。</div>
+          <div class="phase-status en">Source-level path trace. Fix call chain and dispatch branch candidates. Includes live runtime confirmation.</div>
+        </div>
+        <div class="phase-item done">
+          <div class="phase-label">Phase C</div>
+          <div class="phase-status ja">共有ライブラリ依存追跡。ldd で依存チェーンと bundle root を確定。</div>
+          <div class="phase-status en">Shared library dependency map. Fix dependency chain and bundle root via ldd.</div>
+        </div>
+        <div class="phase-item done">
+          <div class="phase-label">Phase D</div>
+          <div class="phase-status ja">コードオブジェクト目録。libggml-hip.so fatbin と rocBLAS library 内の gfx1201 オブジェクト family を列挙。</div>
+          <div class="phase-status en">Code object inventory. Enumerate gfx1201 object families in libggml-hip.so fatbin and rocBLAS library.</div>
+        </div>
+        <div class="phase-item done">
+          <div class="phase-label">Phase E</div>
+          <div class="phase-status ja">逆アセンブリによる絞り込み。Q4_K 候補 bundle を isolate し、register footprint・命令パターンを確定。</div>
+          <div class="phase-status en">Disassembly-assisted narrowing. Isolate Q4_K candidate bundles and fix register footprints and instruction patterns.</div>
+        </div>
+        <div class="phase-item done">
+          <div class="phase-label">Phase F</div>
+          <div class="phase-status ja">ランタイム・逆アセンブリ相関。Phase B–E 証拠を統合し、live case との相関を取る。Phase proxy probe を追加。</div>
+          <div class="phase-status en">Runtime–disassembly correlation. Integrate Phase B–E evidence and correlate against live case. Add phase proxy probe.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Observer 制約と対処 -->
+    <section class="card">
+      <h2><span class="ja">Observer 制約と現在の対処</span><span class="en">Observer Constraints and Current Workarounds</span></h2>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th><span class="ja">手段</span><span class="en">Approach</span></th>
+            <th><span class="ja">状態</span><span class="en">Status</span></th>
+            <th><span class="ja">理由</span><span class="en">Reason</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>rocprofv3 --runtime-trace</code> wrap</td>
+            <td><span class="badge badge-unresolved ja">無効</span><span class="badge badge-unresolved en">Invalid</span></td>
+            <td class="ja"><code>ollama serve</code> の bootstrap discovery を壊し CPU fallback に落ちる</td>
+            <td class="en">Breaks <code>ollama serve</code> bootstrap discovery, causes CPU fallback</td>
+          </tr>
+          <tr>
+            <td><code>rocprofv3 --attach</code></td>
+            <td><span class="badge badge-unresolved ja">ブロック</span><span class="badge badge-unresolved en">Blocked</span></td>
+            <td class="ja">ホストの <code>ptrace_scope = 1</code> によりブロック</td>
+            <td class="en">Blocked by host <code>ptrace_scope = 1</code></td>
+          </tr>
+          <tr>
+            <td><code>ROCBLAS_LAYER=9</code></td>
+            <td><span class="badge badge-limited ja">部分的</span><span class="badge badge-limited en">Partial</span></td>
+            <td class="ja"><code>rocblas_create_handle</code> のみ。per-GEMM attribution には不足</td>
+            <td class="en">Only <code>rocblas_create_handle</code> visible. Insufficient for per-GEMM attribution</td>
+          </tr>
+          <tr>
+            <td><code>rocm-smi</code> 1秒サンプリング</td>
+            <td><span class="badge badge-limited ja">粗い</span><span class="badge badge-limited en">Coarse</span></td>
+            <td class="ja">GPU 残留確認には十分だが、prefill vs decode や per-op dispatch の分解には不足</td>
+            <td class="en">Sufficient for GPU residency confirmation, but cannot separate prefill vs decode or per-op dispatch</td>
+          </tr>
+          <tr>
+            <td><span class="ja">Phase proxy（response JSON）</span><span class="en">Phase proxy (response JSON)</span></td>
+            <td><span class="badge badge-confirmed ja">有効（proxy）</span><span class="badge badge-confirmed en">Valid (proxy)</span></td>
+            <td class="ja"><code>prompt_eval_count / eval_count / eval_duration</code> を MMVQ/MMQ 閾値と照合できる。直接 dispatch 帰属ではないが observer を壊さない</td>
+            <td class="en">Can cross-reference <code>prompt_eval_count / eval_count / eval_duration</code> against MMVQ/MMQ thresholds. Not direct dispatch attribution, but does not distort the runtime path</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 最適化への移行条件 -->
+    <section class="card">
+      <h2><span class="ja">観測クラスから最適化へ移行する条件</span><span class="en">Prerequisites for Moving from Observation Class to Optimization</span></h2>
+      <div class="callout callout-unresolved">
+        <strong class="ja">現在未達の条件：</strong><strong class="en">Currently unmet prerequisite:</strong>
+        <span class="ja"> dispatch-safe observer（runtime path を壊さずに per-dispatch kernel attribution ができる手段）の確保。</span>
+        <span class="en"> dispatch-safe observer (a method that can attribute per-dispatch kernels without distorting the runtime path).</span>
+      </div>
+      <ul class="ja">
+        <li>dispatch-safe observer が確保できた後、比較単位（anchor workload・anchor conditions）を固定します。</li>
+        <li>single-knob 比較：knob を一つ変えて eval_duration / prompt_eval_duration の変化を記録します。</li>
+        <li>複数 run で再現性を確認し、改善量を条件付きで記録します（「条件 X のもとで Y ms 改善」の形式）。</li>
+        <li>改善の帰属先（kernel family / BLAS vs custom）を、observer の限界を明示した上で記録します。</li>
+      </ul>
+      <ul class="en">
+        <li>After a dispatch-safe observer is secured, fix the comparison unit (anchor workload + anchor conditions).</li>
+        <li>Single-knob comparisons: change one knob and record changes in eval_duration / prompt_eval_duration.</li>
+        <li>Confirm reproducibility across multiple runs; record improvement with stated conditions ("Y ms improvement under condition X").</li>
+        <li>Record attribution of improvements (kernel family / BLAS vs custom) with explicit observer limitations stated.</li>
+      </ul>
+    </section>
+
+    <!-- 未確定事項 -->
     <section class="card">
       <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
       <ul class="ja">
-        <li>移植手順の有効性を他の RDNA 系すべてへ一般化して確定しません。</li>
-        <li>kernel レベルの因果や solver 選択を、この方法論文書だけで確定しません。</li>
+        <li>移植手順の有効性を RDNA4 以外の GPU 世代すべてへ一般化して確定しません。</li>
+        <li>kernel レベルの因果や solver 選択の断定は、この方法論文書だけからは行いません。</li>
       </ul>
       <ul class="en">
-        <li>The validity of the transplant procedure is not generalized to all other RDNA generations.</li>
-        <li>Kernel-level causality and solver selection are not confirmed from this methodology document alone.</li>
-      </ul>
-    </section>
-
-    <section class="card">
-      <h2><span class="ja">追記予定</span><span class="en">Planned</span></h2>
-      <ul class="ja">
-        <li>適用境界と未確定事項の追記。</li>
-      </ul>
-      <ul class="en">
-        <li>Application boundaries and open items to be added.</li>
+        <li>The validity of the transplant procedure is not generalized to all GPU generations outside RDNA4.</li>
+        <li>Kernel-level causality and solver selection are not determined from this methodology document alone.</li>
       </ul>
     </section>
 
     <div class="note">
-      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
-      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は確定次第更新します。</span>
+      <span class="en">Content is grounded in observation logs. Open questions are updated as findings solidify.</span>
     </div>
 
   </div>
