@@ -278,12 +278,12 @@ assets/img/graph/     ← 生成済み画像の出力先（HTML から参照）
 1. `python/` 以下にスクリプトを作成する
 2. `.venv` を有効化して実行: `source python/.venv/bin/activate && python python/<script>.py`
 3. 生成した画像は `assets/img/graph/<name>.png`（または `.svg`）に出力する
-4. HTML ページから `<img src="../../../assets/img/graph/<name>.webp" alt="..." class="graph-img" />` で埋め込む
+4. HTML ページから `<img src="../../../assets/img/graph/<name>.png" alt="..." class="graph-img" />` で埋め込む
 
 ### 8.3 命名規則
 
 - スクリプト: 対象コンポーネントと図の種類を含める（例: `gen_ggml_dispatch_flow.py`, `gen_bundle_dep_tree.py`）
-- 画像: スクリプト名と対応させ、形式は **webp 推奨**（例: `ggml_dispatch_flow.webp`, `bundle_dep_tree.webp`）
+- 画像: スクリプト名と対応させる（例: `ggml_dispatch_flow.png`, `bundle_dep_tree.svg`）
 
 ### 8.4 依存ライブラリの追加方法
 
