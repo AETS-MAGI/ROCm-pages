@@ -41,7 +41,7 @@
     <section class="card">
       <h2>Current Best Narrowing</h2>
       <ul>
-        <li>short resident <code>q4_k_m</code> case は、いまのところ custom <code>Q4_K</code> MMVQ + Flash + RoPE と最も整合する。</li>
+        <li>short resident <code>q4_k_m</code> case は pure-MMVQ ではなく、decode 側は MMVQ-compatible、prompt 側は <code>11-12</code> count window で MMQ-eligible とみなすのが現時点の最良整理。</li>
         <li>larger quantized path 用の exact <code>Q4_K mul_mat_q</code> object は <code>bundle_0096</code> として isolate 済み。</li>
         <li>ただし short live case がその MMQ family を十分踏んだか、BLAS-side <code>Cijk_*</code> に入ったかはまだ未確定。</li>
       </ul>
@@ -63,6 +63,7 @@ flowchart LR
       <h2>未確定 / Next Narrowing</h2>
       <ul>
         <li>short live <code>q4_k_m</code> case が <code>bundle_0096</code> の MMQ family をどの程度踏んだか。</li>
+        <li><code>prompt_eval_count = 290</code> 相当の long prompt window が fallback なのか、chunking/case split なのか。</li>
         <li>BLAS-side <code>Cijk_*</code> family が live short case に入ったか。</li>
         <li>observer 由来の visibility gap と target/path 固有差の分離。</li>
       </ul>

@@ -34,7 +34,8 @@
         <li>2026-03-27: source footing を固定。runtime truth を <code>/usr/local/lib/ollama/rocm</code>、code truth を <code>ollama-upstream</code> / shared <code>ggml-cuda</code> lineage に置いた。</li>
         <li>2026-03-27: source trace で <code>Q4_K_M -&gt; Q4_K</code>、<code>mul_mat_vec_q</code> / <code>mul_mat_q</code> / BLAS fallback、Flash Attention / RoPE 分岐を整理。</li>
         <li>2026-03-28: disassembly で <code>bundle_0030</code> (<code>Q4_K mul_mat_vec_q</code>)、<code>bundle_0037</code> (MMQ repack)、<code>bundle_0039</code> (RoPE)、<code>bundle_0096</code> (exact <code>Q4_K mul_mat_q</code>) を isolate。</li>
-        <li>2026-03-28: current best narrowing として、short resident <code>q4_k_m</code> case は custom <code>Q4_K</code> MMVQ + Flash + RoPE により強く整合、MMQ/BLAS participation は unresolved と整理。</li>
+        <li>2026-03-28: resident phase-proxy probe を追加。<code>prompt_eval_count = 3</code> は MMVQ-compatible、<code>11-12</code> は MMQ-eligible、<code>290</code> は fallback/chunking 境界候補と整理。</li>
+        <li>2026-03-28: current best narrowing を更新。short resident <code>q4_k_m</code> case は pure-MMVQ ではなく、decode 側 MMVQ-compatible + prompt 側 MMQ-eligible の mixed-by-phase として扱う。</li>
       </ul>
     </section>
 
@@ -42,6 +43,7 @@
       <h2>次に詰める点</h2>
       <ul>
         <li><code>bundle_0096</code> が short live case の measured window にどこまで入ったかを phase proxy と observer 制約の範囲で詰める。</li>
+        <li><code>prompt_eval_count = 290</code> が本当に MMQ ceiling 超過を意味するのか、それとも内部 chunking なのかを切り分ける。</li>
         <li>BLAS-side <code>Cijk_*</code> が live short case に入ったかを、非破壊 observer が得られた時点で再確認する。</li>
       </ul>
     </section>
