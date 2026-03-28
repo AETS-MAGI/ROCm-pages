@@ -323,7 +323,7 @@ assets/img/graph/     ← 生成済み画像の出力先（HTML から参照）
 必要に応じて、各文書の冒頭または末尾に以下を置くこと。
 
 日本語:
-> 本メモは、公開一次資料およびローカル clone から観測可能な範囲を整理したものであり、非公開 issue や社内意思決定の内容を断定するものではない。
+> 本文章は、公開一次資料およびローカル clone から観測可能な範囲を整理したものであり、非公開 issue や社内意思決定の内容を断定するものではない。
 
 英語:
 > This document organizes observations from publicly available sources and local repository clones only. It does not assert the contents of private issues or internal decision-making processes.
