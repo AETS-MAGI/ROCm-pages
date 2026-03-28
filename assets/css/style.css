@@ -300,3 +300,27 @@ code {
 /* ── Language visibility ── */
 html[data-lang="en"] .ja { display: none !important; }
 html[data-lang="ja"] .en { display: none !important; }
+
+/* ── Graph images (Python-generated) ── */
+.graph-img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 6px;
+  margin: 12px auto 4px;
+}
+.graph-zoom {
+  display: block;
+  text-decoration: none;
+}
+.graph-zoom:hover .graph-img {
+  opacity: 0.92;
+  outline: 2px solid #4A90D9;
+  outline-offset: 2px;
+}
+.graph-caption {
+  text-align: center;
+  font-size: .75rem;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
