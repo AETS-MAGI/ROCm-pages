@@ -25,49 +25,56 @@
 
     <section class="hero">
       <h1>hipBLASLt</h1>
-      <p class="ja">hipBLASLt の位置づけ整理ページです。現時点では依存候補としての管理が中心です。</p>
-      <p class="en">Positioning page for hipBLASLt. At this stage, it is mainly tracked as a candidate dependency layer.</p>
+      <p class="ja">カスタムデータレイアウト・混合精度・活性化関数融合（GELU/ReLU/Swish）をサポートする柔軟な行列積ライブラリです。TensileLite をバックエンドに持ち、rocBLAS とは独立した GEMM API（<code>hipblasLtMatmul</code>）を提供します。gfx1201 向け sparse GEMM テスト構成を含む 250 超の参照が確認されています。</p>
+      <p class="en">A flexible matrix multiplication library supporting custom data layouts, mixed precision, and fused activations (GELU/ReLU/Swish). Uses TensileLite as its backend and provides an independent GEMM API (<code>hipblasLtMatmul</code>) from rocBLAS. Over 250 gfx1201 references found in its TensileLite subdirectory.</p>
+      <div class="hero-meta">
+        <span class="badge badge-env ja">gfx1201: TensileLite 参照 250+</span>
+        <span class="badge badge-env en">gfx1201: TensileLite refs 250+</span>
+        <span class="badge badge-limited ja">RX9070XT live path: 未確定</span>
+        <span class="badge badge-limited en">RX9070XT live path: unresolved</span>
+      </div>
     </section>
 
+    <!-- 位置づけ -->
+    <section class="card">
+      <h2><span class="ja">ROCm スタックにおける位置づけ</span><span class="en">Position in the ROCm Stack</span></h2>
+      <p class="ja">hipBLASLt は rocBLAS と並列に位置する特化 GEMM ライブラリです。backend に TensileLite（Tensile の軽量版）を持ち、activation fusion や sparse GEMM などの拡張機能を提供します。ggml-hip の現行ソースでは直接の <code>hipblasLt*</code> 呼び出しサイトは主たる dispatch 経路に現れていませんが、rocBLAS 内部ポリシー経由で間接的に呼ばれる可能性は否定されていません。</p>
+      <p class="en">hipBLASLt is a specialized GEMM library positioned alongside rocBLAS. Its backend is TensileLite (a lightweight Tensile variant), providing extended capabilities like activation fusion and sparse GEMM. In the current ggml-hip source, direct <code>hipblasLt*</code> call sites do not appear in the primary dispatch path, but indirect calls via internal rocBLAS policy cannot be ruled out.</p>
+    </section>
+
+    <!-- 観測済み事実 -->
     <section class="card">
       <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
       <ul class="ja">
-        <li>本ワークスペースでは hipBLASLt を主観測対象にしていません。</li>
-        <li>主経路の解析を優先し、hipBLASLt は補助コンポーネントとして整理しています。</li>
+        <li><code>ROCm-repos/hipBLASLt/</code> の TensileLite サブディレクトリに gfx1201 参照が 250 超含まれており、sparse GEMM テスト構成等で明示的に参照されています（ソース確認）。</li>
+        <li>RX9070XT Ollama bundle（<code>/usr/local/lib/ollama/rocm/</code>）内に <code>libhipblaslt.so</code> が含まれているかは未確認です。</li>
+        <li>ggml の <code>vendors/hip.h</code> が remapping する API 群（<code>cublasGemmEx</code> 等）は hipBLAS を向いており、hipBLASLt の直接 call site はソース上で確認していません。</li>
       </ul>
       <ul class="en">
-        <li>hipBLASLt is not a primary observation target in this workspace.</li>
-        <li>Primary path analysis is prioritized; hipBLASLt is documented as a secondary component.</li>
+        <li><code>ROCm-repos/hipBLASLt/</code>'s TensileLite subdirectory contains over 250 gfx1201 references, with explicit references in sparse GEMM test configurations (source-confirmed).</li>
+        <li>Whether <code>libhipblaslt.so</code> is included in the RX9070XT Ollama bundle (<code>/usr/local/lib/ollama/rocm/</code>) has not been confirmed.</li>
+        <li>The API remapping in ggml's <code>vendors/hip.h</code> (e.g., <code>cublasGemmEx</code>) targets hipBLAS; no direct hipBLASLt call sites have been confirmed in the source.</li>
       </ul>
     </section>
 
+    <!-- 未確定事項 -->
     <section class="card">
       <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
       <ul class="ja">
-        <li>LLM ワークロードでの直接寄与は未確定です。</li>
-        <li>世代差に対する説明力は観測不足です。</li>
+        <li>RX9070XT 実機の LLM 推論 live case で hipBLASLt が呼ばれたかは未確定です。</li>
+        <li>hipBLASLt が呼ばれるとすれば、rocBLAS 内部ポリシー経由での間接呼び出しが最も自然ですが、これも未観測です。</li>
+        <li>LLM 推論への直接寄与の範囲は、現時点では断定しません。</li>
       </ul>
       <ul class="en">
-        <li>Direct contribution in current LLM workloads is undetermined.</li>
-        <li>Observation is insufficient to explain generation differences via this component.</li>
-      </ul>
-    </section>
-
-    <section class="card">
-      <h2><span class="ja">追記予定</span><span class="en">Planned</span></h2>
-      <ul class="ja">
-        <li>依存解決ログで確認できた範囲を条件付きで追記。</li>
-        <li>必要時に主経路との比較観測を追加。</li>
-      </ul>
-      <ul class="en">
-        <li>Add condition-bounded notes based on dependency-resolution evidence.</li>
-        <li>Add comparative observations against primary paths when needed.</li>
+        <li>Whether hipBLASLt was called in the RX9070XT live LLM inference case is unresolved.</li>
+        <li>If hipBLASLt is called, indirect invocation via internal rocBLAS policy is the most natural candidate, but this remains unobserved.</li>
+        <li>The scope of direct contribution to LLM inference is not asserted at this stage.</li>
       </ul>
     </section>
 
     <div class="note">
-      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
-      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は確定次第更新します。</span>
+      <span class="en">Content is grounded in observation logs. Open questions are updated as findings solidify.</span>
     </div>
 
   </div>

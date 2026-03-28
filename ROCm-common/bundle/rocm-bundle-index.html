@@ -25,45 +25,83 @@
 
     <section class="hero">
       <h1><span class="ja">ROCm バンドル</span><span class="en">ROCm Bundle</span></h1>
-      <p class="ja">ROCm の配布構成（バンドル視点）を整理します。runtime path と library 配置の整合性を中心に記録します。</p>
-      <p class="en">Documents ROCm distribution layout from a bundle perspective. Focuses on runtime path and library placement consistency.</p>
+      <p class="ja">Ollama が使用する ROCm ランタイムバンドルの構造と、RX9070XT 実機で確認した配置を記録します。バンドル優先ロードにより、system ROCm とは独立した stack で動作します。</p>
+      <p class="en">Documents the structure of the ROCm runtime bundle used by Ollama and the layout confirmed on the RX9070XT live machine. Bundle-first loading ensures operation against an independent stack from system ROCm.</p>
+      <div class="hero-meta">
+        <span class="badge badge-env">/usr/local/lib/ollama/rocm/</span>
+        <span class="badge badge-confirmed ja">RX9070XT: 実機確認済み（Phase C）</span>
+        <span class="badge badge-confirmed en">RX9070XT: Confirmed live (Phase C)</span>
+      </div>
     </section>
 
+    <!-- 観測済み事実 -->
     <section class="card">
-      <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
+      <h2><span class="ja">観測済み事実（RX9070XT / Phase C）</span><span class="en">Observed Facts (RX9070XT / Phase C)</span></h2>
       <ul class="ja">
-        <li>runtime path と library 配置の整合性が、動作確認の基本確認項目として機能する。</li>
-        <li>overlay 方式での最小構成配布を観測対象として扱う。</li>
+        <li>Ollama の runner は <code>LD_LIBRARY_PATH</code> と <code>OLLAMA_LIBRARY_PATH</code> を bundle root で先行設定し、system ROCm より bundle を優先します（ソース確認：<code>llm/server.go</code>）。</li>
+        <li>bundle root: <code>/usr/local/lib/ollama/</code> および <code>/usr/local/lib/ollama/rocm/</code>。</li>
+        <li>確認した主要ライブラリと依存チェーン：</li>
       </ul>
       <ul class="en">
-        <li>Runtime path and library placement consistency serves as a basic verification item for functionality checks.</li>
-        <li>Overlay-based minimal distribution is treated as an observation target.</li>
+        <li>Ollama's runner sets <code>LD_LIBRARY_PATH</code> and <code>OLLAMA_LIBRARY_PATH</code> to the bundle root ahead of system ROCm (source-confirmed in <code>llm/server.go</code>).</li>
+        <li>Bundle roots: <code>/usr/local/lib/ollama/</code> and <code>/usr/local/lib/ollama/rocm/</code>.</li>
+        <li>Confirmed major libraries and dependency chain:</li>
       </ul>
+      <div class="call-chain">
+<span class="target">libggml-hip.so</span>          <span class="branch ja">（587 MiB .hip_fatbin 含む）</span><span class="branch en">(includes 587 MiB .hip_fatbin)</span>
+  <span class="arrow">→</span> <span class="target">libhipblas.so.2.3.60303</span>
+      <span class="arrow">→</span> <span class="target">librocblas.so.4.3.60303</span>
+            <span class="arrow">→</span> <span class="target">libamdhip64.so.6</span>
+                  <span class="arrow">→</span> <span class="target">libhsa-runtime64.so.1</span>
+
+rocblas/library/              <span class="branch ja">（gfx1201 ターゲット 56 ファイル）</span><span class="branch en">(56 gfx1201-targeted files)</span>
+  Kernels.so-000-gfx1201.hsaco
+  TensileLibrary_lazy_gfx1201_*.dat / *.so  <span class="branch ja">（variants）</span><span class="branch en">(variants)</span>
+      </div>
+      <table class="data-table" style="margin-top:10px;">
+        <thead>
+          <tr>
+            <th><span class="ja">パス</span><span class="en">Path</span></th>
+            <th><span class="ja">内容</span><span class="en">Contents</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>/usr/local/lib/ollama/rocm/libggml-hip.so</code></td>
+            <td><span class="ja">.hip_fatbin 587 MiB（多ターゲット custom hsaco 群）</span><span class="en">.hip_fatbin 587 MiB (multi-target custom hsacos)</span></td>
+          </tr>
+          <tr>
+            <td><code>/usr/local/lib/ollama/rocm/libhipblas.so.2.3.60303</code></td>
+            <td><span class="ja">hipBLAS marshalling layer</span><span class="en">hipBLAS marshalling layer</span></td>
+          </tr>
+          <tr>
+            <td><code>/usr/local/lib/ollama/rocm/librocblas.so.4.3.60303</code></td>
+            <td><span class="ja">rocBLAS（Tensile kernel 配置を同梱）</span><span class="en">rocBLAS (with Tensile kernel layout bundled)</span></td>
+          </tr>
+          <tr>
+            <td><code>/usr/local/lib/ollama/rocm/rocblas/library/</code></td>
+            <td><span class="ja">gfx1201 ターゲット 56 ファイル（Kernels.so + TensileLibrary variants）</span><span class="en">56 gfx1201-targeted files (Kernels.so + TensileLibrary variants)</span></td>
+          </tr>
+        </tbody>
+      </table>
     </section>
 
+    <!-- 未確定事項 -->
     <section class="card">
       <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
       <ul class="ja">
-        <li>GPU 世代をまたいだ最小配布構成の差異は、追加観測なしでは確定しません。</li>
+        <li>GPU 世代をまたいだ bundle 構成の差異（ファイル数・ライブラリバージョン）は、各世代の実機で個別に確認が必要です。</li>
+        <li>system ROCm と bundle の version 不一致が動作に影響するケースは未観測です。</li>
       </ul>
       <ul class="en">
-        <li>Differences in minimal distribution layout across GPU generations are not confirmed without additional observation.</li>
-      </ul>
-    </section>
-
-    <section class="card">
-      <h2><span class="ja">追記予定</span><span class="en">Planned</span></h2>
-      <ul class="ja">
-        <li>GPU 世代別の最小配布構成（overlay-minimum）の整理。</li>
-      </ul>
-      <ul class="en">
-        <li>Per-generation minimal distribution layout (overlay-minimum) organization to be added.</li>
+        <li>Bundle layout differences across GPU generations (file count, library versions) require per-generation live machine confirmation.</li>
+        <li>Cases where version mismatches between system ROCm and bundle affect behavior have not been observed.</li>
       </ul>
     </section>
 
     <div class="note">
-      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
-      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は確定次第更新します。</span>
+      <span class="en">Content is grounded in observation logs. Open questions are updated as findings solidify.</span>
     </div>
 
   </div>

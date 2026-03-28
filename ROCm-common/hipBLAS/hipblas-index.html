@@ -25,49 +25,62 @@
 
     <section class="hero">
       <h1>hipBLAS</h1>
-      <p class="ja">hipBLAS の位置づけを整理するページです。現時点では主経路の主役ではなく、ROCm 数学スタックの補助層として扱います。</p>
-      <p class="en">Page for positioning hipBLAS in this workspace. Currently treated as a supporting layer in the ROCm math stack, not the primary path focus.</p>
+      <p class="ja">rocBLAS（AMD）と cuBLAS（NVIDIA）の統一インターフェースを提供する BLAS marshalling ライブラリです。アプリケーション側のコード変更なしに backend を切り替えられます。ggml-hip は <code>vendors/hip.h</code> で CUDA API を hipBLAS 等価物にリマップし、BLAS fallback 経路の入口として機能します。</p>
+      <p class="en">A BLAS marshalling library providing a unified interface across rocBLAS (AMD) and cuBLAS (NVIDIA). Allows backend switching without changing application code. ggml-hip remaps CUDA APIs to hipBLAS equivalents via <code>vendors/hip.h</code>, making hipBLAS the gateway for the BLAS fallback path.</p>
+      <div class="hero-meta">
+        <span class="badge badge-env">libhipblas.so.2.3.60303</span>
+        <span class="badge badge-confirmed ja">RX9070XT: 依存チェーン確認済み</span>
+        <span class="badge badge-confirmed en">RX9070XT: Dependency chain confirmed</span>
+      </div>
     </section>
 
+    <!-- 位置づけ -->
     <section class="card">
-      <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
+      <h2><span class="ja">ROCm スタックにおける位置づけ</span><span class="en">Position in the ROCm Stack</span></h2>
+      <p class="ja">hipBLAS は rocBLAS の上位 abstraction 層として機能します。GPU アーキテクチャ固有の最適化は rocBLAS / Tensile が担い、hipBLAS はその API ラッパーです。gfx1201 固有のコードは hipBLAS には含まれず、バックエンドの rocBLAS から継承されます。</p>
+      <p class="en">hipBLAS functions as an abstraction layer above rocBLAS. GPU architecture-specific optimizations are handled by rocBLAS/Tensile; hipBLAS is their API wrapper. gfx1201-specific code is not in hipBLAS itself — it is inherited from the rocBLAS backend.</p>
+      <div class="call-chain">
+ggml-hip (<span class="ja">BLAS fallback 経路</span><span class="en">BLAS fallback path</span>)
+  <span class="arrow">↓</span> ggml_cuda_op_mul_mat_cublas()
+  <span class="arrow">↓</span> <span class="target">hipBLAS</span>  <span class="branch ja">（vendors/hip.h で cublasGemmEx → hipblasGemmEx にリマップ）</span><span class="branch en">(cublasGemmEx → hipblasGemmEx remapped via vendors/hip.h)</span>
+  <span class="arrow">↓</span> <span class="target">rocBLAS</span>
+  <span class="arrow">↓</span> Tensile kernel (Cijk_* / gfx1201)
+      </div>
+    </section>
+
+    <!-- 観測済み事実 -->
+    <section class="card">
+      <h2><span class="ja">観測済み事実（RX9070XT）</span><span class="en">Observed Facts (RX9070XT)</span></h2>
       <ul class="ja">
-        <li>本ワークスペースの LLM 調査では、主観測対象は rocBLAS / Tensile / ggml-hip です。</li>
-        <li>hipBLAS は依存スタック上の補助層として整理し、現時点で単独評価は行っていません。</li>
+        <li><code>ldd /usr/local/lib/ollama/rocm/libggml-hip.so</code> で <code>libhipblas.so.2.3.60303</code> が直接依存として確認されました（Phase C）。</li>
+        <li>ggml の <code>vendors/hip.h</code> ソースで <code>cublasCreate</code>・<code>cublasGemmEx</code>・<code>cublasSgemm</code> 等が hipBLAS 等価物にリマップされていることを確認しました（Phase B）。</li>
+        <li>同 header に <code>rocblas/rocblas.h</code> の include と <code>rocblas_initialize()</code> 呼び出しも含まれており、hipBLAS を通じた rocBLAS の直接 initialize もここで行われます。</li>
+        <li>RX9070XT live case での <code>ROCBLAS_LAYER=9</code> ログには <code>rocblas_create_handle</code> のみが記録され、これが hipBLAS 経由の handle 初期化に対応する可能性があります。</li>
       </ul>
       <ul class="en">
-        <li>In this workspace's LLM investigation, primary observation targets are rocBLAS / Tensile / ggml-hip.</li>
-        <li>hipBLAS is documented as a supporting dependency layer; no standalone evaluation is claimed yet.</li>
+        <li><code>ldd /usr/local/lib/ollama/rocm/libggml-hip.so</code> confirmed <code>libhipblas.so.2.3.60303</code> as a direct dependency (Phase C).</li>
+        <li>Source-confirmed in ggml's <code>vendors/hip.h</code> that <code>cublasCreate</code>, <code>cublasGemmEx</code>, <code>cublasSgemm</code>, etc. are remapped to hipBLAS equivalents (Phase B).</li>
+        <li>The same header also includes <code>rocblas/rocblas.h</code> and calls <code>rocblas_initialize()</code> directly, so rocBLAS initialization also occurs here via hipBLAS.</li>
+        <li>The <code>ROCBLAS_LAYER=9</code> log from the RX9070XT live case only recorded <code>rocblas_create_handle</code> — which may correspond to the handle initialization via hipBLAS.</li>
       </ul>
     </section>
 
+    <!-- 未確定事項 -->
     <section class="card">
       <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
       <ul class="ja">
-        <li>hipBLAS 固有の挙動が実行結果へ与える影響は未確定です。</li>
-        <li>他世代での可視性・寄与度差は観測が不足しています。</li>
+        <li>RX9070XT の live short case で hipBLAS/rocBLAS BLAS fallback が実際に GEMM dispatch を行ったかは未確定です。</li>
+        <li>hipBLAS 固有の挙動（rocBLAS を介さない固有パス）が LLM 推論結果へ与える影響は未確定です。</li>
       </ul>
       <ul class="en">
-        <li>Impact of hipBLAS-specific behavior on end results remains undetermined.</li>
-        <li>Observation is insufficient for cross-generation visibility/contribution differences.</li>
-      </ul>
-    </section>
-
-    <section class="card">
-      <h2><span class="ja">追記予定</span><span class="en">Planned</span></h2>
-      <ul class="ja">
-        <li>呼び出しが確認できた run の条件付き記録を追加。</li>
-        <li>必要に応じて、主経路との差分観測を追記。</li>
-      </ul>
-      <ul class="en">
-        <li>Add condition-bounded notes for runs where calls are confirmed.</li>
-        <li>Add differential observations against primary paths when needed.</li>
+        <li>Whether hipBLAS/rocBLAS BLAS fallback actually dispatched GEMM in the RX9070XT live short case remains unresolved.</li>
+        <li>Any hipBLAS-specific behavior (paths not going through rocBLAS) and its impact on LLM inference results are undetermined.</li>
       </ul>
     </section>
 
     <div class="note">
-      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
-      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は確定次第更新します。</span>
+      <span class="en">Content is grounded in observation logs. Open questions are updated as findings solidify.</span>
     </div>
 
   </div>

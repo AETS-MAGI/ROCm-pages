@@ -25,47 +25,65 @@
 
     <section class="hero">
       <h1>Tensile</h1>
-      <p class="ja">Tensile の fallback 資産（catalog・HSACO）観測状況を整理します。</p>
-      <p class="en">Documents Tensile fallback asset (catalog and HSACO) observation status.</p>
+      <p class="ja">AMD GPU 向けの GEMM / テンソル収縮カーネルを自動生成するベンチマーク駆動のカーネルジェネレータです。rocBLAS に組み込まれ、<code>Cijk_*</code> 命名規則の per-target hsaco を事前生成します。gfx1201 は公式サポートアーキテクチャとして登録されています。</p>
+      <p class="en">A benchmark-driven kernel generator that automatically creates optimized GEMM and tensor contraction kernels for AMD GPUs. Integrated into rocBLAS, it pre-generates per-target hsacos with the <code>Cijk_*</code> naming convention. gfx1201 is registered as a supported architecture.</p>
+      <div class="hero-meta">
+        <span class="badge badge-confirmed ja">gfx1201: サポート済み</span>
+        <span class="badge badge-confirmed en">gfx1201: Supported</span>
+        <span class="badge badge-confirmed ja">RX9070XT: Cijk_* 逆アセンブリ確認</span>
+        <span class="badge badge-confirmed en">RX9070XT: Cijk_* disassembly confirmed</span>
+      </div>
     </section>
 
+    <!-- 位置づけ -->
     <section class="card">
-      <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
+      <h2><span class="ja">ROCm スタックにおける位置づけ</span><span class="en">Position in the ROCm Stack</span></h2>
+      <p class="ja">Tensile は rocBLAS（一次）と hipBLASLt（TensileLite 経由）のバックエンドカーネルジェネレータです。GPU アーキテクチャ仕様を入力に、ベンチマーク自動調整（auto-tuning）を経てアセンブリレベルの最適 kernel を出力し、hsaco として <code>rocblas/library/</code> に配置します。</p>
+      <p class="en">Tensile is the backend kernel generator for rocBLAS (primary) and hipBLASLt (via TensileLite). Given GPU architecture specifications, it produces assembly-level optimized kernels through automated benchmarking (auto-tuning), placing the resulting hsacos under <code>rocblas/library/</code>.</p>
+      <div class="call-chain">
+Tensile (<span class="ja">ビルド時</span><span class="en">at build time</span>)
+  <span class="arrow">→</span> <span class="target">Cijk_*_gfx1201.hsaco</span>  <span class="branch">→ rocblas/library/Kernels.so-000-gfx1201.hsaco</span>
+
+<span class="ja">実行時（rocBLAS 経由）:</span><span class="en">At runtime (via rocBLAS):</span>
+  rocBLAS <span class="arrow">→</span> <span class="target">Cijk_*</span> kernel dispatch
+      </div>
+    </section>
+
+    <!-- gfx1201 対応 -->
+    <section class="card">
+      <h2><span class="ja">gfx1201 対応状況</span><span class="en">gfx1201 Support Status</span></h2>
       <ul class="ja">
-        <li>MI25 では fallback 資産アクセス（catalog-read）と dispatch 観測を区別して記録。</li>
-        <li>「catalog read は見えたが 1:1 因果は未確定」という境界を維持。</li>
+        <li><code>ROCm-repos/Tensile/next-cmake/cmake/TensileSupportedArchitectures.cmake</code>（line 51）に <code>gfx1201</code> がサポートアーキテクチャとして登録されています。</li>
+        <li><code>ROCm-repos/Tensile/Tensile/Common.py</code>（line 331）でも同様に登録済みです。</li>
+        <li>RX9070XT 実機 bundle に <code>Kernels.so-000-gfx1201.hsaco</code> が含まれることを確認（Phase C）。</li>
+        <li>Phase E 逆アセンブリで <code>Cijk_S_GA</code>（sgpr:14, vgpr:10）・<code>Cijk_S_PostGSU3</code>（sgpr:21, vgpr:11）等を確認。いずれも wavefront_size=32。</li>
       </ul>
       <ul class="en">
-        <li>For MI25, fallback asset access (catalog-read) and dispatch observation are recorded as distinct items.</li>
-        <li>The boundary "catalog read was visible, but one-to-one causality is undetermined" is maintained.</li>
+        <li><code>gfx1201</code> is registered as a supported architecture in <code>ROCm-repos/Tensile/next-cmake/cmake/TensileSupportedArchitectures.cmake</code> (line 51).</li>
+        <li>Also registered in <code>ROCm-repos/Tensile/Tensile/Common.py</code> (line 331).</li>
+        <li>Confirmed that <code>Kernels.so-000-gfx1201.hsaco</code> is present in the RX9070XT live bundle (Phase C).</li>
+        <li>Phase E disassembly confirmed <code>Cijk_S_GA</code> (sgpr:14, vgpr:10) and <code>Cijk_S_PostGSU3</code> (sgpr:21, vgpr:11), both with wavefront_size=32.</li>
       </ul>
     </section>
 
+    <!-- 未確定事項 -->
     <section class="card">
       <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
       <ul class="ja">
-        <li>catalog 項目と実行 kernel の厳密対応は、追加証跡なしには確定しません。</li>
-        <li>HSACO 読解結果の解釈は、観測 run 条件つきでのみ扱います。</li>
+        <li>catalog 項目と実行 kernel の厳密対応は、dispatcher attribution なしには確定しません。</li>
+        <li>RX9070XT short live case で <code>Cijk_*</code> family が実際に dispatch されたかは未確定です。</li>
+        <li>MI25 と RX9070XT で同一 shape に対する Tensile kernel 選択がどう異なるかは未観測です。</li>
       </ul>
       <ul class="en">
-        <li>Strict correspondence between catalog items and executed kernels is not confirmed without additional evidence.</li>
-        <li>Interpretation of HSACO analysis is only handled under stated observation run conditions.</li>
-      </ul>
-    </section>
-
-    <section class="card">
-      <h2><span class="ja">追記予定</span><span class="en">Planned</span></h2>
-      <ul class="ja">
-        <li>shape ごとの候補整理と、必要時の逆アセンブル観測手順の整備。</li>
-      </ul>
-      <ul class="en">
-        <li>Per-shape candidate organization and disassembly observation procedures to be documented as needed.</li>
+        <li>Strict correspondence between catalog entries and executed kernels is not confirmed without dispatcher attribution.</li>
+        <li>Whether the <code>Cijk_*</code> family was actually dispatched in the RX9070XT short live case is unresolved.</li>
+        <li>How Tensile kernel selection differs for the same shape between MI25 and RX9070XT has not been observed.</li>
       </ul>
     </section>
 
     <div class="note">
-      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
-      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は確定次第更新します。</span>
+      <span class="en">Content is grounded in observation logs. Open questions are updated as findings solidify.</span>
     </div>
 
   </div>
