@@ -31,47 +31,94 @@
 
     <section class="hero">
       <h1>RX9070XT Optimization Worklog</h1>
-      <p class="ja">RX9070XT 最適化作業のログ要約です。実測追記を前提とした枠組みです。</p>
-      <p class="en">Optimization worklog for RX9070XT. Framework awaiting measurement data.</p>
+      <p class="ja">RX9070XT 最適化作業のログ要約です。条件・手順・観測クラスをセットで記録する設計です。dispatch-safe observer が確保できた段階から本格的な実測が始まります。</p>
+      <p class="en">Optimization worklog for RX9070XT. Designed to record conditions, procedures, and observation class together. Full measurement runs begin once a dispatch-safe observer is available.</p>
     </section>
 
+    <!-- 現在のベースライン -->
     <section class="card">
-      <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
-      <ul class="ja">
-        <li>ログ枠を作成済み。条件・実行手順・観測クラスをセットで残す設計。</li>
-        <li>「結果のみ」ではなく「結果に至る観測文脈」を一緒に保持する運用。</li>
+      <h2><span class="ja">現在の baseline timing（Phase B 実機確認）</span><span class="en">Current Baseline Timing (Phase B Live Confirmation)</span></h2>
+      <p class="ja">以下は最適化 knob を何も操作していない plain 状態の計測です。単発 run のため再現性確認は保留中。</p>
+      <p class="en">The following measurements are from a plain, unmodified state with no optimization knobs applied. Reproducibility confirmation is pending (single run only).</p>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>case</th>
+            <th>load_duration</th>
+            <th>prompt_eval_duration</th>
+            <th>eval_duration</th>
+            <th><span class="ja">備考</span><span class="en">Notes</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="ja">cold generate</span><span class="en">cold generate</span></td>
+            <td>17.455s</td>
+            <td>0.0238s</td>
+            <td>0.306s</td>
+            <td><span class="ja">モデルロード支配</span><span class="en">load-dominated</span></td>
+          </tr>
+          <tr>
+            <td><span class="ja">resident hot (np=32)</span><span class="en">resident hot (np=32)</span></td>
+            <td>0.083s</td>
+            <td>0.0248s</td>
+            <td>0.149s</td>
+            <td><span class="ja">prompt_eval_count=12, eval_count=16</span><span class="en">prompt_eval_count=12, eval_count=16</span></td>
+          </tr>
+          <tr>
+            <td><span class="ja">decode-heavy probe (np=16)</span><span class="en">decode-heavy probe (np=16)</span></td>
+            <td>0.086s</td>
+            <td>0.0116s</td>
+            <td>0.1479s</td>
+            <td><span class="ja">prompt_eval_count=3, eval_count=16</span><span class="en">prompt_eval_count=3, eval_count=16</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout callout-inferred" style="margin-top:8px;">
+        <span class="ja">これらは最適化比較の起点として保持しますが、単発計測のため baseline として確定するには複数 run での再現確認が必要です。</span>
+        <span class="en">These are retained as starting points for optimization comparisons, but they are single-run measurements. Multiple-run reproducibility confirmation is needed to fix them as a confirmed baseline.</span>
+      </div>
+    </section>
+
+    <!-- 実測待ちエントリ -->
+    <section class="card">
+      <h2><span class="ja">実測待ち（dispatch-safe observer 確保後）</span><span class="en">Pending Measurements (after dispatch-safe observer)</span></h2>
+      <div class="callout callout-unresolved">
+        <span class="ja">dispatch-safe observer がまだ確保できていないため、single-knob 比較の結果はここには記録されていません。observer を確保した段階で追記します。</span>
+        <span class="en">A dispatch-safe observer has not yet been secured. Single-knob comparison results are therefore not yet recorded here. This section will be updated once one is available.</span>
+      </div>
+      <ul class="ja" style="margin-top:10px;">
+        <li>single-knob 比較の結果（knob 名・変更内容・eval_duration の変化・条件）</li>
+        <li>baseline からの改善量（条件付き記録）</li>
+        <li>改善の帰属先（kernel family / solver 推定・observer 限界明示付き）</li>
+        <li>複数 run による再現確認</li>
       </ul>
-      <ul class="en">
-        <li>Log framework created. Designed to record conditions, procedures, and observation classes together.</li>
-        <li>Approach retains "observation context leading to the result," not just the result itself.</li>
+      <ul class="en" style="margin-top:10px;">
+        <li>Single-knob comparison results (knob name, change, eval_duration delta, stated conditions)</li>
+        <li>Improvement amount from baseline (recorded with stated conditions)</li>
+        <li>Attribution of improvements (kernel family / solver estimate with observer limits stated)</li>
+        <li>Reproducibility confirmation across multiple runs</li>
       </ul>
     </section>
 
+    <!-- 未確定事項 -->
     <section class="card">
       <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
       <ul class="ja">
         <li>実測が蓄積する前に最終的な最適化の結論は置きません。</li>
         <li>単発 run のみで再現性を確定しません。</li>
+        <li>dispatch-safe observer が確保できない状態では、改善の kernel 帰属は推論として扱います。</li>
       </ul>
       <ul class="en">
         <li>Final optimization conclusions are not drawn before measurements accumulate.</li>
         <li>Reproducibility is not confirmed from a single run alone.</li>
-      </ul>
-    </section>
-
-    <section class="card">
-      <h2><span class="ja">追記予定</span><span class="en">Planned</span></h2>
-      <ul class="ja">
-        <li>実測結果の追記。</li>
-      </ul>
-      <ul class="en">
-        <li>Measurement results to be added.</li>
+        <li>Without a dispatch-safe observer, kernel attribution of improvements is treated as inference, not confirmed fact.</li>
       </ul>
     </section>
 
     <div class="note">
-      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
-      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+      <span class="ja">掲載情報は観測記録に基づきます。「結果のみ」ではなく「結果に至る観測文脈」を一緒に保持します。</span>
+      <span class="en">Content is grounded in observation logs. This log retains "the observation context leading to the result," not just the result itself.</span>
     </div>
 
   </div>
