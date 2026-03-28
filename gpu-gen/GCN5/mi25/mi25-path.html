@@ -1,56 +1,96 @@
 <!doctype html>
-<html lang="ja">
+<html lang="ja" data-lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>MI25 Path Observability | ROCm-pages</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', Meiryo, sans-serif; margin: 0; background:#f6f8fb; color:#1f2937; }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
-    .hero { background:#0b3a66; color:#fff; border-radius:12px; padding:16px; }
-    .hero h1 { margin:0; font-size:1.6rem; }
-    .hero p { margin:.5rem 0 0; line-height:1.6; color:#dbe8f6; }
-    .card { background:#fff; border:1px solid #d8e1ea; border-radius:12px; padding:16px; margin-top:12px; }
-    h2 { font-size:1.05rem; margin:0 0 8px 0; }
-    p { line-height:1.65; margin:8px 0; }
-    ul { margin: 8px 0; padding-left: 20px; line-height:1.6; }
-    .toplinks { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
-    .btn { display:inline-block; text-decoration:none; color:#0b5394; background:#fff; border:1px solid #d8e1ea; border-radius:999px; padding:6px 12px; font-size:.9rem; }
-    .warn { color:#8a4b00; background:#fff7e6; border-left:4px solid #f0a500; padding:10px 12px; border-radius:8px; }
-    code { background:#eef3f8; padding:2px 6px; border-radius:6px; }
-  </style>
+  <link rel="stylesheet" href="../../../assets/css/style.css" />
 </head>
 <body>
   <div class="wrap">
-    <div class="toplinks"><a class="btn" href="mi25-index.html">MI25 index</a><a class="btn" href="mi25-path-worklog.html">Path worklog</a></div>
+
+    <div class="nav-bar">
+      <nav class="breadcrumb">
+        <a href="../../../index.html">Top</a>
+        <span class="sep">›</span>
+        <a href="../../index.html"><span class="ja">GPU 世代別</span><span class="en">GPU Gen</span></a>
+        <span class="sep">›</span>
+        <a href="../gcn5-index.html">GCN5</a>
+        <span class="sep">›</span>
+        <a href="mi25-index.html">MI25</a>
+        <span class="sep">›</span>
+        <span class="current">Path</span>
+      </nav>
+      <div class="lang-toggle">
+        <button class="lang-btn active" data-lang="ja">JA</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+    </div>
+
     <section class="hero">
       <h1>MI25 Path Observability</h1>
-      <p>MI25の経路観測（fallback/dispatch/direct）を扱うページです。</p>
+      <p class="ja">MI25 における推論経路（fallback / dispatch / direct）の観測記録です。</p>
+      <p class="en">Observation log of MI25 inference paths: fallback, dispatch, and direct visibility.</p>
     </section>
 
     <section class="card">
-      <h2>いま分かっていること（このワークスペース）</h2>
-      <ul><li>fallback_confirmed / dispatch_confirmed は観測済み。</li><li>direct可視性はワークロード依存で分岐。</li><li>catalog-read と kernel-level 因果は区別して扱う。</li></ul>
+      <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
+      <ul class="ja">
+        <li><code>fallback_confirmed</code> / <code>dispatch_confirmed</code> は anchor 条件で観測済み。</li>
+        <li>direct 可視性はワークロード依存で分岐することを確認。</li>
+        <li>catalog-read と kernel-level 因果は区別して記録している。</li>
+      </ul>
+      <ul class="en">
+        <li><code>fallback_confirmed</code> / <code>dispatch_confirmed</code> observed under anchor conditions.</li>
+        <li>Direct visibility confirmed to bifurcate based on workload.</li>
+        <li>catalog-read and kernel-level causality are recorded as distinct items.</li>
+      </ul>
     </section>
 
     <section class="card">
-      <h2>言えること（条件つき）</h2>
-      <ul><li>anchor 条件で <code>fallback_confirmed</code> と <code>dispatch_confirmed</code> を複数回観測しています。</li><li><code>direct</code> 可視性は workload 依存で分岐する、という整理が現時点の観測事実です。</li></ul>
+      <h2><span class="ja">現時点での知見</span><span class="en">Current Findings</span></h2>
+      <ul class="ja">
+        <li>anchor 条件で <code>fallback_confirmed</code> と <code>dispatch_confirmed</code> を複数回観測しています。</li>
+        <li><code>direct</code> 可視性はワークロード依存で分岐する、というのが現時点の観測事実です。</li>
+      </ul>
+      <ul class="en">
+        <li><code>fallback_confirmed</code> and <code>dispatch_confirmed</code> observed multiple times under anchor conditions.</li>
+        <li><code>direct</code> visibility bifurcating by workload is the current observed finding.</li>
+      </ul>
     </section>
 
     <section class="card">
-      <h2>まだ言えないこと</h2>
-      <ul><li>catalog-read と個別 kernel dispatch の 1:1 対応は、まだ断定できません。</li><li>「見えない=実行されていない」とは限らないため、可視性だけで不実行とは結論しません。</li></ul>
+      <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
+      <ul class="ja">
+        <li>catalog-read と個別 kernel dispatch の 1:1 対応は確定していません。</li>
+        <li>「見えない＝実行されていない」とは限らないため、可視性だけで不実行とは結論しません。</li>
+      </ul>
+      <ul class="en">
+        <li>One-to-one correspondence between catalog-read and individual kernel dispatch has not been confirmed.</li>
+        <li>"Not visible" does not necessarily mean "not executed"; visibility alone is not used to conclude non-execution.</li>
+      </ul>
     </section>
 
     <section class="card">
-      <h2>準備中 / Coming soon</h2>
-      <ul><li>phase-windowによる定量整理の追記。</li></ul>
+      <h2><span class="ja">追記予定</span><span class="en">Planned</span></h2>
+      <ul class="ja">
+        <li>phase-window による定量整理の追記。</li>
+      </ul>
+      <ul class="en">
+        <li>Quantitative summary via phase-window analysis to be added.</li>
+      </ul>
     </section>
 
-    <section class="card warn">
-      <strong>注記:</strong> 未確認事項は断定しません。観測済み事実と未確定事項を分離して更新します。
-    </section>
+    <p style="margin-top:12px;font-size:.88rem;color:#6b7280;">
+      <a href="mi25-path-worklog.html" style="color:#0b5394;"><span class="ja">→ Path Worklog を見る</span><span class="en">→ View Path Worklog</span></a>
+    </p>
+
+    <div class="note">
+      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
+      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+    </div>
+
   </div>
+  <script src="../../../assets/js/main.js"></script>
 </body>
 </html>

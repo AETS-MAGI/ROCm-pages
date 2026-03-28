@@ -1,56 +1,80 @@
 <!doctype html>
-<html lang="ja">
+<html lang="ja" data-lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>MI25 Path Worklog | ROCm-pages</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', Meiryo, sans-serif; margin: 0; background:#f6f8fb; color:#1f2937; }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
-    .hero { background:#0b3a66; color:#fff; border-radius:12px; padding:16px; }
-    .hero h1 { margin:0; font-size:1.6rem; }
-    .hero p { margin:.5rem 0 0; line-height:1.6; color:#dbe8f6; }
-    .card { background:#fff; border:1px solid #d8e1ea; border-radius:12px; padding:16px; margin-top:12px; }
-    h2 { font-size:1.05rem; margin:0 0 8px 0; }
-    p { line-height:1.65; margin:8px 0; }
-    ul { margin: 8px 0; padding-left: 20px; line-height:1.6; }
-    .toplinks { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
-    .btn { display:inline-block; text-decoration:none; color:#0b5394; background:#fff; border:1px solid #d8e1ea; border-radius:999px; padding:6px 12px; font-size:.9rem; }
-    .warn { color:#8a4b00; background:#fff7e6; border-left:4px solid #f0a500; padding:10px 12px; border-radius:8px; }
-    code { background:#eef3f8; padding:2px 6px; border-radius:6px; }
-  </style>
+  <link rel="stylesheet" href="../../../assets/css/style.css" />
 </head>
 <body>
   <div class="wrap">
-    <div class="toplinks"><a class="btn" href="mi25-path.html">Path</a></div>
+
+    <div class="nav-bar">
+      <nav class="breadcrumb">
+        <a href="../../../index.html">Top</a>
+        <span class="sep">›</span>
+        <a href="../../index.html"><span class="ja">GPU 世代別</span><span class="en">GPU Gen</span></a>
+        <span class="sep">›</span>
+        <a href="../gcn5-index.html">GCN5</a>
+        <span class="sep">›</span>
+        <a href="mi25-index.html">MI25</a>
+        <span class="sep">›</span>
+        <a href="mi25-path.html">Path</a>
+        <span class="sep">›</span>
+        <span class="current">Worklog</span>
+      </nav>
+      <div class="lang-toggle">
+        <button class="lang-btn active" data-lang="ja">JA</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+    </div>
+
     <section class="hero">
       <h1>MI25 Path Worklog</h1>
-      <p>MI25経路観測の作業ログ要約ページです。</p>
+      <p class="ja">MI25 経路観測の作業ログ要約です。run ごとに観測・推論・未確定を分離して記録しています。</p>
+      <p class="en">Summary worklog for MI25 path observation sessions. Observations, inferences, and open items are separated per run.</p>
     </section>
 
     <section class="card">
-      <h2>いま分かっていること（このワークスペース）</h2>
-      <ul><li>観測・推論・未確定を分離する運用を採用。</li></ul>
+      <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
+      <ul class="ja">
+        <li>観測・推論・未確定を分離する記録様式を採用し、run 単位で管理。</li>
+        <li>phase-window / split など観測手法の差も、同一ログ上で比較できる形で記録。</li>
+      </ul>
+      <ul class="en">
+        <li>Observation/inference/open-item separation format adopted; managed per run.</li>
+        <li>Differences in observation methods (phase-window, split, etc.) are recorded in a comparable format on the same log.</li>
+      </ul>
     </section>
 
     <section class="card">
-      <h2>言えること（条件つき）</h2>
-      <ul><li>run 単位で、観測・推論・未確定を分けて記録するルールを維持しています。</li><li>phase-window / split など観測手法の差も、同じログ上で比較できる形で残しています。</li></ul>
+      <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
+      <ul class="ja">
+        <li>worklog 要約だけで性能因果を確定する方針ではありません。</li>
+        <li>raw ログ非公開分があるため、最終評価は対応する参照ノートと併読が前提です。</li>
+      </ul>
+      <ul class="en">
+        <li>The worklog summary alone is not used to confirm performance causality.</li>
+        <li>Some raw logs are not published; final assessment requires reading alongside corresponding reference notes.</li>
+      </ul>
     </section>
 
     <section class="card">
-      <h2>まだ言えないこと</h2>
-      <ul><li>worklog 要約だけで性能因果を確定しない方針です。</li><li>raw ログ非公開分があるため、最終評価は対応する参照ノートと併読が前提です。</li></ul>
+      <h2><span class="ja">追記予定</span><span class="en">Planned</span></h2>
+      <ul class="ja">
+        <li>ログ索引と run tag 対応表の追記。</li>
+      </ul>
+      <ul class="en">
+        <li>Log index and run tag correspondence table to be added.</li>
+      </ul>
     </section>
 
-    <section class="card">
-      <h2>準備中 / Coming soon</h2>
-      <ul><li>ログ索引とrun tag対応表を追記。</li></ul>
-    </section>
+    <div class="note">
+      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
+      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+    </div>
 
-    <section class="card warn">
-      <strong>注記:</strong> 未確認事項は断定しません。観測済み事実と未確定事項を分離して更新します。
-    </section>
   </div>
+  <script src="../../../assets/js/main.js"></script>
 </body>
 </html>

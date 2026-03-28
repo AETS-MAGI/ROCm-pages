@@ -1,66 +1,74 @@
 <!doctype html>
-<html lang="ja">
+<html lang="ja" data-lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>GPU Generations | ROCm-pages</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", Meiryo, sans-serif; margin: 0; background: #f6f8fb; color: #1f2937; }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
-    .hero { background: #0b3a66; color: #fff; border-radius: 12px; padding: 16px; }
-    .hero h1 { margin: 0; font-size: 1.6rem; }
-    .hero p { margin: .5rem 0 0; line-height: 1.6; color: #dbe8f6; }
-    .card { background: #fff; border: 1px solid #d8e1ea; border-radius: 12px; padding: 16px; margin-top: 12px; }
-    h2 { font-size: 1.05rem; margin: 0 0 8px 0; }
-    ul { margin: 8px 0; padding-left: 20px; line-height: 1.6; }
-    .toplinks { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-    .btn { display: inline-block; text-decoration: none; color: #0b5394; background: #fff; border: 1px solid #d8e1ea; border-radius: 999px; padding: 6px 12px; font-size: .9rem; }
-    .warn { color: #8a4b00; background: #fff7e6; border-left: 4px solid #f0a500; padding: 10px 12px; border-radius: 8px; }
-  </style>
+  <link rel="stylesheet" href="../assets/css/style.css" />
 </head>
 <body>
   <div class="wrap">
-    <div class="toplinks">
-      <a class="btn" href="../index.html">Top</a>
-      <a class="btn" href="GCN5/gcn5-index.html">GCN5</a>
-      <a class="btn" href="rDNA4/rdna4-index.html">rDNA4</a>
-      <a class="btn" href="cDNA4/cdna4-index.html">cDNA4</a>
+
+    <div class="nav-bar">
+      <nav class="breadcrumb">
+        <a href="../index.html">Top</a>
+        <span class="sep">›</span>
+        <span class="current ja">GPU 世代別</span>
+        <span class="current en">GPU Generations</span>
+      </nav>
+      <div class="lang-toggle">
+        <button class="lang-btn active" data-lang="ja">JA</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
     </div>
+
     <section class="hero">
-      <h1>GPU Generations</h1>
-      <p>GPU世代別のページ群です。観測済み事実のみ記載し、未確定項目は準備中として残します。</p>
+      <h1><span class="ja">GPU 世代別</span><span class="en">GPU Generations</span></h1>
+      <p class="ja">GCN5 / rDNA4 / cDNA4 の GPU 世代ごとに、観測状況と経路調査の結果を整理します。</p>
+      <p class="en">Observations and path investigation results organized by GPU generation: GCN5, rDNA4, and cDNA4.</p>
     </section>
 
     <section class="card">
-      <h2>いま分かっていること（このワークスペース）</h2>
-      <ul>
-        <li>GCN5（MI25）: 最も観測が進んでいる世代。</li>
-        <li>rDNA4（RX9070XT）: C14 portability pilot の観測結果を追記中。</li>
-        <li>cDNA4（MI300X）: まず方法論移植の足場を整備中。</li>
+      <h2><span class="ja">世代別の観測状況</span><span class="en">Investigation Status by Generation</span></h2>
+      <ul class="ja">
+        <li><strong>GCN5</strong> — MI25 が主対象。観測が最も進んでいる。</li>
+        <li><strong>rDNA4</strong> — RX9070XT で方法論移植パイロット（C14 系）を実施中。</li>
+        <li><strong>cDNA4</strong> — MI300X は枠組み先行。移植計画を保持。</li>
+      </ul>
+      <ul class="en">
+        <li><strong>GCN5</strong> — MI25 is the primary target; most advanced investigation.</li>
+        <li><strong>rDNA4</strong> — Methodology portability pilot underway on RX9070XT (C14 series).</li>
+        <li><strong>cDNA4</strong> — MI300X scaffold prepared; transplant plan in place.</li>
       </ul>
     </section>
 
     <section class="card">
-      <h2>言えること（条件つき）</h2>
-      <ul><li>ここに記載する結論は、ページ内で明示した条件・観測範囲に限定されます。</li><li>再現条件が変わる場合、同じ結果になるとは限りません。</li></ul>
-    </section>
-
-    <section class="card">
-      <h2>まだ言えないこと</h2>
-      <ul><li>kernel / solver レベルの厳密な因果を、ページ単独では断定しません。</li><li>未観測のケースや他ワークロードへの一般化は保留します。</li></ul>
-    </section>
-
-    <section class="card">
-      <h2>準備中 / Coming soon</h2>
-      <ul>
-        <li>世代横断比較表（同一観測クラス基準）。</li>
-        <li>各世代の再現手順テンプレート。</li>
+      <h2><span class="ja">世代ページ</span><span class="en">Generation Pages</span></h2>
+      <ul class="nav-list">
+        <li><a href="GCN5/gcn5-index.html">GCN5</a></li>
+        <li><a href="rDNA4/rdna4-index.html">rDNA4</a></li>
+        <li><a href="cDNA4/cdna4-index.html">cDNA4</a></li>
       </ul>
     </section>
 
-    <section class="card warn">
-      <strong>注記:</strong> ここは宣伝ページではなく、検証ログに基づく技術ページです。
+    <section class="card">
+      <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
+      <ul class="ja">
+        <li>世代横断での比較軸（同一観測クラス基準）は整備中です。</li>
+        <li>kernel / solver レベルの厳密な因果は、ページ単独では確定していません。</li>
+      </ul>
+      <ul class="en">
+        <li>Cross-generation comparison axes (shared observation class basis) are under development.</li>
+        <li>Precise kernel/solver-level causality has not been confirmed from page content alone.</li>
+      </ul>
     </section>
+
+    <div class="note">
+      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
+      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+    </div>
+
   </div>
+  <script src="../assets/js/main.js"></script>
 </body>
 </html>

@@ -1,141 +1,84 @@
 <!doctype html>
-<html lang="ja">
-
+<html lang="ja" data-lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ROCm-pages | ROCm-pages</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', Meiryo, sans-serif;
-      margin: 0;
-      background: #f6f8fb;
-      color: #1f2937;
-    }
-
-    .wrap {
-      max-width: 980px;
-      margin: 0 auto;
-      padding: 24px 16px 48px;
-    }
-
-    .hero {
-      background: #0b3a66;
-      color: #fff;
-      border-radius: 12px;
-      padding: 16px;
-    }
-
-    .hero h1 {
-      margin: 0;
-      font-size: 1.6rem;
-    }
-
-    .hero p {
-      margin: .5rem 0 0;
-      line-height: 1.6;
-      color: #dbe8f6;
-    }
-
-    .card {
-      background: #fff;
-      border: 1px solid #d8e1ea;
-      border-radius: 12px;
-      padding: 16px;
-      margin-top: 12px;
-    }
-
-    h2 {
-      font-size: 1.05rem;
-      margin: 0 0 8px 0;
-    }
-
-    p {
-      line-height: 1.65;
-      margin: 8px 0;
-    }
-
-    ul {
-      margin: 8px 0;
-      padding-left: 20px;
-      line-height: 1.6;
-    }
-
-    .toplinks {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-bottom: 10px;
-    }
-
-    .btn {
-      display: inline-block;
-      text-decoration: none;
-      color: #0b5394;
-      background: #fff;
-      border: 1px solid #d8e1ea;
-      border-radius: 999px;
-      padding: 6px 12px;
-      font-size: .9rem;
-    }
-
-    .warn {
-      color: #8a4b00;
-      background: #fff7e6;
-      border-left: 4px solid #f0a500;
-      padding: 10px 12px;
-      border-radius: 8px;
-    }
-
-    code {
-      background: #eef3f8;
-      padding: 2px 6px;
-      border-radius: 6px;
-    }
-  </style>
+  <title>ROCm-pages</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
 </head>
-
 <body>
   <div class="wrap">
-    <div class="toplinks"><a class="btn" href="ROCm-common/rocm-index.html">ROCm-common</a><a class="btn"
-        href="gpu-gen/index.html">GPU世代</a><a class="btn" href="LLVM/llvm-index.html">LLVM</a></div>
+
+    <div class="nav-bar">
+      <nav class="breadcrumb">
+        <span class="current ja">ROCm-pages</span>
+        <span class="current en">ROCm-pages</span>
+      </nav>
+      <div class="lang-toggle">
+        <button class="lang-btn active" data-lang="ja">JA</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+    </div>
+
     <section class="hero">
       <h1>ROCm-pages</h1>
-      <p>ROCm・GPU世代・LLVM関連のページを、観測済み事実ベースで整理するための入口です。</p>
+      <p class="ja">AMD ROCm スタックの実装挙動を、GPU 世代ごとに観測・記録する技術ノートです。</p>
+      <p class="en">Technical notes recording AMD ROCm stack behavior per GPU generation, grounded in observation logs.</p>
     </section>
 
     <section class="card">
-      <h2>いま分かっていること</h2>
-      <ul>
-        <li>GCN5 / rDNA4 / cDNA4 と ROCm-common / LLVM のページ構造を用意済み。</li>
-        <li>MI25（GCN5）は観測ログと比較結果があり、優先的に内容を具体化。</li>
-        <li>RX9070XT（rDNA4）は portability pilot（C14系）の観測結果を反映可能。</li>
-        <li>MI300X（cDNA4）は枠組み先行で、実測追記はこれから。</li>
+      <h2><span class="ja">このサイトについて</span><span class="en">About This Site</span></h2>
+      <p class="ja">
+        ROCm スタックの挙動を「動いたかどうか」だけでなく、「なぜそのパスを通ったか」まで記録します。
+        観測済み事実と未確定事項を分けて扱い、再現条件を明示します。
+      </p>
+      <p class="en">
+        This site documents ROCm stack behavior not just in terms of "did it work" but "why did it take that path."
+        Observed facts and open questions are kept separate; reproduction conditions are stated explicitly.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2><span class="ja">観測状況</span><span class="en">Investigation Status</span></h2>
+      <ul class="ja">
+        <li><strong>GCN5 / MI25</strong> — 最も観測が進んでいる世代。<code>fallback_confirmed</code> / <code>dispatch_confirmed</code> 確認済み。同一 run 比で最大約 9.4x の tok/s 改善を観測（条件限定）。</li>
+        <li><strong>rDNA4 / RX9070XT</strong> — 方法論移植パイロット実施中（C14 系）。ROCm 経路・dispatch observer 確保済み。</li>
+        <li><strong>cDNA4 / MI300X</strong> — 枠組み先行。実測追記はこれから。</li>
+      </ul>
+      <ul class="en">
+        <li><strong>GCN5 / MI25</strong> — Most advanced investigation. <code>fallback_confirmed</code> / <code>dispatch_confirmed</code> verified. Up to ~9.4× tok/s improvement observed in same-run comparisons (conditions constrained).</li>
+        <li><strong>rDNA4 / RX9070XT</strong> — Methodology portability pilot in progress (C14 series). ROCm path and dispatch-safe observer established.</li>
+        <li><strong>cDNA4 / MI300X</strong> — Scaffold only. Measurements pending.</li>
       </ul>
     </section>
 
     <section class="card">
-      <h2>言えること（条件つき）</h2>
-      <ul><li>ここに記載する結論は、ページ内で明示した条件・観測範囲に限定されます。</li><li>再現条件が変わる場合、同じ結果になるとは限りません。</li></ul>
-    </section>
-
-    <section class="card">
-      <h2>まだ言えないこと</h2>
-      <ul><li>kernel / solver レベルの厳密な因果を、ページ単独では断定しません。</li><li>未観測のケースや他ワークロードへの一般化は保留します。</li></ul>
-    </section>
-
-    <section class="card">
-      <h2>準備中 / Coming soon</h2>
-      <ul>
-        <li>各ページの図版・再現手順・比較表の追加。</li>
-        <li>GitHub Pages公開向けにナビゲーションと更新履歴を追加。</li>
+      <h2><span class="ja">セクション一覧</span><span class="en">Sections</span></h2>
+      <ul class="nav-list">
+        <li><a href="gpu-gen/index.html"><span class="ja">GPU 世代別</span><span class="en">GPU Generations</span></a></li>
+        <li><a href="ROCm-common/rocm-index.html"><span class="ja">ROCm 共通コンポーネント</span><span class="en">ROCm Components</span></a></li>
+        <li><a href="LLVM/llvm-index.html">LLVM</a></li>
       </ul>
     </section>
 
-    <section class="card warn">
-      <strong>注記:</strong> 未確認事項は断定せず、観測済み事実と未確定事項を分離して更新します。
+    <section class="card">
+      <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
+      <ul class="ja">
+        <li>kernel / solver レベルの厳密な因果関係は、現時点では確定していません。</li>
+        <li>未観測のケースや他ワークロードへの一般化は保留します。</li>
+      </ul>
+      <ul class="en">
+        <li>Precise causal attribution at the kernel/solver level has not been confirmed.</li>
+        <li>Generalization to unobserved cases and other workloads is withheld.</li>
+      </ul>
     </section>
+
+    <div class="note">
+      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
+      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+    </div>
+
   </div>
+  <script src="assets/js/main.js"></script>
 </body>
-
 </html>

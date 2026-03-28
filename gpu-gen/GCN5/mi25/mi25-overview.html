@@ -1,56 +1,92 @@
 <!doctype html>
-<html lang="ja">
+<html lang="ja" data-lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>MI25 Overview | ROCm-pages</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', Meiryo, sans-serif; margin: 0; background:#f6f8fb; color:#1f2937; }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
-    .hero { background:#0b3a66; color:#fff; border-radius:12px; padding:16px; }
-    .hero h1 { margin:0; font-size:1.6rem; }
-    .hero p { margin:.5rem 0 0; line-height:1.6; color:#dbe8f6; }
-    .card { background:#fff; border:1px solid #d8e1ea; border-radius:12px; padding:16px; margin-top:12px; }
-    h2 { font-size:1.05rem; margin:0 0 8px 0; }
-    p { line-height:1.65; margin:8px 0; }
-    ul { margin: 8px 0; padding-left: 20px; line-height:1.6; }
-    .toplinks { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
-    .btn { display:inline-block; text-decoration:none; color:#0b5394; background:#fff; border:1px solid #d8e1ea; border-radius:999px; padding:6px 12px; font-size:.9rem; }
-    .warn { color:#8a4b00; background:#fff7e6; border-left:4px solid #f0a500; padding:10px 12px; border-radius:8px; }
-    code { background:#eef3f8; padding:2px 6px; border-radius:6px; }
-  </style>
+  <link rel="stylesheet" href="../../../assets/css/style.css" />
 </head>
 <body>
   <div class="wrap">
-    <div class="toplinks"><a class="btn" href="mi25-index.html">MI25 index</a></div>
+
+    <div class="nav-bar">
+      <nav class="breadcrumb">
+        <a href="../../../index.html">Top</a>
+        <span class="sep">›</span>
+        <a href="../../index.html"><span class="ja">GPU 世代別</span><span class="en">GPU Gen</span></a>
+        <span class="sep">›</span>
+        <a href="../gcn5-index.html">GCN5</a>
+        <span class="sep">›</span>
+        <a href="mi25-index.html">MI25</a>
+        <span class="sep">›</span>
+        <span class="current">Overview</span>
+      </nav>
+      <div class="lang-toggle">
+        <button class="lang-btn active" data-lang="ja">JA</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+    </div>
+
     <section class="hero">
       <h1>MI25 Overview</h1>
-      <p>MI25調査の全体像ページです。</p>
+      <p class="ja">MI25 調査の全体像です。3 層基盤の構成・観測フロー・主要確認事実をまとめます。</p>
+      <p class="en">Overview of the MI25 investigation: 3-layer infrastructure, observation workflow, and key confirmed facts.</p>
     </section>
 
     <section class="card">
-      <h2>いま分かっていること（このワークスペース）</h2>
-      <ul><li>推論基盤・実験クライアント・MCPの3層で土台を整備。</li><li>最新の主張は『条件付き観測事実』として提示。</li></ul>
+      <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
+      <ul class="ja">
+        <li>推論基盤（ollama-src）・実験クライアント（multi_llm-client）・Agent 制御（MI25-tuning-MCP）の 3 層で土台を整備済み。</li>
+        <li>観測→比較→記録の順序で再現事実を積み上げる運用が成立している。</li>
+        <li>推論速度の大幅改善（同一 run 比で最大約 9.4x）を観測済み（条件限定）。</li>
+      </ul>
+      <ul class="en">
+        <li>Three-layer foundation established: inference stack (ollama-src), experiment client (multi_llm-client), and agent control (MI25-tuning-MCP).</li>
+        <li>The observe → compare → record workflow is operational and producing reproducible facts.</li>
+        <li>Significant throughput improvement (up to ~9.4× in same-run comparisons) observed (conditions constrained).</li>
+      </ul>
     </section>
 
     <section class="card">
-      <h2>言えること（条件つき）</h2>
-      <ul><li>MI25 では、観測→比較→記録の順で再現事実を積み上げる運用が成立しています。</li><li>推論速度の大幅改善（同一 run 比で最大約 9.4x）を観測済みですが、条件限定の結果です。</li></ul>
+      <h2><span class="ja">現時点での知見</span><span class="en">Current Findings</span></h2>
+      <ul class="ja">
+        <li>MI25 では、観測クラスを維持したまま改善を記録する手順が確立できています。</li>
+        <li>条件を明示した上での比較結果は、再現可能な観測事実として保持します。</li>
+      </ul>
+      <ul class="en">
+        <li>For MI25, a procedure for recording improvements while preserving observation class integrity has been established.</li>
+        <li>Comparison results with stated conditions are retained as reproducible observed facts.</li>
+      </ul>
     </section>
 
     <section class="card">
-      <h2>まだ言えないこと</h2>
-      <ul><li>単一の原因（特定 solver/kernel）だけで改善を説明できるとは、まだ断定しません。</li><li>他 GPU 世代に同じ改善率が出るとは言えません。</li></ul>
+      <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
+      <ul class="ja">
+        <li>改善を単一の原因（特定 solver / kernel）だけで説明できるとは、まだ確定していません。</li>
+        <li>他 GPU 世代に同じ改善率が出るとは言えません。</li>
+      </ul>
+      <ul class="en">
+        <li>Whether improvement can be fully explained by a single cause (specific solver/kernel) has not been confirmed.</li>
+        <li>The same improvement rate cannot be assumed for other GPU generations.</li>
+      </ul>
     </section>
 
     <section class="card">
-      <h2>準備中 / Coming soon</h2>
-      <ul><li>図版と時系列更新履歴の追加。</li></ul>
+      <h2><span class="ja">追記予定</span><span class="en">Planned</span></h2>
+      <ul class="ja">
+        <li>図版と時系列更新履歴の追加。</li>
+      </ul>
+      <ul class="en">
+        <li>Figures and chronological update history to be added.</li>
+      </ul>
     </section>
 
-    <section class="card warn">
-      <strong>注記:</strong> 未確認事項は断定しません。観測済み事実と未確定事項を分離して更新します。
-    </section>
+    <div class="note">
+      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
+      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+    </div>
+
   </div>
+  <script src="../../../assets/js/main.js"></script>
 </body>
 </html>

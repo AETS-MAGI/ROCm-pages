@@ -1,56 +1,82 @@
 <!doctype html>
-<html lang="ja">
+<html lang="ja" data-lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>MI25 Optimization Worklog | ROCm-pages</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', Meiryo, sans-serif; margin: 0; background:#f6f8fb; color:#1f2937; }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
-    .hero { background:#0b3a66; color:#fff; border-radius:12px; padding:16px; }
-    .hero h1 { margin:0; font-size:1.6rem; }
-    .hero p { margin:.5rem 0 0; line-height:1.6; color:#dbe8f6; }
-    .card { background:#fff; border:1px solid #d8e1ea; border-radius:12px; padding:16px; margin-top:12px; }
-    h2 { font-size:1.05rem; margin:0 0 8px 0; }
-    p { line-height:1.65; margin:8px 0; }
-    ul { margin: 8px 0; padding-left: 20px; line-height:1.6; }
-    .toplinks { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
-    .btn { display:inline-block; text-decoration:none; color:#0b5394; background:#fff; border:1px solid #d8e1ea; border-radius:999px; padding:6px 12px; font-size:.9rem; }
-    .warn { color:#8a4b00; background:#fff7e6; border-left:4px solid #f0a500; padding:10px 12px; border-radius:8px; }
-    code { background:#eef3f8; padding:2px 6px; border-radius:6px; }
-  </style>
+  <link rel="stylesheet" href="../../../assets/css/style.css" />
 </head>
 <body>
   <div class="wrap">
-    <div class="toplinks"><a class="btn" href="mi25-optimize.html">Optimize</a></div>
+
+    <div class="nav-bar">
+      <nav class="breadcrumb">
+        <a href="../../../index.html">Top</a>
+        <span class="sep">›</span>
+        <a href="../../index.html"><span class="ja">GPU 世代別</span><span class="en">GPU Gen</span></a>
+        <span class="sep">›</span>
+        <a href="../gcn5-index.html">GCN5</a>
+        <span class="sep">›</span>
+        <a href="mi25-index.html">MI25</a>
+        <span class="sep">›</span>
+        <a href="mi25-optimize.html">Optimize</a>
+        <span class="sep">›</span>
+        <span class="current">Worklog</span>
+      </nav>
+      <div class="lang-toggle">
+        <button class="lang-btn active" data-lang="ja">JA</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+    </div>
+
     <section class="hero">
       <h1>MI25 Optimization Worklog</h1>
-      <p>MI25最適化作業のログ要約ページです。</p>
+      <p class="ja">MI25 最適化作業のログ要約です。条件・ノブ・観測クラスをセットで記録します。</p>
+      <p class="en">Optimization worklog for MI25. Records conditions, knobs, and observation classes together per run.</p>
     </section>
 
     <section class="card">
-      <h2>いま分かっていること（このワークスペース）</h2>
-      <ul><li>run tagごとの記録基盤は確立済み。</li></ul>
+      <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
+      <ul class="ja">
+        <li>run tag ごとの記録基盤を確立済み。</li>
+        <li>最適化 worklog は条件・ノブ・観測クラスをセットで残す運用。</li>
+        <li>改善値だけでなく「観測クラスが不変か」を判定軸にしています。</li>
+      </ul>
+      <ul class="en">
+        <li>Recording infrastructure established per run tag.</li>
+        <li>Optimization worklog retains conditions, knobs, and observation classes together.</li>
+        <li>Assessment axis includes "is the observation class unchanged?" not just improvement value.</li>
+      </ul>
     </section>
 
     <section class="card">
-      <h2>言えること（条件つき）</h2>
-      <ul><li>最適化 worklog は条件・ノブ・観測クラスをセットで残す運用です。</li><li>改善値だけでなく「観測クラスが不変か」を判定軸にしています。</li></ul>
+      <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
+      <ul class="ja">
+        <li>個々の run を切り出して普遍的な性能結論にはしません。</li>
+        <li>短期ログのみで長期安定性を断定しません。</li>
+      </ul>
+      <ul class="en">
+        <li>Individual runs are not extracted and used for universal performance conclusions.</li>
+        <li>Long-term stability is not asserted from short-term logs alone.</li>
+      </ul>
     </section>
 
     <section class="card">
-      <h2>まだ言えないこと</h2>
-      <ul><li>個々の run を切り出して、普遍的な性能結論にはしません。</li><li>短期ログのみで長期安定性を断定しません。</li></ul>
+      <h2><span class="ja">追記予定</span><span class="en">Planned</span></h2>
+      <ul class="ja">
+        <li>可視化テーブルと更新履歴の追加。</li>
+      </ul>
+      <ul class="en">
+        <li>Visualization table and update history to be added.</li>
+      </ul>
     </section>
 
-    <section class="card">
-      <h2>準備中 / Coming soon</h2>
-      <ul><li>可視化テーブルと更新履歴の追加。</li></ul>
-    </section>
+    <div class="note">
+      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
+      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+    </div>
 
-    <section class="card warn">
-      <strong>注記:</strong> 未確認事項は断定しません。観測済み事実と未確定事項を分離して更新します。
-    </section>
   </div>
+  <script src="../../../assets/js/main.js"></script>
 </body>
 </html>

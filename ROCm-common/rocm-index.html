@@ -1,142 +1,80 @@
 <!doctype html>
-<html lang="ja">
-
+<html lang="ja" data-lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ROCm Common Components | ROCm-pages</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', Meiryo, sans-serif;
-      margin: 0;
-      background: #f6f8fb;
-      color: #1f2937;
-    }
-
-    .wrap {
-      max-width: 980px;
-      margin: 0 auto;
-      padding: 24px 16px 48px;
-    }
-
-    .hero {
-      background: #0b3a66;
-      color: #fff;
-      border-radius: 12px;
-      padding: 16px;
-    }
-
-    .hero h1 {
-      margin: 0;
-      font-size: 1.6rem;
-    }
-
-    .hero p {
-      margin: .5rem 0 0;
-      line-height: 1.6;
-      color: #dbe8f6;
-    }
-
-    .card {
-      background: #fff;
-      border: 1px solid #d8e1ea;
-      border-radius: 12px;
-      padding: 16px;
-      margin-top: 12px;
-    }
-
-    h2 {
-      font-size: 1.05rem;
-      margin: 0 0 8px 0;
-    }
-
-    p {
-      line-height: 1.65;
-      margin: 8px 0;
-    }
-
-    ul {
-      margin: 8px 0;
-      padding-left: 20px;
-      line-height: 1.6;
-    }
-
-    .toplinks {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-bottom: 10px;
-    }
-
-    .btn {
-      display: inline-block;
-      text-decoration: none;
-      color: #0b5394;
-      background: #fff;
-      border: 1px solid #d8e1ea;
-      border-radius: 999px;
-      padding: 6px 12px;
-      font-size: .9rem;
-    }
-
-    .warn {
-      color: #8a4b00;
-      background: #fff7e6;
-      border-left: 4px solid #f0a500;
-      padding: 10px 12px;
-      border-radius: 8px;
-    }
-
-    code {
-      background: #eef3f8;
-      padding: 2px 6px;
-      border-radius: 6px;
-    }
-  </style>
+  <title>ROCm Components | ROCm-pages</title>
+  <link rel="stylesheet" href="../assets/css/style.css" />
 </head>
-
 <body>
   <div class="wrap">
-    <div class="toplinks"><a class="btn" href="../index.html">Top</a><a class="btn"
-        href="rocBLAS/rocblas-index.html">rocBLAS</a><a class="btn" href="Tensile/tensile-index.html">Tensile</a><a
-        class="btn" href="MIOpen/miopen-index.html">MIOpen</a></div>
+
+    <div class="nav-bar">
+      <nav class="breadcrumb">
+        <a href="../index.html">Top</a>
+        <span class="sep">›</span>
+        <span class="current ja">ROCm 共通コンポーネント</span>
+        <span class="current en">ROCm Components</span>
+      </nav>
+      <div class="lang-toggle">
+        <button class="lang-btn active" data-lang="ja">JA</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+    </div>
+
     <section class="hero">
-      <h1>ROCm Common Components</h1>
-      <p>世代横断で使う ROCm 関連コンポーネント（数学ライブラリや推論基盤）を整理するページです。</p>
+      <h1><span class="ja">ROCm 共通コンポーネント</span><span class="en">ROCm Components</span></h1>
+      <p class="ja">LLM 推論に関わる ROCm 共通コンポーネント（数学ライブラリ・推論基盤）を、観測状況とともに整理します。</p>
+      <p class="en">ROCm components relevant to LLM inference — math libraries and inference stack — organized with observation status.</p>
     </section>
 
     <section class="card">
-      <h2>いま分かっていること（このワークスペース）</h2>
-      <ul>
-        <li>この配下に <code>rocBLAS</code> / <code>Tensile</code> / <code>MIOpen</code> / <code>ggml-hip</code> などの個別ページを配置。
-        </li>
-        <li>MI25調査では、LLM推論の主経路候補を rocBLAS/Tensile 側で重点観測している。</li>
-        <li>コンポーネントごとの最終結論はまだ固定せず、観測ログに沿って更新する方針。</li>
+      <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
+      <ul class="ja">
+        <li>MI25 調査では、LLM 推論の主経路として <code>rocBLAS</code> / <code>Tensile</code> 側を重点観測している。</li>
+        <li><code>libggml-hip.so</code> の読み込み確認は、HIP 経路観測の基本証跡として有効。</li>
+        <li>コンポーネントごとの最終結論は固定せず、観測ログに沿って更新する方針。</li>
+      </ul>
+      <ul class="en">
+        <li>The MI25 investigation focuses on <code>rocBLAS</code> / <code>Tensile</code> as the primary LLM inference path.</li>
+        <li>Confirming <code>libggml-hip.so</code> loading is an effective basic evidence of HIP path activity.</li>
+        <li>Per-component conclusions are not fixed; they are updated in line with observation logs.</li>
       </ul>
     </section>
 
     <section class="card">
-      <h2>言えること（条件つき）</h2>
-      <ul><li>ここに記載する結論は、ページ内で明示した条件・観測範囲に限定されます。</li><li>再現条件が変わる場合、同じ結果になるとは限りません。</li></ul>
-    </section>
-
-    <section class="card">
-      <h2>まだ言えないこと</h2>
-      <ul><li>kernel / solver レベルの厳密な因果を、ページ単独では断定しません。</li><li>未観測のケースや他ワークロードへの一般化は保留します。</li></ul>
-    </section>
-
-    <section class="card">
-      <h2>準備中 / Coming soon</h2>
-      <ul>
-        <li>各コンポーネントに『観測済み』『解釈』『未確定』の3層を追加。</li>
-        <li>世代別ページからの参照リンク整理。</li>
+      <h2><span class="ja">コンポーネント一覧</span><span class="en">Components</span></h2>
+      <ul class="nav-list">
+        <li><a href="rocBLAS/rocblas-index.html">rocBLAS</a></li>
+        <li><a href="Tensile/tensile-index.html">Tensile</a></li>
+        <li><a href="ggml-hip/ggml-hip-index.html">ggml-hip</a></li>
+        <li><a href="MIOpen/miopen-index.html">MIOpen</a></li>
+        <li><a href="hipBLAS/hipblas-index.html">hipBLAS</a></li>
+        <li><a href="hipBLASLt/hipblasslt-index.html">hipBLASLt</a></li>
+        <li><a href="rocSOLVER/rocsolver-index.html">rocSOLVER</a></li>
+        <li><a href="MIGraphX/migraphx-index.html">MIGraphX</a></li>
+        <li><a href="bundle/rocm-bundle-index.html"><span class="ja">ROCm Bundle</span><span class="en">ROCm Bundle</span></a></li>
       </ul>
     </section>
 
-    <section class="card warn">
-      <strong>注記:</strong> 未確認事項は断定しません。観測済み事実と未確定事項を分離して更新します。
+    <section class="card">
+      <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
+      <ul class="ja">
+        <li>各コンポーネントへの因果帰属は、追加観測なしには断定しません。</li>
+        <li>世代別ページからの参照リンク整理は追記予定。</li>
+      </ul>
+      <ul class="en">
+        <li>Causal attribution to individual components is withheld without additional observation.</li>
+        <li>Cross-reference links from per-generation pages are planned.</li>
+      </ul>
     </section>
+
+    <div class="note">
+      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
+      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+    </div>
+
   </div>
+  <script src="../assets/js/main.js"></script>
 </body>
-
 </html>
