@@ -94,11 +94,13 @@
 
       <div class="callout callout-inferred">
         <span class="ja">
-          <strong>次の問い：</strong> この分岐が RX9070XT で「実際に動くバイナリ」として存在しているのか？
+          <strong>ステップ 1 の結論：</strong> 理論上、3 経路すべてが存在する。<br>
+          <strong>→ 次の問い：</strong> ではその分岐は RX9070XT 上で「実際に動くバイナリ」として存在しているのか？
           ソースに書いてあっても、gfx1201 向け hsaco が fatbin に入っていなければ動かない。
         </span>
         <span class="en">
-          <strong>Next question:</strong> Do the binaries for these paths actually exist for gfx1201?
+          <strong>Step 1 conclusion:</strong> Theoretically, all three paths exist.<br>
+          <strong>→ Next question:</strong> Do the binaries for these paths actually exist for gfx1201?
           Even if the source branch exists, if no gfx1201 hsaco is embedded in the fatbin, it won't run.
         </span>
       </div>
@@ -209,15 +211,16 @@
       </p>
 
       <div class="callout callout-unresolved">
-        <strong>load ≠ dispatch</strong><br>
+        <strong>load ≠ dispatch — ステップ 2 の結論と次の問い</strong><br>
         <span class="ja">
-          バイナリが fatbin に入っていることと、そのバイナリが実際に dispatch されることは別の問題。
-          ライブラリがロードされていても、その中のカーネルが呼ばれているとは限らない。
-          これを確認するのが Step 3 の課題。
+          <strong>ステップ 2 の結論：</strong> MMVQ・MMQ・BLAS のすべての gfx1201 バイナリが fatbin に存在する。バイナリの欠如が経路をブロックしているわけではない。<br>
+          <strong>→ 次の問い：</strong> ではそのバイナリは live run で実際に dispatch されたのか？
+          バイナリが存在することと、そのカーネルが実際に呼ばれることは別問題。これを確認するのが Step 3 の課題。
         </span>
         <span class="en">
+          <strong>Step 2 conclusion:</strong> gfx1201 binaries for all three paths exist in the fatbin. No path is blocked by a missing binary.<br>
+          <strong>→ Next question:</strong> Were those binaries actually dispatched in a live run?
           A binary existing in the fatbin is a separate question from whether that binary actually gets dispatched.
-          A loaded library does not mean its kernels are called.
           Verifying this is the challenge of Step 3.
         </span>
       </div>
@@ -286,18 +289,54 @@
         </tbody>
       </table>
 
-      <div class="callout callout-inferred" style="margin-top:10px;">
+      <div class="callout callout-confirmed" style="margin-top:10px;">
+        <span class="ja">
+          <strong>ステップ 3 の現時点で最も筋のいい読み：</strong><br>
+          short case（<code>prompt_eval_count = 3</code>）は ne11 ≤ 8 の MMVQ 圏に入っていると読むのが最も自然。
+          medium case（<code>11</code>）は MMQ-eligible 圏、<code>bundle_0096</code> が候補。
+          long case（<code>290</code>）は BLAS fallback または internal chunking のどちらかであり、現時点では切り分けできない。
+        </span>
+        <span class="en">
+          <strong>Step 3 — strongest current reading:</strong><br>
+          The short case (<code>prompt_eval_count = 3</code>) most naturally falls into the MMVQ zone (ne11 ≤ 8).
+          The medium case (<code>11</code>) is in the MMQ-eligible zone, with <code>bundle_0096</code> as the candidate.
+          The long case (<code>290</code>) is either BLAS fallback or internal chunking — not yet distinguishable.
+        </span>
+      </div>
+      <div class="callout callout-inferred" style="margin-top:8px;">
         <span class="ja">
           <strong>proxy の限界：</strong>
-          <code>prompt_eval_count</code> は response JSON の値であり、kernel launch 時の <code>ne11</code> を直接読んでいるわけではない。
-          「ほぼ対応する」近似であり、正確な dispatch 判定ではない。
-          それでも他に runtime を壊さない手段が存在しない現状では、これが現在の frontier。
+          上記は「最も筋のいい読み」であり、確定した dispatch 判定ではない。
+          <code>prompt_eval_count</code> は response JSON の値であり、kernel launch 時の <code>ne11</code> を直接読んでいない。
+          他に runtime を壊さない observer が存在しない現状では、これが現在の frontier。
         </span>
         <span class="en">
           <strong>Proxy limitations:</strong>
-          <code>prompt_eval_count</code> is from the response JSON — it is not a direct readout of <code>ne11</code> at kernel launch.
-          It is an approximation, not an exact dispatch judgment.
-          However, with no other runtime-safe observer available, this is the current frontier.
+          The above is the "most natural reading," not a confirmed dispatch judgment.
+          <code>prompt_eval_count</code> is from the response JSON — it does not directly read <code>ne11</code> at kernel launch.
+          With no other runtime-safe observer available, this is the current frontier.
+        </span>
+      </div>
+    </section>
+
+    <!-- ── このページの結論 ───────────────────────────────────── -->
+    <section class="card">
+      <h2>
+        <span class="ja">このページの結論</span>
+        <span class="en">Page Conclusion</span>
+      </h2>
+      <div class="callout callout-confirmed">
+        <span class="ja">
+          RX9070XT では MMVQ / MMQ / BLAS の 3 経路すべての gfx1201 バイナリが存在し、
+          short case（<code>prompt_eval_count = 3</code>）は MMVQ 圏に入ったと読むのが最も自然。
+          しかし dispatch の直接確認は observer 制約により不可能であり、
+          <strong>phase proxy による近似観測が現時点での限界</strong>。
+        </span>
+        <span class="en">
+          On RX9070XT, gfx1201 binaries exist for all three paths — MMVQ, MMQ, and BLAS.
+          The short case (<code>prompt_eval_count = 3</code>) most naturally places in the MMVQ zone.
+          However, direct dispatch confirmation is blocked by observer constraints;
+          <strong>phase proxy approximation is the current frontier</strong>.
         </span>
       </div>
     </section>
