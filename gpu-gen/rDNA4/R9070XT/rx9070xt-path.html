@@ -1,81 +1,102 @@
 <!doctype html>
-<html lang="ja">
+<html lang="ja" data-lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>RX9070XT Path Observability | ROCm-pages</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', Meiryo, sans-serif; margin: 0; background:#f6f8fb; color:#1f2937; }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
-    .hero { background:#0b3a66; color:#fff; border-radius:12px; padding:16px; }
-    .hero h1 { margin:0; font-size:1.6rem; }
-    .hero p { margin:.5rem 0 0; line-height:1.6; color:#dbe8f6; }
-    .card { background:#fff; border:1px solid #d8e1ea; border-radius:12px; padding:16px; margin-top:12px; }
-    h2 { font-size:1.05rem; margin:0 0 8px 0; }
-    p { line-height:1.65; margin:8px 0; }
-    ul { margin: 8px 0; padding-left: 20px; line-height:1.6; }
-    .toplinks { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
-    .btn { display:inline-block; text-decoration:none; color:#0b5394; background:#fff; border:1px solid #d8e1ea; border-radius:999px; padding:6px 12px; font-size:.9rem; }
-    .warn { color:#8a4b00; background:#fff7e6; border-left:4px solid #f0a500; padding:10px 12px; border-radius:8px; }
-    code { background:#eef3f8; padding:2px 6px; border-radius:6px; }
-    .mermaid { background:#f8fbff; border:1px solid #d8e1ea; border-radius:10px; padding:12px; overflow:auto; }
-  </style>
+  <link rel="stylesheet" href="../../../assets/css/style.css" />
 </head>
 <body>
   <div class="wrap">
-    <div class="toplinks"><a class="btn" href="rx9070xt-index.html">RX9070XT index</a><a class="btn" href="rx9070xt-path-worklog.html">Path worklog</a></div>
+
+    <div class="nav-bar">
+      <nav class="breadcrumb">
+        <a href="../../../index.html">Top</a>
+        <span class="sep">›</span>
+        <a href="../../index.html"><span class="ja">GPU 世代別</span><span class="en">GPU Gen</span></a>
+        <span class="sep">›</span>
+        <a href="../rdna4-index.html">rDNA4</a>
+        <span class="sep">›</span>
+        <a href="rx9070xt-index.html">RX9070XT</a>
+        <span class="sep">›</span>
+        <span class="current">Path</span>
+      </nav>
+      <div class="lang-toggle">
+        <button class="lang-btn active" data-lang="ja">JA</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+    </div>
+
     <section class="hero">
       <h1>RX9070XT Path Observability</h1>
-      <p>RX9070XTの経路観測ページです。plain runtime確認を超えて、source tracing / code object extraction / disassembly / runtime correlation を段階的に固定します。</p>
+      <p class="ja">RX9070XT の経路観測記録です。plain runtime-path alive で止まらず、source tracing / bundle isolate / disassembly / runtime correlation を段階的に固定します。</p>
+      <p class="en">Path observation log for RX9070XT. This page goes beyond plain runtime proof-of-life and fixes source tracing, bundle isolation, disassembly, and runtime correlation step by step.</p>
     </section>
 
     <section class="card">
-      <h2>いま分かっていること（このワークスペース）</h2>
-      <ul>
-        <li>fresh runtime は bundle-first で <code>/usr/local/lib/ollama/rocm</code> を使い、<code>libggml-hip</code> / <code>hipBLAS</code> / <code>rocBLAS</code> / <code>amdhip64</code> を実際にロードする。</li>
-        <li><code>libggml-hip.so</code> には RDNA4 / <code>gfx1201</code> 向けの custom hsaco 群が埋め込まれており、BLAS 側には <code>rocblas/library/Kernels.so-000-gfx1201.hsaco</code> の <code>Cijk_*</code> family が共存する。</li>
-        <li>custom 側では <code>Q4_K</code> dequant、<code>mul_mat_vec_q</code>、<code>mul_mat_q</code>、MMQ repack、Flash Attention、RoPE の family を bundle 単位で isolate 済み。</li>
+      <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
+      <ul class="ja">
+        <li>fresh runtime は bundle-first で <code>/usr/local/lib/ollama/rocm</code> を使い、<code>libggml-hip</code> / <code>hipBLAS</code> / <code>rocBLAS</code> / <code>amdhip64</code> を実際にロードします。</li>
+        <li><code>libggml-hip.so</code> には RDNA4 / <code>gfx1201</code> 向けの custom hsaco 群が埋め込まれており、BLAS 側には <code>rocblas/library/Kernels.so-000-gfx1201.hsaco</code> の <code>Cijk_*</code> family が共存します。</li>
+        <li>custom 側では <code>Q4_K</code> dequant、<code>mul_mat_vec_q</code>、exact <code>mul_mat_q</code>、MMQ repack、Flash Attention、RoPE の family を bundle 単位で isolate 済みです。</li>
+      </ul>
+      <ul class="en">
+        <li>The fresh runtime is bundle-first, using <code>/usr/local/lib/ollama/rocm</code> and actually loading <code>libggml-hip</code>, <code>hipBLAS</code>, <code>rocBLAS</code>, and <code>amdhip64</code>.</li>
+        <li><code>libggml-hip.so</code> embeds RDNA4/<code>gfx1201</code> custom hsaco families, while the BLAS side also ships <code>Cijk_*</code> kernels in <code>rocblas/library/Kernels.so-000-gfx1201.hsaco</code>.</li>
+        <li>On the custom side, <code>Q4_K</code> dequant, <code>mul_mat_vec_q</code>, exact <code>mul_mat_q</code>, MMQ repack, Flash Attention, and RoPE families have already been isolated bundle-by-bundle.</li>
       </ul>
     </section>
 
     <section class="card">
-      <h2>Current Best Narrowing</h2>
-      <ul>
-        <li>short resident <code>q4_k_m</code> case は pure-MMVQ ではなく、decode 側は MMVQ-compatible、prompt 側は <code>11-12</code> count window で MMQ-eligible とみなすのが現時点の最良整理。</li>
-        <li>larger quantized path 用の exact <code>Q4_K mul_mat_q</code> object は <code>bundle_0096</code> として isolate 済み。</li>
-        <li>ただし short live case がその MMQ family を十分踏んだか、BLAS-side <code>Cijk_*</code> に入ったかはまだ未確定。</li>
+      <h2><span class="ja">現時点での知見</span><span class="en">Current Findings</span></h2>
+      <ul class="ja">
+        <li>short resident <code>q4_k_m</code> case は pure-MMVQ ではなく、decode 側は MMVQ-compatible、prompt 側は <code>11-12</code> count window で MMQ-eligible とみなすのが現時点の最良整理です。</li>
+        <li>larger quantized path 用の exact <code>Q4_K mul_mat_q</code> object は <code>bundle_0096</code> として isolate 済みです。</li>
+        <li><code>prompt_eval_count = 290</code> の long prompt probe は、MMQ ceiling 超過か internal chunking かを切り分けるべき境界 probe として扱っています。</li>
+      </ul>
+      <ul class="en">
+        <li>The short resident <code>q4_k_m</code> case should no longer be treated as pure MMVQ: decode-side remains MMVQ-compatible, while the prompt-side <code>11-12</code> count window is already MMQ-eligible.</li>
+        <li>The exact <code>Q4_K mul_mat_q</code> object for the larger quantized path is now fixed as <code>bundle_0096</code>.</li>
+        <li>The long-prompt probe at <code>prompt_eval_count = 290</code> is treated as a boundary probe for either MMQ ceiling crossing or internal chunking.</li>
       </ul>
     </section>
 
     <section class="card">
-      <h2>Method Flow</h2>
-      <div class="mermaid">
-flowchart LR
-  A[Source trace] --> B[Bundle / library trace]
-  B --> C[Code object isolate]
-  C --> D[Disassembly]
-  D --> E[Runtime correlation]
-  E --> F[Observed / Inferred / Unresolved]
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>未確定 / Next Narrowing</h2>
-      <ul>
-        <li>short live <code>q4_k_m</code> case が <code>bundle_0096</code> の MMQ family をどの程度踏んだか。</li>
-        <li><code>prompt_eval_count = 290</code> 相当の long prompt window が fallback なのか、chunking/case split なのか。</li>
-        <li>BLAS-side <code>Cijk_*</code> family が live short case に入ったか。</li>
-        <li>observer 由来の visibility gap と target/path 固有差の分離。</li>
+      <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
+      <ul class="ja">
+        <li>short live case が <code>bundle_0096</code> の MMQ family をどの程度踏んだかは、まだ直接は確定していません。</li>
+        <li>BLAS-side <code>Cijk_*</code> family が live short case に入ったかも未確定です。</li>
+        <li><code>prompt_eval_count</code> は有用な proxy ですが、kernel launch 時の正確な <code>ne11</code> を直接読んでいるわけではありません。</li>
+      </ul>
+      <ul class="en">
+        <li>We still do not know how strongly the short live case actually exercised the <code>bundle_0096</code> MMQ family.</li>
+        <li>Whether the BLAS-side <code>Cijk_*</code> family entered the short live case is also unresolved.</li>
+        <li><code>prompt_eval_count</code> is a useful proxy, but it is not a direct readout of the exact <code>ne11</code> seen at kernel launch.</li>
       </ul>
     </section>
 
-    <section class="card warn">
-      <strong>注記:</strong> 未確認事項は断定しません。観測済み事実と未確定事項を分離して更新します。
+    <section class="card">
+      <h2><span class="ja">追記予定</span><span class="en">Planned</span></h2>
+      <ul class="ja">
+        <li><code>bundle_0096</code> の live phase ownership を、非破壊 observer と phase proxy の範囲でさらに詰めます。</li>
+        <li>long prompt boundary が fallback か chunking かを切り分けます。</li>
+      </ul>
+      <ul class="en">
+        <li>We will narrow the live phase ownership of <code>bundle_0096</code> further using non-distorting observers and phase proxies.</li>
+        <li>We will separate whether the long-prompt boundary is fallback-driven or chunking-driven.</li>
+      </ul>
     </section>
+
+    <p style="margin-top:12px;font-size:.88rem;color:#6b7280;">
+      <a href="rx9070xt-path-worklog.html" style="color:#0b5394;"><span class="ja">→ Path Worklog を見る</span><span class="en">→ View Path Worklog</span></a>
+    </p>
+
+    <div class="note">
+      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
+      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+    </div>
+
   </div>
-  <script type="module">
-    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-    mermaid.initialize({ startOnLoad: true, theme: 'default' });
-  </script>
+  <script src="../../../assets/js/main.js"></script>
 </body>
 </html>

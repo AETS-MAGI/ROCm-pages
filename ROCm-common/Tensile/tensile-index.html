@@ -1,46 +1,74 @@
 <!doctype html>
-<html lang="ja">
+<html lang="ja" data-lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Tensile | ROCm-pages</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', Meiryo, sans-serif; margin: 0; background:#f6f8fb; color:#1f2937; }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
-    .hero { background:#0b3a66; color:#fff; border-radius:12px; padding:16px; }
-    .hero h1 { margin:0; font-size:1.6rem; }
-    .hero p { margin:.5rem 0 0; line-height:1.6; color:#dbe8f6; }
-    .card { background:#fff; border:1px solid #d8e1ea; border-radius:12px; padding:16px; margin-top:12px; }
-    h2 { font-size:1.05rem; margin:0 0 8px 0; }
-    p { line-height:1.65; margin:8px 0; }
-    ul { margin: 8px 0; padding-left: 20px; line-height:1.6; }
-    .toplinks { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
-    .btn { display:inline-block; text-decoration:none; color:#0b5394; background:#fff; border:1px solid #d8e1ea; border-radius:999px; padding:6px 12px; font-size:.9rem; }
-    .warn { color:#8a4b00; background:#fff7e6; border-left:4px solid #f0a500; padding:10px 12px; border-radius:8px; }
-    code { background:#eef3f8; padding:2px 6px; border-radius:6px; }
-  </style>
+  <link rel="stylesheet" href="../../assets/css/style.css" />
 </head>
 <body>
   <div class="wrap">
-    <div class="toplinks"><a class="btn" href="../rocm-index.html">ROCm Common</a><a class="btn" href="../../gpu-gen/GCN5/mi25/mi25-optimize-method.html">MI25 optimize method</a></div>
+
+    <div class="nav-bar">
+      <nav class="breadcrumb">
+        <a href="../../index.html">Top</a>
+        <span class="sep">›</span>
+        <a href="../rocm-index.html"><span class="ja">ROCm 共通コンポーネント</span><span class="en">ROCm Components</span></a>
+        <span class="sep">›</span>
+        <span class="current">Tensile</span>
+      </nav>
+      <div class="lang-toggle">
+        <button class="lang-btn active" data-lang="ja">JA</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+    </div>
+
     <section class="hero">
       <h1>Tensile</h1>
-      <p>Tensile資産（fallbackカタログやHSACO）観測の整理ページです。</p>
+      <p class="ja">Tensile の fallback 資産（catalog・HSACO）観測状況を整理します。</p>
+      <p class="en">Documents Tensile fallback asset (catalog and HSACO) observation status.</p>
     </section>
 
     <section class="card">
-      <h2>いま分かっていること（このワークスペース）</h2>
-      <ul><li>MI25では fallback資産アクセス（catalog-read）と dispatch観測を区別して記録。</li><li>catalog-read と kernel-level causality を混同しない方針を採用。</li></ul>
+      <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
+      <ul class="ja">
+        <li>MI25 では fallback 資産アクセス（catalog-read）と dispatch 観測を区別して記録。</li>
+        <li>「catalog read は見えたが 1:1 因果は未確定」という境界を維持。</li>
+      </ul>
+      <ul class="en">
+        <li>For MI25, fallback asset access (catalog-read) and dispatch observation are recorded as distinct items.</li>
+        <li>The boundary "catalog read was visible, but one-to-one causality is undetermined" is maintained.</li>
+      </ul>
     </section>
 
     <section class="card">
-      <h2>準備中 / Coming soon</h2>
-      <ul><li>shapeごとの候補整理と、必要時の逆アセンブル観測手順の整備。</li></ul>
+      <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
+      <ul class="ja">
+        <li>catalog 項目と実行 kernel の厳密対応は、追加証跡なしには確定しません。</li>
+        <li>HSACO 読解結果の解釈は、観測 run 条件つきでのみ扱います。</li>
+      </ul>
+      <ul class="en">
+        <li>Strict correspondence between catalog items and executed kernels is not confirmed without additional evidence.</li>
+        <li>Interpretation of HSACO analysis is only handled under stated observation run conditions.</li>
+      </ul>
     </section>
 
-    <section class="card warn">
-      <strong>注記:</strong> 未確認事項は断定しません。観測済み事実と未確定事項を分離して更新します。
+    <section class="card">
+      <h2><span class="ja">追記予定</span><span class="en">Planned</span></h2>
+      <ul class="ja">
+        <li>shape ごとの候補整理と、必要時の逆アセンブル観測手順の整備。</li>
+      </ul>
+      <ul class="en">
+        <li>Per-shape candidate organization and disassembly observation procedures to be documented as needed.</li>
+      </ul>
     </section>
+
+    <div class="note">
+      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
+      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+    </div>
+
   </div>
+  <script src="../../assets/js/main.js"></script>
 </body>
 </html>

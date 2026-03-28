@@ -1,56 +1,84 @@
 <!doctype html>
-<html lang="ja">
+<html lang="ja" data-lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>RX9070XT Path Worklog | ROCm-pages</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', Meiryo, sans-serif; margin: 0; background:#f6f8fb; color:#1f2937; }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
-    .hero { background:#0b3a66; color:#fff; border-radius:12px; padding:16px; }
-    .hero h1 { margin:0; font-size:1.6rem; }
-    .hero p { margin:.5rem 0 0; line-height:1.6; color:#dbe8f6; }
-    .card { background:#fff; border:1px solid #d8e1ea; border-radius:12px; padding:16px; margin-top:12px; }
-    h2 { font-size:1.05rem; margin:0 0 8px 0; }
-    p { line-height:1.65; margin:8px 0; }
-    ul { margin: 8px 0; padding-left: 20px; line-height:1.6; }
-    .toplinks { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
-    .btn { display:inline-block; text-decoration:none; color:#0b5394; background:#fff; border:1px solid #d8e1ea; border-radius:999px; padding:6px 12px; font-size:.9rem; }
-    .warn { color:#8a4b00; background:#fff7e6; border-left:4px solid #f0a500; padding:10px 12px; border-radius:8px; }
-    code { background:#eef3f8; padding:2px 6px; border-radius:6px; }
-  </style>
+  <link rel="stylesheet" href="../../../assets/css/style.css" />
 </head>
 <body>
   <div class="wrap">
-    <div class="toplinks"><a class="btn" href="rx9070xt-path.html">Path</a></div>
+
+    <div class="nav-bar">
+      <nav class="breadcrumb">
+        <a href="../../../index.html">Top</a>
+        <span class="sep">›</span>
+        <a href="../../index.html"><span class="ja">GPU 世代別</span><span class="en">GPU Gen</span></a>
+        <span class="sep">›</span>
+        <a href="../rdna4-index.html">rDNA4</a>
+        <span class="sep">›</span>
+        <a href="rx9070xt-index.html">RX9070XT</a>
+        <span class="sep">›</span>
+        <a href="rx9070xt-path.html">Path</a>
+        <span class="sep">›</span>
+        <span class="current">Worklog</span>
+      </nav>
+      <div class="lang-toggle">
+        <button class="lang-btn active" data-lang="ja">JA</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+    </div>
+
     <section class="hero">
       <h1>RX9070XT Path Worklog</h1>
-      <p>RX9070XT経路観測の作業ログ要約です。runtime proof-of-life から bundle/disassembly 相関へ進んだログだけを抜粋します。</p>
+      <p class="ja">RX9070XT 経路観測の作業ログ要約です。runtime proof-of-life から bundle/disassembly/runtime correlation へ進んだ節目だけを抜粋します。</p>
+      <p class="en">Summary worklog for RX9070XT path observation sessions. This page extracts the turning points from runtime proof-of-life to bundle/disassembly/runtime correlation.</p>
     </section>
 
     <section class="card">
-      <h2>いま分かっていること（このワークスペース）</h2>
-      <ul>
-        <li>2026-03-27: source footing を固定。runtime truth を <code>/usr/local/lib/ollama/rocm</code>、code truth を <code>ollama-upstream</code> / shared <code>ggml-cuda</code> lineage に置いた。</li>
-        <li>2026-03-27: source trace で <code>Q4_K_M -&gt; Q4_K</code>、<code>mul_mat_vec_q</code> / <code>mul_mat_q</code> / BLAS fallback、Flash Attention / RoPE 分岐を整理。</li>
-        <li>2026-03-28: disassembly で <code>bundle_0030</code> (<code>Q4_K mul_mat_vec_q</code>)、<code>bundle_0037</code> (MMQ repack)、<code>bundle_0039</code> (RoPE)、<code>bundle_0096</code> (exact <code>Q4_K mul_mat_q</code>) を isolate。</li>
-        <li>2026-03-28: resident phase-proxy probe を追加。<code>prompt_eval_count = 3</code> は MMVQ-compatible、<code>11-12</code> は MMQ-eligible、<code>290</code> は fallback/chunking 境界候補と整理。</li>
-        <li>2026-03-28: current best narrowing を更新。short resident <code>q4_k_m</code> case は pure-MMVQ ではなく、decode 側 MMVQ-compatible + prompt 側 MMQ-eligible の mixed-by-phase として扱う。</li>
+      <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
+      <ul class="ja">
+        <li>source footing を固定し、runtime truth を <code>/usr/local/lib/ollama/rocm</code>、code truth を <code>ollama-upstream</code> / shared <code>ggml-cuda</code> lineage に置きました。</li>
+        <li>disassembly で <code>bundle_0030</code> (<code>Q4_K mul_mat_vec_q</code>)、<code>bundle_0037</code> (MMQ repack)、<code>bundle_0039</code> (RoPE)、<code>bundle_0096</code> (exact <code>Q4_K mul_mat_q</code>) を isolate しました。</li>
+        <li>resident phase-proxy probe を追加し、<code>prompt_eval_count = 3</code> は MMVQ-compatible、<code>11-12</code> は MMQ-eligible、<code>290</code> は fallback/chunking 境界候補と整理しました。</li>
+      </ul>
+      <ul class="en">
+        <li>We fixed the source footing, using <code>/usr/local/lib/ollama/rocm</code> as runtime truth and <code>ollama-upstream</code> plus the shared <code>ggml-cuda</code> lineage as code truth.</li>
+        <li>Disassembly isolated <code>bundle_0030</code> (<code>Q4_K mul_mat_vec_q</code>), <code>bundle_0037</code> (MMQ repack), <code>bundle_0039</code> (RoPE), and <code>bundle_0096</code> (exact <code>Q4_K mul_mat_q</code>).</li>
+        <li>A resident phase-proxy probe was added: <code>prompt_eval_count = 3</code> is treated as MMVQ-compatible, <code>11-12</code> as MMQ-eligible, and <code>290</code> as a fallback/chunking boundary candidate.</li>
       </ul>
     </section>
 
     <section class="card">
-      <h2>次に詰める点</h2>
-      <ul>
-        <li><code>bundle_0096</code> が short live case の measured window にどこまで入ったかを phase proxy と observer 制約の範囲で詰める。</li>
-        <li><code>prompt_eval_count = 290</code> が本当に MMQ ceiling 超過を意味するのか、それとも内部 chunking なのかを切り分ける。</li>
-        <li>BLAS-side <code>Cijk_*</code> が live short case に入ったかを、非破壊 observer が得られた時点で再確認する。</li>
+      <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
+      <ul class="ja">
+        <li>short resident case が pure-MMVQ ではなく mixed-by-phase だと分かってきましたが、MMQ/BLAS の live ownership はまだ直接確定していません。</li>
+        <li>long prompt boundary が fallback なのか internal chunking なのかは未確定です。</li>
+      </ul>
+      <ul class="en">
+        <li>The short resident case now looks mixed-by-phase rather than pure MMVQ, but live MMQ/BLAS ownership is still not directly fixed.</li>
+        <li>It remains unresolved whether the long-prompt boundary is fallback-driven or due to internal chunking.</li>
       </ul>
     </section>
 
-    <section class="card warn">
-      <strong>注記:</strong> 未確認事項は断定しません。観測済み事実と未確定事項を分離して更新します。
+    <section class="card">
+      <h2><span class="ja">追記予定</span><span class="en">Planned</span></h2>
+      <ul class="ja">
+        <li><code>bundle_0096</code> の live phase ownership をさらに詰めます。</li>
+        <li>BLAS-side <code>Cijk_*</code> participation の有無を、非破壊 observer が得られた時点で再確認します。</li>
+      </ul>
+      <ul class="en">
+        <li>We will narrow the live phase ownership of <code>bundle_0096</code> further.</li>
+        <li>We will re-check BLAS-side <code>Cijk_*</code> participation once a non-distorting observer is available.</li>
+      </ul>
     </section>
+
+    <div class="note">
+      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
+      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+    </div>
+
   </div>
+  <script src="../../../assets/js/main.js"></script>
 </body>
 </html>

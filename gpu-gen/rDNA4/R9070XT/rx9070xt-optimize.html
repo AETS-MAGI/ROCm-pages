@@ -1,46 +1,86 @@
 <!doctype html>
-<html lang="ja">
+<html lang="ja" data-lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>RX9070XT Optimization | ROCm-pages</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', Meiryo, sans-serif; margin: 0; background:#f6f8fb; color:#1f2937; }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
-    .hero { background:#0b3a66; color:#fff; border-radius:12px; padding:16px; }
-    .hero h1 { margin:0; font-size:1.6rem; }
-    .hero p { margin:.5rem 0 0; line-height:1.6; color:#dbe8f6; }
-    .card { background:#fff; border:1px solid #d8e1ea; border-radius:12px; padding:16px; margin-top:12px; }
-    h2 { font-size:1.05rem; margin:0 0 8px 0; }
-    p { line-height:1.65; margin:8px 0; }
-    ul { margin: 8px 0; padding-left: 20px; line-height:1.6; }
-    .toplinks { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
-    .btn { display:inline-block; text-decoration:none; color:#0b5394; background:#fff; border:1px solid #d8e1ea; border-radius:999px; padding:6px 12px; font-size:.9rem; }
-    .warn { color:#8a4b00; background:#fff7e6; border-left:4px solid #f0a500; padding:10px 12px; border-radius:8px; }
-    code { background:#eef3f8; padding:2px 6px; border-radius:6px; }
-  </style>
+  <link rel="stylesheet" href="../../../assets/css/style.css" />
 </head>
 <body>
   <div class="wrap">
-    <div class="toplinks"><a class="btn" href="rx9070xt-index.html">RX9070XT index</a><a class="btn" href="rx9070xt-optimize-method.html">Optimize method</a></div>
+
+    <div class="nav-bar">
+      <nav class="breadcrumb">
+        <a href="../../../index.html">Top</a>
+        <span class="sep">›</span>
+        <a href="../../index.html"><span class="ja">GPU 世代別</span><span class="en">GPU Gen</span></a>
+        <span class="sep">›</span>
+        <a href="../rdna4-index.html">rDNA4</a>
+        <span class="sep">›</span>
+        <a href="rx9070xt-index.html">RX9070XT</a>
+        <span class="sep">›</span>
+        <span class="current">Optimize</span>
+      </nav>
+      <div class="lang-toggle">
+        <button class="lang-btn active" data-lang="ja">JA</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+    </div>
+
     <section class="hero">
       <h1>RX9070XT Optimization</h1>
-      <p>RX9070XT最適化ページの雛形です。</p>
+      <p class="ja">RX9070XT 最適化調査の入口です。現段階は観測クラスの整備を優先しています。</p>
+      <p class="en">Entry point for RX9070XT optimization study. Observation class establishment is the current priority.</p>
     </section>
 
     <section class="card">
-      <h2>いま分かっていること（このワークスペース）</h2>
-      <ul><li>現段階は最適化より観測クラス整備を優先。</li></ul>
+      <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
+      <ul class="ja">
+        <li>現段階の主目的は、最適化前に観測クラスを安定化させることです。</li>
+        <li>single-knob 比較へ進む前提条件（dispatch-safe observer）を整備中です。</li>
+      </ul>
+      <ul class="en">
+        <li>The current primary goal is stabilizing the observation class before optimization.</li>
+        <li>Prerequisites for single-knob comparison (dispatch-safe observer) are being established.</li>
+      </ul>
     </section>
 
     <section class="card">
-      <h2>準備中 / Coming soon</h2>
-      <ul><li>single-knob比較の本格運用を追記。</li></ul>
+      <h2><span class="ja">このセクションのページ</span><span class="en">Pages in This Section</span></h2>
+      <ul class="nav-list">
+        <li><a href="rx9070xt-optimize-method.html">Method</a></li>
+        <li><a href="rx9070xt-optimize-worklog.html">Worklog</a></li>
+      </ul>
     </section>
 
-    <section class="card warn">
-      <strong>注記:</strong> 未確認事項は断定しません。観測済み事実と未確定事項を分離して更新します。
+    <section class="card">
+      <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
+      <ul class="ja">
+        <li>この時点で RX9070XT の最適化成果を数値で確定しません。</li>
+        <li>MI25 と同じ入口 shape が即適用できるとは限りません。</li>
+      </ul>
+      <ul class="en">
+        <li>Numerical optimization results for RX9070XT are not confirmed at this stage.</li>
+        <li>The same entry shapes as MI25 may not apply directly.</li>
+      </ul>
     </section>
+
+    <section class="card">
+      <h2><span class="ja">追記予定</span><span class="en">Planned</span></h2>
+      <ul class="ja">
+        <li>single-knob 比較の本格運用を追記。</li>
+      </ul>
+      <ul class="en">
+        <li>Full single-knob comparison runs to be added.</li>
+      </ul>
+    </section>
+
+    <div class="note">
+      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
+      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+    </div>
+
   </div>
+  <script src="../../../assets/js/main.js"></script>
 </body>
 </html>

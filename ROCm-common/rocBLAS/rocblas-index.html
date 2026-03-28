@@ -1,46 +1,90 @@
 <!doctype html>
-<html lang="ja">
+<html lang="ja" data-lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>rocBLAS | ROCm-pages</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', Meiryo, sans-serif; margin: 0; background:#f6f8fb; color:#1f2937; }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
-    .hero { background:#0b3a66; color:#fff; border-radius:12px; padding:16px; }
-    .hero h1 { margin:0; font-size:1.6rem; }
-    .hero p { margin:.5rem 0 0; line-height:1.6; color:#dbe8f6; }
-    .card { background:#fff; border:1px solid #d8e1ea; border-radius:12px; padding:16px; margin-top:12px; }
-    h2 { font-size:1.05rem; margin:0 0 8px 0; }
-    p { line-height:1.65; margin:8px 0; }
-    ul { margin: 8px 0; padding-left: 20px; line-height:1.6; }
-    .toplinks { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
-    .btn { display:inline-block; text-decoration:none; color:#0b5394; background:#fff; border:1px solid #d8e1ea; border-radius:999px; padding:6px 12px; font-size:.9rem; }
-    .warn { color:#8a4b00; background:#fff7e6; border-left:4px solid #f0a500; padding:10px 12px; border-radius:8px; }
-    code { background:#eef3f8; padding:2px 6px; border-radius:6px; }
-  </style>
+  <link rel="stylesheet" href="../../assets/css/style.css" />
 </head>
 <body>
   <div class="wrap">
-    <div class="toplinks"><a class="btn" href="../rocm-index.html">ROCm Common</a><a class="btn" href="../../gpu-gen/GCN5/mi25/mi25-path.html">MI25 path</a></div>
+
+    <div class="nav-bar">
+      <nav class="breadcrumb">
+        <a href="../../index.html">Top</a>
+        <span class="sep">›</span>
+        <a href="../rocm-index.html"><span class="ja">ROCm 共通コンポーネント</span><span class="en">ROCm Components</span></a>
+        <span class="sep">›</span>
+        <span class="current">rocBLAS</span>
+      </nav>
+      <div class="lang-toggle">
+        <button class="lang-btn active" data-lang="ja">JA</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+    </div>
+
     <section class="hero">
       <h1>rocBLAS</h1>
-      <p>rocBLASの役割と、このワークスペースでの観測位置づけを記録します。</p>
+      <p class="ja">rocBLAS の役割と MI25 調査での観測状況を記録します。</p>
+      <p class="en">Records rocBLAS's role and observation status in the MI25 investigation.</p>
     </section>
 
     <section class="card">
-      <h2>いま分かっていること（このワークスペース）</h2>
-      <ul><li>MI25関連では lane 比較で <code>ROCBLAS_TENSILE_LIBPATH</code> 差分を使った対照実験を実施。</li><li>AETS lane / system lane の観測差が throughput 差として見えるケースを確認。</li><li>kernel-level 因果は未確定として扱う。</li></ul>
+      <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
+      <ul class="ja">
+        <li>MI25 では lane 比較で <code>ROCBLAS_TENSILE_LIBPATH</code> 差分を使った対照実験を実施。</li>
+        <li>AETS lane / system lane の観測差が throughput 差として現れるケースを確認。</li>
+        <li>kernel レベルの因果は未確定として扱う。</li>
+      </ul>
+      <ul class="en">
+        <li>Controlled experiments using <code>ROCBLAS_TENSILE_LIBPATH</code> difference conducted via lane comparison on MI25.</li>
+        <li>Cases confirmed where observation differences between AETS and system lanes appear as throughput differences.</li>
+        <li>Kernel-level causality is treated as undetermined.</li>
+      </ul>
     </section>
 
     <section class="card">
-      <h2>準備中 / Coming soon</h2>
-      <ul><li>ワークロード依存の可視性差（direct/indirect）の体系化。</li><li>再現条件つき比較表の整備。</li></ul>
+      <h2><span class="ja">現時点での知見</span><span class="en">Current Findings</span></h2>
+      <ul class="ja">
+        <li>MI25 では、lane 比較により rocBLAS/Tensile 側の観測差と実行差を条件つきで確認しています。</li>
+        <li>direct 可視性はワークロード依存であるため、単一モデルの結果で一般化しません。</li>
+      </ul>
+      <ul class="en">
+        <li>For MI25, rocBLAS/Tensile observation and execution differences are conditionally confirmed via lane comparison.</li>
+        <li>Direct visibility is workload-dependent; results from a single model are not generalized.</li>
+      </ul>
     </section>
 
-    <section class="card warn">
-      <strong>注記:</strong> 未確認事項は断定しません。観測済み事実と未確定事項を分離して更新します。
+    <section class="card">
+      <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
+      <ul class="ja">
+        <li>rocBLAS ログの可視性だけで実行経路の全体を確定しません。</li>
+        <li>特定 kernel への因果帰属は、追加観測なしでは保留します。</li>
+      </ul>
+      <ul class="en">
+        <li>The entire execution path is not confirmed from rocBLAS log visibility alone.</li>
+        <li>Causal attribution to specific kernels is withheld without additional observation.</li>
+      </ul>
     </section>
+
+    <section class="card">
+      <h2><span class="ja">追記予定</span><span class="en">Planned</span></h2>
+      <ul class="ja">
+        <li>ワークロード依存の可視性差（direct / indirect）の体系化。</li>
+        <li>再現条件つき比較表の整備。</li>
+      </ul>
+      <ul class="en">
+        <li>Systematic documentation of workload-dependent visibility differences (direct/indirect).</li>
+        <li>Comparison table with stated reproduction conditions to be prepared.</li>
+      </ul>
+    </section>
+
+    <div class="note">
+      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
+      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+    </div>
+
   </div>
+  <script src="../../assets/js/main.js"></script>
 </body>
 </html>
