@@ -29,22 +29,34 @@
 
     <section class="hero">
       <h1>RX9070XT Optimization</h1>
-      <p class="ja">RX9070XT 最適化調査の入口です。現段階は観測クラスの整備を優先しています。</p>
-      <p class="en">Entry point for RX9070XT optimization study. Observation class establishment is the current priority.</p>
+      <p class="ja">RX9070XT 最適化調査の入口です。Path 観測（Phase A–F）が完了し、dispatch-safe observer の確保が次の前提条件になっています。single-knob 比較はその後の段階です。</p>
+      <p class="en">Entry point for RX9070XT optimization study. Path observation (Phase A–F) is complete. Securing a dispatch-safe observer is the next prerequisite before proceeding to single-knob comparisons.</p>
+      <div class="hero-meta">
+        <span class="badge badge-phase ja">観測クラス整備中</span>
+        <span class="badge badge-phase en">Observation Class In Progress</span>
+        <span class="badge badge-unresolved ja">最適化数値: 未確定</span>
+        <span class="badge badge-unresolved en">Optimization numbers: not yet</span>
+      </div>
     </section>
 
+    <!-- 観測済み事実 -->
     <section class="card">
       <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
       <ul class="ja">
-        <li>現段階の主目的は、最適化前に観測クラスを安定化させることです。</li>
-        <li>single-knob 比較へ進む前提条件（dispatch-safe observer）を整備中です。</li>
+        <li>plain ROCm path（gfx1201）が実際に到達することを確認し、cold / hot generate の timing 分布（load / prompt_eval / eval duration）を phase proxy として取得しました。</li>
+        <li>居住 hot case での eval duration は <code>0.149s</code>（eval_count = 16、decode-heavy probe では <code>0.1479s</code>）。これが現時点の baseline timing です。</li>
+        <li><code>rocprofv3</code> wrap は runtime path を壊すことが判明しており、<code>rocprofv3 --attach</code> は ptrace_scope=1 によりブロックされています。したがって dispatch-safe observer はまだ確保できていません。</li>
+        <li><code>ROCBLAS_LAYER=9</code> は <code>rocblas_create_handle</code> のみを記録しており、per-GEMM knob の単純な有無比較には不十分です。</li>
       </ul>
       <ul class="en">
-        <li>The current primary goal is stabilizing the observation class before optimization.</li>
-        <li>Prerequisites for single-knob comparison (dispatch-safe observer) are being established.</li>
+        <li>Confirmed that the plain ROCm path (gfx1201) is actually reachable, and obtained cold/hot generate timing distribution (load / prompt_eval / eval duration) as phase proxies.</li>
+        <li>Resident hot case eval duration: <code>0.149s</code> (eval_count = 16; decode-heavy probe: <code>0.1479s</code>). This is the current baseline timing.</li>
+        <li><code>rocprofv3</code> wrap is known to break the runtime path; <code>rocprofv3 --attach</code> is blocked by ptrace_scope=1. A dispatch-safe observer has therefore not yet been secured.</li>
+        <li><code>ROCBLAS_LAYER=9</code> only logged <code>rocblas_create_handle</code> — insufficient for simple per-GEMM knob presence/absence comparison.</li>
       </ul>
     </section>
 
+    <!-- このセクションのページ -->
     <section class="card">
       <h2><span class="ja">このセクションのページ</span><span class="en">Pages in This Section</span></h2>
       <ul class="nav-list">
@@ -53,31 +65,37 @@
       </ul>
     </section>
 
+    <!-- 未確定事項 -->
     <section class="card">
       <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
       <ul class="ja">
-        <li>この時点で RX9070XT の最適化成果を数値で確定しません。</li>
-        <li>MI25 と同じ入口 shape が即適用できるとは限りません。</li>
+        <li>dispatch-safe observer が確保できていないため、single-knob 比較の前提条件が満たされていません。</li>
+        <li>この時点で RX9070XT の最適化成果（改善率・改善量）を数値で確定しません。</li>
+        <li>MI25 と同じ入口 shape / knob が即適用できるとは言えません（wavefront_size / アーキテクチャ差を考慮）。</li>
       </ul>
       <ul class="en">
-        <li>Numerical optimization results for RX9070XT are not confirmed at this stage.</li>
-        <li>The same entry shapes as MI25 may not apply directly.</li>
+        <li>Prerequisites for single-knob comparison are not yet met, as a dispatch-safe observer has not been secured.</li>
+        <li>Numerical optimization results (improvement rate/amount) for RX9070XT are not confirmed at this stage.</li>
+        <li>The same entry shapes/knobs as MI25 cannot be assumed to apply directly (considering wavefront_size and architecture differences).</li>
       </ul>
     </section>
 
+    <!-- 追記予定 -->
     <section class="card">
       <h2><span class="ja">追記予定</span><span class="en">Planned</span></h2>
       <ul class="ja">
-        <li>single-knob 比較の本格運用を追記。</li>
+        <li>dispatch-safe observer の確保後、single-knob 比較を開始します。</li>
+        <li>baseline timing の追加計測（複数 run による再現確認）。</li>
       </ul>
       <ul class="en">
-        <li>Full single-knob comparison runs to be added.</li>
+        <li>Once a dispatch-safe observer is secured, start single-knob comparisons.</li>
+        <li>Additional baseline timing measurements (reproducibility confirmation across multiple runs).</li>
       </ul>
     </section>
 
     <div class="note">
-      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
-      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+      <span class="ja">掲載情報は観測記録に基づきます。最適化数値の確定には dispatch-safe observer が必要です。</span>
+      <span class="en">Content is grounded in observation logs. Confirming optimization numbers requires a dispatch-safe observer.</span>
     </div>
 
   </div>
