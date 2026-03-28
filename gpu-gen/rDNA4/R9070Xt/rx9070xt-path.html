@@ -18,6 +18,7 @@
     .btn { display:inline-block; text-decoration:none; color:#0b5394; background:#fff; border:1px solid #d8e1ea; border-radius:999px; padding:6px 12px; font-size:.9rem; }
     .warn { color:#8a4b00; background:#fff7e6; border-left:4px solid #f0a500; padding:10px 12px; border-radius:8px; }
     code { background:#eef3f8; padding:2px 6px; border-radius:6px; }
+    .mermaid { background:#f8fbff; border:1px solid #d8e1ea; border-radius:10px; padding:12px; overflow:auto; }
   </style>
 </head>
 <body>
@@ -25,22 +26,55 @@
     <div class="toplinks"><a class="btn" href="rx9070xt-index.html">RX9070XT index</a><a class="btn" href="rx9070xt-path-worklog.html">Path worklog</a></div>
     <section class="hero">
       <h1>RX9070XT Path Observability</h1>
-      <p>RX9070XTの経路観測ページです。</p>
+      <p>RX9070XTの経路観測ページです。plain runtime確認を超えて、source tracing / code object extraction / disassembly / runtime correlation を段階的に固定します。</p>
     </section>
 
     <section class="card">
       <h2>いま分かっていること（このワークスペース）</h2>
-      <ul><li>layer sweepで trace非空だが gemm_visible_rows=0 の状態を記録。</li><li>legacy rocprofで operation trace を取得し、dispatch相当観測を前進。</li><li>direct GEMM名可視は未確認。</li></ul>
+      <ul>
+        <li>fresh runtime は bundle-first で <code>/usr/local/lib/ollama/rocm</code> を使い、<code>libggml-hip</code> / <code>hipBLAS</code> / <code>rocBLAS</code> / <code>amdhip64</code> を実際にロードする。</li>
+        <li><code>libggml-hip.so</code> には RDNA4 / <code>gfx1201</code> 向けの custom hsaco 群が埋め込まれており、BLAS 側には <code>rocblas/library/Kernels.so-000-gfx1201.hsaco</code> の <code>Cijk_*</code> family が共存する。</li>
+        <li>custom 側では <code>Q4_K</code> dequant、<code>mul_mat_vec_q</code>、<code>mul_mat_q</code>、MMQ repack、Flash Attention、RoPE の family を bundle 単位で isolate 済み。</li>
+      </ul>
     </section>
 
     <section class="card">
-      <h2>準備中 / Coming soon</h2>
-      <ul><li>phase_set・shape候補の確定を追記。</li></ul>
+      <h2>Current Best Narrowing</h2>
+      <ul>
+        <li>short resident <code>q4_k_m</code> case は、いまのところ custom <code>Q4_K</code> MMVQ + Flash + RoPE と最も整合する。</li>
+        <li>larger quantized path 用の exact <code>Q4_K mul_mat_q</code> object は <code>bundle_0096</code> として isolate 済み。</li>
+        <li>ただし short live case がその MMQ family を十分踏んだか、BLAS-side <code>Cijk_*</code> に入ったかはまだ未確定。</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Method Flow</h2>
+      <div class="mermaid">
+flowchart LR
+  A[Source trace] --> B[Bundle / library trace]
+  B --> C[Code object isolate]
+  C --> D[Disassembly]
+  D --> E[Runtime correlation]
+  E --> F[Observed / Inferred / Unresolved]
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>未確定 / Next Narrowing</h2>
+      <ul>
+        <li>short live <code>q4_k_m</code> case が <code>bundle_0096</code> の MMQ family をどの程度踏んだか。</li>
+        <li>BLAS-side <code>Cijk_*</code> family が live short case に入ったか。</li>
+        <li>observer 由来の visibility gap と target/path 固有差の分離。</li>
+      </ul>
     </section>
 
     <section class="card warn">
       <strong>注記:</strong> 未確認事項は断定しません。観測済み事実と未確定事項を分離して更新します。
     </section>
   </div>
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true, theme: 'default' });
+  </script>
 </body>
 </html>

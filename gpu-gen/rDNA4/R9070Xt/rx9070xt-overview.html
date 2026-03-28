@@ -25,12 +25,16 @@
     <div class="toplinks"><a class="btn" href="rx9070xt-index.html">RX9070XT index</a></div>
     <section class="hero">
       <h1>RX9070XT Overview</h1>
-      <p>RX9070XT調査の全体像ページです。</p>
+      <p>RX9070XT調査の全体像ページです。RDNA4 では MI25 と同じ見え方を前提にせず、source / runtime / binary を分けて積み上げます。</p>
     </section>
 
     <section class="card">
       <h2>いま分かっていること（このワークスペース）</h2>
-      <ul><li>C14 pilotで『方法論が立つか』を重視。</li><li>大きな速度差より観測クラス確立を優先。</li></ul>
+      <ul>
+        <li>C14 pilot では「方法論が RDNA4 に移植できるか」を重視し、plain runtime-path alive で止めない。</li>
+        <li>現在は source trace、shared-library trace、bundle isolate、disassembly、runtime correlation の 5 層まで到達。</li>
+        <li><code>Q4_K mul_mat_vec_q</code> と exact <code>Q4_K mul_mat_q</code> の両方を binary 側で固定し、残差は live phase ownership に縮んでいる。</li>
+      </ul>
     </section>
 
     <section class="card">

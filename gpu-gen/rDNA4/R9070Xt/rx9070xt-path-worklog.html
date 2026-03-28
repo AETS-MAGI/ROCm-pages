@@ -25,17 +25,25 @@
     <div class="toplinks"><a class="btn" href="rx9070xt-path.html">Path</a></div>
     <section class="hero">
       <h1>RX9070XT Path Worklog</h1>
-      <p>RX9070XT経路観測の作業ログ要約です。</p>
+      <p>RX9070XT経路観測の作業ログ要約です。runtime proof-of-life から bundle/disassembly 相関へ進んだログだけを抜粋します。</p>
     </section>
 
     <section class="card">
       <h2>いま分かっていること（このワークスペース）</h2>
-      <ul><li>C14-1〜C14-6 の記録方針（観測/未確定分離）を採用。</li></ul>
+      <ul>
+        <li>2026-03-27: source footing を固定。runtime truth を <code>/usr/local/lib/ollama/rocm</code>、code truth を <code>ollama-upstream</code> / shared <code>ggml-cuda</code> lineage に置いた。</li>
+        <li>2026-03-27: source trace で <code>Q4_K_M -&gt; Q4_K</code>、<code>mul_mat_vec_q</code> / <code>mul_mat_q</code> / BLAS fallback、Flash Attention / RoPE 分岐を整理。</li>
+        <li>2026-03-28: disassembly で <code>bundle_0030</code> (<code>Q4_K mul_mat_vec_q</code>)、<code>bundle_0037</code> (MMQ repack)、<code>bundle_0039</code> (RoPE)、<code>bundle_0096</code> (exact <code>Q4_K mul_mat_q</code>) を isolate。</li>
+        <li>2026-03-28: current best narrowing として、short resident <code>q4_k_m</code> case は custom <code>Q4_K</code> MMVQ + Flash + RoPE により強く整合、MMQ/BLAS participation は unresolved と整理。</li>
+      </ul>
     </section>
 
     <section class="card">
-      <h2>準備中 / Coming soon</h2>
-      <ul><li>runタグ対応表と更新履歴の追加。</li></ul>
+      <h2>次に詰める点</h2>
+      <ul>
+        <li><code>bundle_0096</code> が short live case の measured window にどこまで入ったかを phase proxy と observer 制約の範囲で詰める。</li>
+        <li>BLAS-side <code>Cijk_*</code> が live short case に入ったかを、非破壊 observer が得られた時点で再確認する。</li>
+      </ul>
     </section>
 
     <section class="card warn">
