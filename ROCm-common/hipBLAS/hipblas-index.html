@@ -25,23 +25,43 @@
 
     <section class="hero">
       <h1>hipBLAS</h1>
-      <p class="ja">hipBLAS のページです。ページ枠を先行配置しています。</p>
-      <p class="en">hipBLAS page. Scaffold placed in advance.</p>
+      <p class="ja">hipBLAS の位置づけを整理するページです。現時点では主経路の主役ではなく、ROCm 数学スタックの補助層として扱います。</p>
+      <p class="en">Page for positioning hipBLAS in this workspace. Currently treated as a supporting layer in the ROCm math stack, not the primary path focus.</p>
     </section>
 
     <section class="card">
-      <h2><span class="ja">現状</span><span class="en">Current Status</span></h2>
-      <p class="ja">コンポーネント分類と導線を準備済みです。観測データが蓄積されたあとに内容を追記します。</p>
-      <p class="en">Component classification and navigation scaffold prepared. Content will be added as observation data is collected.</p>
+      <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
+      <ul class="ja">
+        <li>本ワークスペースの LLM 調査では、主観測対象は rocBLAS / Tensile / ggml-hip です。</li>
+        <li>hipBLAS は依存スタック上の補助層として整理し、現時点で単独評価は行っていません。</li>
+      </ul>
+      <ul class="en">
+        <li>In this workspace's LLM investigation, primary observation targets are rocBLAS / Tensile / ggml-hip.</li>
+        <li>hipBLAS is documented as a supporting dependency layer; no standalone evaluation is claimed yet.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
+      <ul class="ja">
+        <li>hipBLAS 固有の挙動が実行結果へ与える影響は未確定です。</li>
+        <li>他世代での可視性・寄与度差は観測が不足しています。</li>
+      </ul>
+      <ul class="en">
+        <li>Impact of hipBLAS-specific behavior on end results remains undetermined.</li>
+        <li>Observation is insufficient for cross-generation visibility/contribution differences.</li>
+      </ul>
     </section>
 
     <section class="card">
       <h2><span class="ja">追記予定</span><span class="en">Planned</span></h2>
       <ul class="ja">
-        <li>実測ログに基づく追記。</li>
+        <li>呼び出しが確認できた run の条件付き記録を追加。</li>
+        <li>必要に応じて、主経路との差分観測を追記。</li>
       </ul>
       <ul class="en">
-        <li>Content based on measurement logs to be added.</li>
+        <li>Add condition-bounded notes for runs where calls are confirmed.</li>
+        <li>Add differential observations against primary paths when needed.</li>
       </ul>
     </section>
 

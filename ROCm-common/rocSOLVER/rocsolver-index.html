@@ -25,23 +25,43 @@
 
     <section class="hero">
       <h1>rocSOLVER</h1>
-      <p class="ja">rocSOLVER のページです。ページ枠を先行配置しています。</p>
-      <p class="en">rocSOLVER page. Scaffold placed in advance.</p>
+      <p class="ja">rocSOLVER の整理ページです。現時点では主経路解析の補助的な位置づけです。</p>
+      <p class="en">Summary page for rocSOLVER. It currently plays a supporting role relative to primary-path analysis.</p>
     </section>
 
     <section class="card">
-      <h2><span class="ja">現状</span><span class="en">Current Status</span></h2>
-      <p class="ja">コンポーネント分類と導線を準備済みです。観測データが蓄積されたあとに内容を追記します。</p>
-      <p class="en">Component classification and navigation scaffold prepared. Content will be added as observation data is collected.</p>
+      <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
+      <ul class="ja">
+        <li>このワークスペースの LLM 調査では、rocSOLVER を主観測対象としていません。</li>
+        <li>主経路（rocBLAS/Tensile/ggml-hip）の観測を優先する方針です。</li>
+      </ul>
+      <ul class="en">
+        <li>rocSOLVER is not treated as a primary observation target in this workspace's LLM investigation.</li>
+        <li>The investigation prioritizes primary paths (rocBLAS/Tensile/ggml-hip).</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
+      <ul class="ja">
+        <li>rocSOLVER の寄与が実行結果に及ぶ範囲は未確定です。</li>
+        <li>世代ごとの差異を rocSOLVER で説明できるかは未観測です。</li>
+      </ul>
+      <ul class="en">
+        <li>The extent of rocSOLVER's contribution to observed runtime outcomes is undetermined.</li>
+        <li>Whether generation differences can be explained via rocSOLVER remains unobserved.</li>
+      </ul>
     </section>
 
     <section class="card">
       <h2><span class="ja">追記予定</span><span class="en">Planned</span></h2>
       <ul class="ja">
-        <li>GPU 世代別の関連性と観測有無を追記。</li>
+        <li>GPU 世代別の関連性と観測有無を条件つきで追記。</li>
+        <li>必要時に主経路との差分観測を追加。</li>
       </ul>
       <ul class="en">
-        <li>Per-GPU-generation relevance and observation status to be added.</li>
+        <li>Add condition-bounded relevance and observation status per GPU generation.</li>
+        <li>Add differential observations versus primary paths when needed.</li>
       </ul>
     </section>
 
