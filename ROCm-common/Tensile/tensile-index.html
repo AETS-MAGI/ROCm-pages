@@ -53,14 +53,14 @@ Tensile (<span class="ja">ビルド時</span><span class="en">at build time</spa
     <section class="card">
       <h2><span class="ja">gfx1201 対応状況</span><span class="en">gfx1201 Support Status</span></h2>
       <ul class="ja">
-        <li><code>ROCm-repos/Tensile/next-cmake/cmake/TensileSupportedArchitectures.cmake</code>（line 51）に <code>gfx1201</code> がサポートアーキテクチャとして登録されています。</li>
-        <li><code>ROCm-repos/Tensile/Tensile/Common.py</code>（line 331）でも同様に登録済みです。</li>
+        <li><code>Tensile/next-cmake/cmake/TensileSupportedArchitectures.cmake</code>（line 51）に <code>gfx1201</code> がサポートアーキテクチャとして登録されています。</li>
+        <li><code>Tensile/Tensile/Common.py</code>（line 331）でも同様に登録済みです。</li>
         <li>RX9070XT 実機 bundle に <code>Kernels.so-000-gfx1201.hsaco</code> が含まれることを確認（Phase C）。</li>
         <li>Phase E 逆アセンブリで <code>Cijk_S_GA</code>（sgpr:14, vgpr:10）・<code>Cijk_S_PostGSU3</code>（sgpr:21, vgpr:11）等を確認。いずれも wavefront_size=32。</li>
       </ul>
       <ul class="en">
-        <li><code>gfx1201</code> is registered as a supported architecture in <code>ROCm-repos/Tensile/next-cmake/cmake/TensileSupportedArchitectures.cmake</code> (line 51).</li>
-        <li>Also registered in <code>ROCm-repos/Tensile/Tensile/Common.py</code> (line 331).</li>
+        <li><code>gfx1201</code> is registered as a supported architecture in <code>Tensile/next-cmake/cmake/TensileSupportedArchitectures.cmake</code> (line 51).</li>
+        <li>Also registered in <code>Tensile/Tensile/Common.py</code> (line 331).</li>
         <li>Confirmed that <code>Kernels.so-000-gfx1201.hsaco</code> is present in the RX9070XT live bundle (Phase C).</li>
         <li>Phase E disassembly confirmed <code>Cijk_S_GA</code> (sgpr:14, vgpr:10) and <code>Cijk_S_PostGSU3</code> (sgpr:21, vgpr:11), both with wavefront_size=32.</li>
       </ul>

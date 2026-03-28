@@ -40,8 +40,8 @@
       <p class="ja">rocBLAS は ROCm 数学スタックの基盤層です。hipBLAS・MIOpen・ユーザーアプリケーションから呼び出され、GEMM（行列積）を含む BLAS 演算を実行します。kernel は Tensile によって GPU アーキテクチャごとに事前生成され、<code>rocblas/library/</code> 以下に配置されます。</p>
       <p class="en">rocBLAS is the foundation layer of the ROCm math stack. It is called by hipBLAS, MIOpen, and user applications to execute BLAS operations including GEMM. Kernels are pre-generated per GPU architecture by Tensile and placed under <code>rocblas/library/</code>.</p>
       <div class="callout callout-inferred">
-        <span class="ja">一次ソース：<code>ROCm-repos/rocBLAS/</code>（retired リポジトリ）。現行の active 開発は <code>ROCm-repos/rocm-libraries/</code> に移管されています。</span>
-        <span class="en">Primary source: <code>ROCm-repos/rocBLAS/</code> (marked retired). Active development has moved to <code>ROCm-repos/rocm-libraries/</code>.</span>
+        <span class="ja">一次ソース：<code>rocBLAS/</code>（retired リポジトリ）。現行の active 開発は <code>rocm-libraries/</code> に移管されています。</span>
+        <span class="en">Primary source: <code>rocBLAS/</code> (marked retired). Active development has moved to <code>rocm-libraries/</code>.</span>
       </div>
     </section>
 
@@ -49,13 +49,13 @@
     <section class="card">
       <h2><span class="ja">gfx1201 対応状況</span><span class="en">gfx1201 Support Status</span></h2>
       <ul class="ja">
-        <li><code>ROCm-repos/rocBLAS/library/src/handle.hpp</code> に <code>Processor::gfx1201</code> enum が存在し、<code>handle.cpp</code> でデバイス名文字列 <code>"gfx1201"</code> から enum 値へのマッピングが確認できます。</li>
+        <li><code>rocBLAS/library/src/handle.hpp</code> に <code>Processor::gfx1201</code> enum が存在し、<code>handle.cpp</code> でデバイス名文字列 <code>"gfx1201"</code> から enum 値へのマッピングが確認できます。</li>
         <li>RX9070XT 実機の Ollama bundle（<code>/usr/local/lib/ollama/rocm/rocblas/library/</code>）に gfx1201 ターゲットのファイルが 56 本存在することを確認（Phase C）。</li>
         <li>その中に <code>Kernels.so-000-gfx1201.hsaco</code>（standalone ELF AMD GPU object）が含まれます。</li>
         <li>Phase E の逆アセンブリで <code>Kernels.so-000-gfx1201.hsaco</code> から <code>Cijk_S_GA</code>・<code>Cijk_S_PostGSU3</code> 等の Tensile contraction kernel family を確認しました。</li>
       </ul>
       <ul class="en">
-        <li><code>ROCm-repos/rocBLAS/library/src/handle.hpp</code> defines the <code>Processor::gfx1201</code> enum, and <code>handle.cpp</code> maps the device name string <code>"gfx1201"</code> to that enum value.</li>
+        <li><code>rocBLAS/library/src/handle.hpp</code> defines the <code>Processor::gfx1201</code> enum, and <code>handle.cpp</code> maps the device name string <code>"gfx1201"</code> to that enum value.</li>
         <li>Confirmed 56 gfx1201-targeted files in <code>/usr/local/lib/ollama/rocm/rocblas/library/</code> on the RX9070XT live machine (Phase C).</li>
         <li>Includes <code>Kernels.so-000-gfx1201.hsaco</code> (standalone ELF AMD GPU object).</li>
         <li>Phase E disassembly confirmed Tensile contraction kernel families (<code>Cijk_S_GA</code>, <code>Cijk_S_PostGSU3</code>, etc.) from <code>Kernels.so-000-gfx1201.hsaco</code>.</li>
