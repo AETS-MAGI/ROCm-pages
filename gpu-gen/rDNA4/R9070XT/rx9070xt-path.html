@@ -29,71 +29,225 @@
 
     <section class="hero">
       <h1>RX9070XT Path Observability</h1>
-      <p class="ja">RX9070XT の経路観測記録です。plain runtime-path alive で止まらず、source tracing / bundle isolate / disassembly / runtime correlation を段階的に固定します。</p>
-      <p class="en">Path observation log for RX9070XT. This page goes beyond plain runtime proof-of-life and fixes source tracing, bundle isolation, disassembly, and runtime correlation step by step.</p>
+      <p class="ja">RX9070XT の経路観測記録です。ランタイム確認・ソース追跡・共有ライブラリ・バンドル分離・逆アセンブリ・ランタイム相関の 6 層を順に固定しています。</p>
+      <p class="en">Path observation record for RX9070XT, fixing each of six layers in sequence: runtime confirmation, source trace, shared-library map, bundle isolation, disassembly, and runtime correlation.</p>
+      <div class="hero-meta">
+        <span class="badge badge-env">gfx1201</span>
+        <span class="badge badge-env">Q4_K_M anchor</span>
+        <span class="badge badge-phase ja">Phase A–F 完了</span>
+        <span class="badge badge-phase en">Phase A–F Complete</span>
+      </div>
     </section>
 
+    <!-- 観測済み事実 -->
     <section class="card">
       <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
       <ul class="ja">
-        <li>fresh runtime は bundle-first で <code>/usr/local/lib/ollama/rocm</code> を使い、<code>libggml-hip</code> / <code>hipBLAS</code> / <code>rocBLAS</code> / <code>amdhip64</code> を実際にロードします。</li>
-        <li><code>libggml-hip.so</code> には RDNA4 / <code>gfx1201</code> 向けの custom hsaco 群が埋め込まれており、BLAS 側には <code>rocblas/library/Kernels.so-000-gfx1201.hsaco</code> の <code>Cijk_*</code> family が共存します。</li>
-        <li>custom 側では <code>Q4_K</code> dequant、<code>mul_mat_vec_q</code>、exact <code>mul_mat_q</code>、MMQ repack、Flash Attention、RoPE の family を bundle 単位で isolate 済みです。</li>
+        <li>fresh runtime は bundle-first で <code>/usr/local/lib/ollama/rocm</code> を使い、<code>libggml-hip.so</code> → <code>libhipblas.so.2</code> → <code>librocblas.so.4</code> → <code>libamdhip64.so.6</code> → <code>hsa-runtime64</code> という依存チェーンを実際にロードします（<code>ldd</code> 確認）。</li>
+        <li><code>libggml-hip.so</code> の <code>.hip_fatbin</code>（587 MiB）には、<code>hipv4-amdgcn-amd-amdhsa--gfx1201</code> 向け custom hsaco が多数埋め込まれています。BLAS 側には別途 <code>rocblas/library/Kernels.so-000-gfx1201.hsaco</code> の <code>Cijk_*</code> family が存在します。</li>
+        <li>custom 側で isolate 済みの主要 bundle：<code>bundle_0012</code>（Q4_K dequant, 173 KB）・<code>bundle_0019</code>（Flash Attn, 337 KB）・<code>bundle_0030</code>（Q4_K MMVQ, 1019 KB）・<code>bundle_0037</code>（MMQ repack, 17 KB）・<code>bundle_0039</code>（RoPE, 332 KB）・<code>bundle_0096</code>（exact Q4_K MMQ, 918 KB）。</li>
+        <li>resident phase-proxy probe で <code>prompt_eval_count = 3</code>（MMVQ 圏）・<code>11</code>（MMQ-eligible 圏）・<code>290</code>（境界候補）・decode-heavy <code>eval_count = 16 / eval_duration = 0.1479s</code> を取得しました。</li>
       </ul>
       <ul class="en">
-        <li>The fresh runtime is bundle-first, using <code>/usr/local/lib/ollama/rocm</code> and actually loading <code>libggml-hip</code>, <code>hipBLAS</code>, <code>rocBLAS</code>, and <code>amdhip64</code>.</li>
-        <li><code>libggml-hip.so</code> embeds RDNA4/<code>gfx1201</code> custom hsaco families, while the BLAS side also ships <code>Cijk_*</code> kernels in <code>rocblas/library/Kernels.so-000-gfx1201.hsaco</code>.</li>
-        <li>On the custom side, <code>Q4_K</code> dequant, <code>mul_mat_vec_q</code>, exact <code>mul_mat_q</code>, MMQ repack, Flash Attention, and RoPE families have already been isolated bundle-by-bundle.</li>
+        <li>The fresh runtime uses <code>/usr/local/lib/ollama/rocm</code> bundle-first, and actually loads the confirmed dependency chain: <code>libggml-hip.so</code> → <code>libhipblas.so.2</code> → <code>librocblas.so.4</code> → <code>libamdhip64.so.6</code> → <code>hsa-runtime64</code> (confirmed via <code>ldd</code>).</li>
+        <li><code>libggml-hip.so</code>'s <code>.hip_fatbin</code> (587 MiB) embeds many custom hsacos targeting <code>hipv4-amdgcn-amd-amdhsa--gfx1201</code>. The BLAS side separately ships <code>Cijk_*</code> family kernels in <code>rocblas/library/Kernels.so-000-gfx1201.hsaco</code>.</li>
+        <li>Key custom-side bundles already isolated: <code>bundle_0012</code> (Q4_K dequant, 173 KB), <code>bundle_0019</code> (Flash Attn, 337 KB), <code>bundle_0030</code> (Q4_K MMVQ, 1019 KB), <code>bundle_0037</code> (MMQ repack, 17 KB), <code>bundle_0039</code> (RoPE, 332 KB), <code>bundle_0096</code> (exact Q4_K MMQ, 918 KB).</li>
+        <li>Resident phase-proxy probe obtained: <code>prompt_eval_count = 3</code> (MMVQ-compatible), <code>11</code> (MMQ-eligible), <code>290</code> (boundary candidate), and decode-heavy <code>eval_count = 16 / eval_duration = 0.1479s</code>.</li>
       </ul>
     </section>
 
+    <!-- コール・チェーン -->
+    <section class="card">
+      <h2><span class="ja">ソースレベル呼び出し経路（Q4_K_M）</span><span class="en">Source-Level Call Chain (Q4_K_M)</span></h2>
+      <p class="ja">Phase B ソース追跡で確定した Ollama → ggml HIP backend の経路概要です。</p>
+      <p class="en">Path summary from Phase B source trace — Ollama to ggml HIP backend.</p>
+      <div class="call-chain">
+<span class="ja">llm.NewLlamaServer</span><span class="en">llm.NewLlamaServer</span>
+  <span class="arrow">↓</span> StartRunner  <span class="branch ja">（LD_LIBRARY_PATH / OLLAMA_LIBRARY_PATH を設定）</span><span class="branch en">(sets LD_LIBRARY_PATH / OLLAMA_LIBRARY_PATH)</span>
+  <span class="arrow">↓</span> runner.allocModel → model.New → ml.NewBackend(<span class="target">"ggml"</span>)
+  <span class="arrow">↓</span> ggml.New → initDevices() → ggml_backend_load_all_from_path()
+  <span class="arrow">↓</span> <span class="ja">モデルグラフ: nn.Linear / nn.Attention / nn.RoPE</span><span class="en">Model graph: nn.Linear / nn.Attention / nn.RoPE</span>
+  <span class="arrow">↓</span> <span class="ja">テンソル降下: GGML_OP_MUL_MAT</span><span class="en">Tensor lowering: GGML_OP_MUL_MAT</span>
+  <span class="arrow">↓</span> ggml_cuda_mul_mat()  <span class="branch ja">—— dispatch 分岐</span><span class="branch en">—— dispatch branch</span>
+
+  <span class="branch">ne11 ≤ 8</span>  <span class="arrow">→</span>  <span class="target">mul_mat_vec_q</span> <span class="branch ja">（MMVQ / decode 小バッチ）</span><span class="branch en">(MMVQ / decode small-batch)</span>
+  <span class="branch">ne11 ≤ 256 for Q4_K</span> <span class="arrow">→</span>  <span class="target">mul_mat_q</span> <span class="branch ja">（MMQ / quantize src1 to q8_1）</span><span class="branch en">(MMQ / quantize src1 to q8_1)</span>
+  <span class="branch ja">その他</span><span class="branch en">otherwise</span> <span class="arrow">→</span>  <span class="alt">ggml_cuda_op_mul_mat_cublas</span> <span class="arrow">→</span> hipBLAS <span class="arrow">→</span> rocBLAS
+
+<span class="ja">Attention 分岐（独立）:</span><span class="en">Attention branch (separate):</span>
+  Flash Attention enabled  <span class="arrow">→</span>  <span class="target">ggml_flash_attn_ext</span>
+  Flash Attention disabled <span class="arrow">→</span>  MulmatFullPrec + softmax + value.Mulmat
+      </div>
+    </section>
+
+    <!-- bundle 対応表 -->
+    <section class="card">
+      <h2><span class="ja">gfx1201 Binary Bundle 対応表</span><span class="en">gfx1201 Binary Bundle Reference</span></h2>
+      <p class="ja">Phase D/E で isolate した主要 custom hsaco とその役割です。</p>
+      <p class="en">Key custom hsacos isolated in Phase D/E and their roles.</p>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Bundle</th>
+            <th><span class="ja">サイズ</span><span class="en">Size</span></th>
+            <th><span class="ja">主なシンボル</span><span class="en">Key Symbols</span></th>
+            <th><span class="ja">役割</span><span class="en">Role</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>bundle_0012</code></td>
+            <td>173 KB</td>
+            <td><code>dequantize_block_q4_K&lt;float&gt;</code></td>
+            <td><span class="ja">Q4_K dequant（v_fma: 130, global_load: 325）</span><span class="en">Q4_K dequant (v_fma: 130, global_load: 325)</span></td>
+          </tr>
+          <tr>
+            <td><code>bundle_0019</code></td>
+            <td>337 KB</td>
+            <td><code>flash_attn_ext_f16&lt;...&gt;</code></td>
+            <td><span class="ja">Flash Attention（多数テンプレート variant）</span><span class="en">Flash Attention (many template variants)</span></td>
+          </tr>
+          <tr>
+            <td><code>bundle_0030</code></td>
+            <td>1019 KB</td>
+            <td><code>mul_mat_vec_q&lt;Q4_K, 1, false&gt;</code></td>
+            <td><span class="ja">Q4_K MMVQ anchor（decode 小バッチ向け）sgpr: 32–34, vgpr: 26–61</span><span class="en">Q4_K MMVQ anchor (decode small-batch). sgpr: 32–34, vgpr: 26–61</span></td>
+          </tr>
+          <tr>
+            <td><code>bundle_0037</code></td>
+            <td>17 KB</td>
+            <td><code>quantize_mmq_q8_1&lt;layout0/1/2&gt;</code></td>
+            <td><span class="ja">MMQ repack helper（src1 を q8_1 に量子化）</span><span class="en">MMQ repack helper (quantize src1 to q8_1)</span></td>
+          </tr>
+          <tr>
+            <td><code>bundle_0039</code></td>
+            <td>332 KB</td>
+            <td><code>rope_multi/rope_neox/rope_norm</code></td>
+            <td><span class="ja">RoPE family（sgpr: 19–29, vgpr: 19–20）</span><span class="en">RoPE family (sgpr: 19–29, vgpr: 19–20)</span></td>
+          </tr>
+          <tr>
+            <td><code>bundle_0096</code></td>
+            <td>918 KB</td>
+            <td><code>mul_mat_q&lt;Q4_K, 8, false&gt;</code></td>
+            <td><span class="ja">exact Q4_K MMQ anchor（prefill 向け）sgpr: 36, vgpr: 51</span><span class="en">Exact Q4_K MMQ anchor (prefill). sgpr: 36, vgpr: 51</span></td>
+          </tr>
+          <tr>
+            <td><code>Kernels.so-000-gfx1201.hsaco</code></td>
+            <td>—</td>
+            <td><code>Cijk_S_GA</code>, <code>Cijk_S_PostGSU3</code></td>
+            <td><span class="ja">BLAS/Tensile 側 contraction family（v_fma: 245, global_load: 2948）</span><span class="en">BLAS/Tensile contraction family (v_fma: 245, global_load: 2948)</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="font-size:.82rem;color:var(--muted);margin-top:6px;" class="ja">※ gfx1201 の wavefront_size は 32（MI25 の 64 と異なる）。v_mfma 命令は現在の inspectウィンドウでは検出されていません。</p>
+      <p style="font-size:.82rem;color:var(--muted);margin-top:6px;" class="en">※ gfx1201 wavefront_size = 32 (differs from MI25's 64). No v_mfma instructions detected in the current inspection window.</p>
+    </section>
+
+    <!-- フェーズ proxy probe 表 -->
+    <section class="card">
+      <h2><span class="ja">Phase Proxy Probe 結果（2026-03-28）</span><span class="en">Phase Proxy Probe Results (2026-03-28)</span></h2>
+      <p class="ja">resident runner での <code>prompt_eval_count</code> / <code>eval_count</code> を phase proxy として使用しました（ソース側の MMVQ/MMQ 閾値と照合）。</p>
+      <p class="en">Using <code>prompt_eval_count</code> / <code>eval_count</code> from resident runner responses as phase proxies (cross-referenced against MMVQ/MMQ source thresholds).</p>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>case</th>
+            <th>prompt_eval_count</th>
+            <th>eval_count</th>
+            <th>eval_duration</th>
+            <th><span class="ja">解釈</span><span class="en">Interpretation</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>short_np1</code></td>
+            <td>3</td>
+            <td>1</td>
+            <td>—</td>
+            <td><span class="badge badge-confirmed">MMVQ-compatible</span></td>
+          </tr>
+          <tr>
+            <td><code>medium_np1</code></td>
+            <td>11</td>
+            <td>1</td>
+            <td>—</td>
+            <td><span class="badge badge-inferred ja">MMQ-eligible 圏（bundle_0096 候補）</span><span class="badge badge-inferred en">MMQ-eligible (bundle_0096 candidate)</span></td>
+          </tr>
+          <tr>
+            <td><code>long_np1</code></td>
+            <td>290</td>
+            <td>1</td>
+            <td>—</td>
+            <td><span class="badge badge-unresolved ja">境界候補（fallback or chunking）</span><span class="badge badge-unresolved en">Boundary candidate (fallback or chunking)</span></td>
+          </tr>
+          <tr>
+            <td><code>short_np16</code></td>
+            <td>3</td>
+            <td>16</td>
+            <td>0.1479s</td>
+            <td><span class="badge badge-confirmed ja">decode-heavy / prompt MMVQ-compatible</span><span class="badge badge-confirmed en">decode-heavy / prompt MMVQ-compatible</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout callout-inferred" style="margin-top:10px;">
+        <strong class="ja">注意：</strong><strong class="en">Note:</strong>
+        <span class="ja"><code>prompt_eval_count</code> は response JSON の値であり、kernel launch 時の正確な <code>ne11</code> を直接読んでいるわけではありません。proxy として有用ですが、source 側の閾値との対応は近似です。</span>
+        <span class="en"><code>prompt_eval_count</code> is from the response JSON, not a direct readout of <code>ne11</code> at kernel launch. Useful as a proxy, but its mapping to source-side thresholds is approximate.</span>
+      </div>
+    </section>
+
+    <!-- 現時点での知見 -->
     <section class="card">
       <h2><span class="ja">現時点での知見</span><span class="en">Current Findings</span></h2>
       <ul class="ja">
-        <li>short resident <code>q4_k_m</code> case は pure-MMVQ ではなく、decode 側は MMVQ-compatible、prompt 側は <code>11-12</code> count window で MMQ-eligible とみなすのが現時点の最良整理です。</li>
-        <li>larger quantized path 用の exact <code>Q4_K mul_mat_q</code> object は <code>bundle_0096</code> として isolate 済みです。</li>
-        <li><code>prompt_eval_count = 290</code> の long prompt probe は、MMQ ceiling 超過か internal chunking かを切り分けるべき境界 probe として扱っています。</li>
+        <li>short resident case は pure-MMVQ ではなく、phase により混在しています：prompt 側（11〜12 token 窓）は MMQ-eligible、decode 側は MMVQ-compatible。</li>
+        <li>exact <code>Q4_K mul_mat_q</code> object は <code>bundle_0096</code> として binary レベルで isolate 済みです。</li>
+        <li>weak direct GEMM 可視性は「深い compute を避けた」証拠ではなく、custom kernel 優位・Flash Attention・observer 制約の複合で説明できます。</li>
       </ul>
       <ul class="en">
-        <li>The short resident <code>q4_k_m</code> case should no longer be treated as pure MMVQ: decode-side remains MMVQ-compatible, while the prompt-side <code>11-12</code> count window is already MMQ-eligible.</li>
-        <li>The exact <code>Q4_K mul_mat_q</code> object for the larger quantized path is now fixed as <code>bundle_0096</code>.</li>
-        <li>The long-prompt probe at <code>prompt_eval_count = 290</code> is treated as a boundary probe for either MMQ ceiling crossing or internal chunking.</li>
+        <li>The short resident case is not pure-MMVQ; it is mixed by phase: prompt-side (~11–12 token window) is MMQ-eligible; decode-side remains MMVQ-compatible.</li>
+        <li>The exact <code>Q4_K mul_mat_q</code> object is now isolated at binary level as <code>bundle_0096</code>.</li>
+        <li>Weak direct GEMM visibility is not evidence of avoiding deep compute; it is better explained by custom-kernel dominance, Flash Attention routing, and observer constraints.</li>
       </ul>
     </section>
 
+    <!-- 未確定事項 -->
     <section class="card">
       <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
       <ul class="ja">
         <li>short live case が <code>bundle_0096</code> の MMQ family をどの程度踏んだかは、まだ直接は確定していません。</li>
         <li>BLAS-side <code>Cijk_*</code> family が live short case に入ったかも未確定です。</li>
-        <li><code>prompt_eval_count</code> は有用な proxy ですが、kernel launch 時の正確な <code>ne11</code> を直接読んでいるわけではありません。</li>
+        <li><code>prompt_eval_count = 290</code> 境界が fallback か internal chunking かは未確定です。</li>
       </ul>
       <ul class="en">
-        <li>We still do not know how strongly the short live case actually exercised the <code>bundle_0096</code> MMQ family.</li>
+        <li>How strongly the short live case exercised the <code>bundle_0096</code> MMQ family is still not directly confirmed.</li>
         <li>Whether the BLAS-side <code>Cijk_*</code> family entered the short live case is also unresolved.</li>
-        <li><code>prompt_eval_count</code> is a useful proxy, but it is not a direct readout of the exact <code>ne11</code> seen at kernel launch.</li>
+        <li>Whether the <code>prompt_eval_count = 290</code> boundary is fallback-driven or due to internal chunking is unresolved.</li>
       </ul>
     </section>
 
+    <!-- 追記予定 -->
     <section class="card">
       <h2><span class="ja">追記予定</span><span class="en">Planned</span></h2>
       <ul class="ja">
-        <li><code>bundle_0096</code> の live phase ownership を、非破壊 observer と phase proxy の範囲でさらに詰めます。</li>
+        <li><code>bundle_0096</code> の live phase ownership を非破壊 observer と phase proxy の範囲でさらに詰めます。</li>
         <li>long prompt boundary が fallback か chunking かを切り分けます。</li>
+        <li>BLAS-side <code>Cijk_*</code> participation の有無を、非破壊 observer が得られた時点で再確認します。</li>
       </ul>
       <ul class="en">
-        <li>We will narrow the live phase ownership of <code>bundle_0096</code> further using non-distorting observers and phase proxies.</li>
-        <li>We will separate whether the long-prompt boundary is fallback-driven or chunking-driven.</li>
+        <li>Narrow live phase ownership of <code>bundle_0096</code> further using non-distorting observers and phase proxies.</li>
+        <li>Separate whether the long-prompt boundary is fallback-driven or chunking-driven.</li>
+        <li>Re-check BLAS-side <code>Cijk_*</code> participation once a non-distorting observer is available.</li>
       </ul>
     </section>
 
-    <p style="margin-top:12px;font-size:.88rem;color:#6b7280;">
+    <p style="margin-top:12px;font-size:.88rem;color:var(--muted);">
       <a href="rx9070xt-path-worklog.html" style="color:#0b5394;"><span class="ja">→ Path Worklog を見る</span><span class="en">→ View Path Worklog</span></a>
     </p>
 
     <div class="note">
-      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
-      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+      <span class="ja">掲載情報は観測記録に基づきます。「現時点での知見」は推論を含み、「未確定事項」は確定次第更新します。</span>
+      <span class="en">Content is grounded in observation logs. "Current Findings" include inferences; "Open Questions" are updated as findings solidify.</span>
     </div>
 
   </div>

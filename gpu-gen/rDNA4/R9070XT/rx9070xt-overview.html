@@ -29,49 +29,147 @@
 
     <section class="hero">
       <h1>RX9070XT Overview</h1>
-      <p class="ja">RX9070XT 調査の全体像です。MI25 由来の方法論を移植する C14 pilot を、RDNA4 固有の見え方に合わせて再固定している段階です。</p>
-      <p class="en">Overview of the RX9070XT investigation. This stage re-fixes the C14 pilot methodology from MI25 for RDNA4-specific observability rather than assuming identical signatures.</p>
+      <p class="ja">RX9070XT 調査の現時点の全体像です。MI25 由来の多層観測方法論を rDNA4（gfx1201）向けに移植する C14 pilot として実施し、ソース追跡・共有ライブラリ・バンドル分離・逆アセンブリ・ランタイム相関の 6 フェーズを完了しています。</p>
+      <p class="en">Current overview of the RX9070XT investigation. This is the C14 pilot transplanting the MI25 multi-layer observation methodology to rDNA4 (gfx1201). Six investigation phases — source trace, shared-library map, bundle isolate, code-object inventory, disassembly, and runtime correlation — have been completed.</p>
+      <div class="hero-meta">
+        <span class="badge badge-env">gfx1201 / ROCm 7.2.0</span>
+        <span class="badge badge-env">Ollama 0.17.4</span>
+        <span class="badge badge-env">deepseek-r1-distill-qwen-7b:q4_k_m</span>
+        <span class="badge badge-phase ja">Phase A–F 完了</span>
+        <span class="badge badge-phase en">Phase A–F Complete</span>
+      </div>
     </section>
 
+    <!-- 対象環境 -->
+    <section class="card">
+      <h2><span class="ja">対象環境</span><span class="en">Target Environment</span></h2>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th><span class="ja">項目</span><span class="en">Item</span></th>
+            <th><span class="ja">確認値</span><span class="en">Confirmed Value</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>GPU</td><td><code>AMD Radeon RX 9070 XT</code></td></tr>
+          <tr><td>GFX target</td><td><code>gfx1201</code> (device id <code>0x7550</code>)</td></tr>
+          <tr><td>VRAM pool</td><td>16.7 GiB (rocminfo 確認)</td></tr>
+          <tr><td>ROCm</td><td>7.2.0 (<code>/opt/rocm/.info/version</code>)</td></tr>
+          <tr><td>Ollama</td><td>0.17.4 (<code>/usr/local/bin/ollama</code>)</td></tr>
+          <tr><td>ROCm bundle</td><td><code>/usr/local/lib/ollama/rocm/</code></td></tr>
+          <tr><td>wavefront_size</td><td>32 (gfx1201 固有、MI25 の 64 と異なる)</td></tr>
+          <tr><td class="ja">調査ワークロード</td><td class="ja"><code>deepseek-r1-distill-qwen-7b:q4_k_m</code>（Q4_K 型として anchor）</td></tr>
+          <tr><td class="en">Workload anchor</td><td class="en"><code>deepseek-r1-distill-qwen-7b:q4_k_m</code> (anchored as Q4_K family)</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 観測済み事実 -->
     <section class="card">
       <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
       <ul class="ja">
-        <li>C14 pilot の目的は「最適化成果」より「方法論が成立するか」の確認です。</li>
-        <li>現在は source trace、shared-library trace、bundle isolate、disassembly、runtime correlation の 5 層まで到達しています。</li>
-        <li><code>Q4_K mul_mat_vec_q</code> と exact <code>Q4_K mul_mat_q</code> の両方を binary 側で固定し、残差は live phase ownership と long-prompt boundary interpretation に縮んでいます。</li>
+        <li>plain <code>ollama serve</code> が <code>inference compute library=ROCm compute=gfx1201</code> を報告し、<code>offloaded 29/29 layers to GPU</code>、<code>Flash Attention was auto, set to enabled</code>、<code>graph splits = 2</code> を確認しました。</li>
+        <li>cold generate: <code>load_duration = 17.455s</code>、<code>prompt_eval_duration = 0.0238s</code>、<code>eval_duration = 0.306s</code>。hot（resident）generate: <code>load_duration = 0.083s</code>、<code>prompt_eval_duration = 0.0248s</code>、<code>eval_duration = 0.149s</code>。</li>
+        <li>runtime bundle は <code>/usr/local/lib/ollama/rocm/</code> が先行し、<code>libggml-hip.so</code> → <code>libhipblas.so</code> → <code>librocblas.so</code> → <code>libamdhip64.so</code> → <code>hsa-runtime64</code> という依存チェーンを確認しました。</li>
+        <li><code>libggml-hip.so</code> 内の <code>.hip_fatbin</code>（587 MiB）から gfx1201 向け custom hsaco 群を isolate 済みです：<code>bundle_0012</code>（Q4_K dequant）・<code>bundle_0019</code>（Flash Attn）・<code>bundle_0030</code>（Q4_K MMVQ）・<code>bundle_0037</code>（MMQ repack）・<code>bundle_0039</code>（RoPE）・<code>bundle_0096</code>（exact Q4_K MMQ）。</li>
+        <li>BLAS 側にも <code>rocblas/library/Kernels.so-000-gfx1201.hsaco</code> の <code>Cijk_*</code> family が存在することを逆アセンブリで確認しました。</li>
+        <li>resident phase-proxy probe: <code>prompt_eval_count = 3</code>（MMVQ 圏）・<code>11</code>（MMQ-eligible 圏）・<code>290</code>（fallback/chunking 境界候補）・decode-heavy <code>eval_count = 16, eval_duration = 0.1479s</code>。</li>
       </ul>
       <ul class="en">
-        <li>The C14 pilot's goal is to verify "does the methodology work here?" rather than delivering optimization results.</li>
-        <li>The work has now reached all five layers: source trace, shared-library trace, bundle isolation, disassembly, and runtime correlation.</li>
-        <li>Both <code>Q4_K mul_mat_vec_q</code> and exact <code>Q4_K mul_mat_q</code> are fixed on the binary side, shrinking the remaining gap to live phase ownership and long-prompt boundary interpretation.</li>
+        <li>Plain <code>ollama serve</code> reported <code>inference compute library=ROCm compute=gfx1201</code>, with <code>offloaded 29/29 layers to GPU</code>, <code>Flash Attention was auto, set to enabled</code>, and <code>graph splits = 2</code> confirmed.</li>
+        <li>Cold generate: <code>load_duration = 17.455s</code>, <code>prompt_eval_duration = 0.0238s</code>, <code>eval_duration = 0.306s</code>. Hot (resident) generate: <code>load_duration = 0.083s</code>, <code>prompt_eval_duration = 0.0248s</code>, <code>eval_duration = 0.149s</code>.</li>
+        <li>The runtime bundle uses <code>/usr/local/lib/ollama/rocm/</code> first, with the confirmed dependency chain: <code>libggml-hip.so</code> → <code>libhipblas.so</code> → <code>librocblas.so</code> → <code>libamdhip64.so</code> → <code>hsa-runtime64</code>.</li>
+        <li>gfx1201 custom hsacos isolated from the <code>.hip_fatbin</code> (587 MiB) inside <code>libggml-hip.so</code>: <code>bundle_0012</code> (Q4_K dequant), <code>bundle_0019</code> (Flash Attn), <code>bundle_0030</code> (Q4_K MMVQ), <code>bundle_0037</code> (MMQ repack), <code>bundle_0039</code> (RoPE), <code>bundle_0096</code> (exact Q4_K MMQ).</li>
+        <li>The BLAS side also carries <code>Cijk_*</code> family kernels in <code>rocblas/library/Kernels.so-000-gfx1201.hsaco</code>, confirmed by disassembly.</li>
+        <li>Resident phase-proxy probe: <code>prompt_eval_count = 3</code> (MMVQ-compatible), <code>11</code> (MMQ-eligible), <code>290</code> (fallback/chunking boundary candidate), decode-heavy <code>eval_count = 16, eval_duration = 0.1479s</code>.</li>
       </ul>
     </section>
 
+    <!-- フェーズ進捗 -->
+    <section class="card">
+      <h2><span class="ja">フェーズ進捗</span><span class="en">Phase Progress</span></h2>
+      <div class="phase-grid">
+        <div class="phase-item done">
+          <div class="phase-label">Phase A — <span class="ja">ソース footing</span><span class="en">Source Footing</span></div>
+          <div class="phase-status"><span class="ja">✓ 完了</span><span class="en">✓ Complete</span></div>
+        </div>
+        <div class="phase-item done">
+          <div class="phase-label">Phase B — <span class="ja">ソース経路追跡</span><span class="en">Source Path Trace</span></div>
+          <div class="phase-status"><span class="ja">✓ 完了</span><span class="en">✓ Complete</span></div>
+        </div>
+        <div class="phase-item done">
+          <div class="phase-label">Phase C — <span class="ja">共有ライブラリ追跡</span><span class="en">Shared Library Map</span></div>
+          <div class="phase-status"><span class="ja">✓ 完了</span><span class="en">✓ Complete</span></div>
+        </div>
+        <div class="phase-item done">
+          <div class="phase-label">Phase D — <span class="ja">コードオブジェクト目録</span><span class="en">Code Object Inventory</span></div>
+          <div class="phase-status"><span class="ja">✓ 完了</span><span class="en">✓ Complete</span></div>
+        </div>
+        <div class="phase-item done">
+          <div class="phase-label">Phase E — <span class="ja">逆アセンブリ</span><span class="en">Disassembly</span></div>
+          <div class="phase-status"><span class="ja">✓ 完了</span><span class="en">✓ Complete</span></div>
+        </div>
+        <div class="phase-item done">
+          <div class="phase-label">Phase F — <span class="ja">ランタイム相関</span><span class="en">Runtime Correlation</span></div>
+          <div class="phase-status"><span class="ja">✓ 完了（初回パス）</span><span class="en">✓ Complete (first pass)</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 現時点での知見 -->
+    <section class="card">
+      <h2><span class="ja">現時点での知見（Phase F 相関）</span><span class="en">Current Findings (Phase F Correlation)</span></h2>
+      <ul class="ja">
+        <li><strong>decode 側</strong>は custom <code>Q4_K mul_mat_vec_q</code>（<code>bundle_0030</code>）と最も強く整合しており、BLAS 支配を積極的に示す証拠は現時点ではありません。</li>
+        <li><strong>Attention</strong> は Flash Attention が有効であることを runtime で確認しており、custom <code>flash_attn_ext_f16</code>（<code>bundle_0019</code>）family で処理されているとみるのが自然です。明示的な KQ/KQV GEMM 可視性の欠如はこの説明と整合します。</li>
+        <li><strong>RoPE</strong> は custom gfx1201 family として <code>bundle_0039</code> に isolate 済みです。</li>
+        <li><strong>prompt 側（11〜12 token 窓）</strong>は MMVQ 閾値を超えており、<code>bundle_0096</code>（exact <code>Q4_K mul_mat_q</code>）が MMQ-eligible であるとみなせます。</li>
+        <li><code>ROCBLAS_LAYER=9</code> では <code>rocblas_create_handle</code> のみ観測。direct GEMM 名が見えないことは path 不在の証拠ではなく、custom kernel 優位・Flash Attention・observer 制約の複合で説明できます。</li>
+      </ul>
+      <ul class="en">
+        <li><strong>Decode-side</strong> aligns most strongly with custom <code>Q4_K mul_mat_vec_q</code> (<code>bundle_0030</code>); no positive evidence for BLAS dominance exists at this stage.</li>
+        <li><strong>Attention</strong> was explicitly confirmed as Flash Attention enabled at runtime, aligning naturally with the custom <code>flash_attn_ext_f16</code> family (<code>bundle_0019</code>). The absence of visible KQ/KQV GEMM names is consistent with this explanation.</li>
+        <li><strong>RoPE</strong> is isolated as a concrete custom gfx1201 family in <code>bundle_0039</code>.</li>
+        <li><strong>Prompt-side (~11–12 token window)</strong> crosses the MMVQ threshold, making <code>bundle_0096</code> (exact <code>Q4_K mul_mat_q</code>) MMQ-eligible.</li>
+        <li><code>ROCBLAS_LAYER=9</code> only observed <code>rocblas_create_handle</code>. The absence of direct GEMM names is not evidence of a shallow path — it is better explained by the combination of custom-kernel dominance, Flash Attention routing, and observer constraints.</li>
+      </ul>
+    </section>
+
+    <!-- 未確定事項 -->
     <section class="card">
       <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
       <ul class="ja">
-        <li>MI25 と同じ可視化粒度が即時に再現できるとは確定していません。</li>
-        <li>short resident case は mixed-by-phase と読めますが、MMQ / BLAS participation の live ownership はまだ直接確定していません。</li>
+        <li>short live case で BLAS 側 <code>Cijk_*</code> family が実際に入ったかどうかは未確定です。</li>
+        <li>11〜12 token resident 窓が <code>bundle_0096</code> を実際に踏んだかどうかは、直接の dispatch 帰属なしには確定しません。</li>
+        <li><code>prompt_eval_count = 290</code> の境界が MMQ heuristic 超過（fallback）か internal chunking によるものかは未確定です。</li>
+        <li>decode 側で <code>mul_mat_f</code> dense family や他の隣接 kernel が混在する割合は未確定です。</li>
       </ul>
       <ul class="en">
-        <li>Immediate reproduction of the same visualization granularity as MI25 has not been confirmed.</li>
-        <li>The short resident case now reads as mixed-by-phase, but live MMQ / BLAS ownership is still not directly fixed.</li>
+        <li>Whether the BLAS-side <code>Cijk_*</code> family participated in the short live case remains unresolved.</li>
+        <li>Whether the 11–12 token resident window actually exercised <code>bundle_0096</code> is not confirmed without direct dispatch attribution.</li>
+        <li>Whether the <code>prompt_eval_count = 290</code> boundary results from MMQ heuristic overflow (BLAS fallback) or internal chunking is unresolved.</li>
+        <li>The fraction of <code>mul_mat_f</code> dense family and other adjacent kernels in the decode-side mix is unknown.</li>
       </ul>
     </section>
 
+    <!-- 追記予定 -->
     <section class="card">
-      <h2><span class="ja">追記予定</span><span class="en">Planned</span></h2>
+      <h2><span class="ja">追記予定（Phase G 以降）</span><span class="en">Planned (Phase G+)</span></h2>
       <ul class="ja">
+        <li>non-distorting observer が確保できた時点で、BLAS 側 <code>Cijk_*</code> family の live phase ownership を確認します。</li>
         <li><code>prompt_eval_count = 290</code> 境界が fallback か chunking かを切り分けます。</li>
+        <li>図版・時系列要約の追加。</li>
       </ul>
       <ul class="en">
-        <li>We will separate whether the <code>prompt_eval_count = 290</code> boundary is fallback-driven or chunking-driven.</li>
+        <li>Once a non-distorting observer is available, confirm whether the BLAS-side <code>Cijk_*</code> family has any live phase ownership.</li>
+        <li>Separate whether the <code>prompt_eval_count = 290</code> boundary is fallback or chunking.</li>
+        <li>Add figures and chronological summary.</li>
       </ul>
     </section>
 
     <div class="note">
-      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
-      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+      <span class="ja">掲載情報は観測記録に基づきます。「現時点での知見」は推論を含み、「未確定事項」は確定次第更新します。</span>
+      <span class="en">Content is grounded in observation logs. "Current Findings" include inferences; "Open Questions" are updated as findings solidify.</span>
     </div>
 
   </div>
