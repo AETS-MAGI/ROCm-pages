@@ -277,7 +277,7 @@ assets/img/graph/     ← 生成済み画像の出力先（HTML から参照）
 
 1. `python/` 以下にスクリプトを作成する
 2. `.venv` を有効化して実行: `source python/.venv/bin/activate && python python/<script>.py`
-3. 生成した画像は `assets/img/graph/<name>.png`（または `.svg`）に出力する
+3. 生成した画像は `assets/img/graph/<name>.webp` に出力する（webp 推奨）
 4. HTML ページから `<img src="../../../assets/img/graph/<name>.png" alt="..." class="graph-img" />` で埋め込む
 
 ### 8.3 命名規則
