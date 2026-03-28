@@ -25,47 +25,54 @@
 
     <section class="hero">
       <h1>MIOpen</h1>
-      <p class="ja">MIOpen の本調査における位置づけを記録します。現行 LLM 推論調査では補助線として扱います。</p>
-      <p class="en">Records MIOpen's role in this investigation. Used as a secondary reference in the current LLM inference study.</p>
+      <p class="ja">畳み込み・活性化・BatchNorm 等を最適化する AMD の深層学習プリミティブライブラリです。ggml-hip（Ollama LLM 推論パス）の依存チェーンには現れず、RX9070XT 実機の runner process maps にも記録されていません。</p>
+      <p class="en">AMD's deep learning primitives library optimizing convolution, activation, BatchNorm, etc. MIOpen does not appear in the ggml-hip (Ollama LLM inference) dependency chain, and was not recorded in the RX9070XT live runner process maps.</p>
+      <div class="hero-meta">
+        <span class="badge badge-confirmed ja">RX9070XT: runner maps に不在（Phase C）</span>
+        <span class="badge badge-confirmed en">RX9070XT: absent from runner maps (Phase C)</span>
+        <span class="badge badge-limited ja">LLM 推論パスへの関与: 未観測</span>
+        <span class="badge badge-limited en">LLM inference path involvement: unobserved</span>
+      </div>
     </section>
 
+    <!-- 位置づけ -->
     <section class="card">
-      <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
+      <h2><span class="ja">ROCm スタックにおける位置づけ</span><span class="en">Position in the ROCm Stack</span></h2>
+      <p class="ja">MIOpen は CNN / 畳み込みワークロードを中心に設計されたプリミティブライブラリです。Transformer ベースの LLM 推論では、ggml-hip が GEMM・attention・activation を直接 HIP kernel または rocBLAS 経由で実行するため、MIOpen の介在は通常の経路上に現れません。</p>
+      <p class="en">MIOpen is a primitives library designed primarily for CNN/convolution workloads. In Transformer-based LLM inference, ggml-hip executes GEMM, attention, and activation directly via HIP kernels or rocBLAS, so MIOpen does not appear in the standard inference path.</p>
+    </section>
+
+    <!-- 観測済み事実 -->
+    <section class="card">
+      <h2><span class="ja">観測済み事実（RX9070XT / Phase C）</span><span class="en">Observed Facts (RX9070XT / Phase C)</span></h2>
       <ul class="ja">
-        <li>現行 LLM 推論経路の主観測対象は rocBLAS/Tensile 側。</li>
-        <li>MIOpen は必要時の比較対象として記録し、役割を過大評価しない運用。</li>
+        <li>Phase C の新規 runner 起動後、<code>/proc/&lt;runner&gt;/maps</code> に <code>libMIOpen</code> は記録されていません。</li>
+        <li><code>readelf -d /usr/local/lib/ollama/rocm/libggml-hip.so</code> の <code>NEEDED</code> 一覧に <code>libMIOpen</code> は含まれていません。</li>
+        <li>Ollama bundle（<code>/usr/local/lib/ollama/rocm/</code>）内のファイル一覧にも MIOpen の SO は確認されていません。</li>
       </ul>
       <ul class="en">
-        <li>The primary observation target for the current LLM inference path is rocBLAS/Tensile.</li>
-        <li>MIOpen is recorded as a comparison reference when needed, without overstating its role.</li>
+        <li>After Phase C fresh runner startup, <code>libMIOpen</code> is not recorded in <code>/proc/&lt;runner&gt;/maps</code>.</li>
+        <li><code>readelf -d /usr/local/lib/ollama/rocm/libggml-hip.so</code> does not list <code>libMIOpen</code> in its <code>NEEDED</code> entries.</li>
+        <li>The Ollama bundle directory (<code>/usr/local/lib/ollama/rocm/</code>) does not contain a MIOpen SO.</li>
       </ul>
     </section>
 
+    <!-- 未確定事項 -->
     <section class="card">
       <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
       <ul class="ja">
-        <li>LLM 実行での MIOpen の関与有無は、現時点では確定していません。</li>
-        <li>CNN 系の知見を LLM 系へ直接一般化しません。</li>
+        <li>system ROCm（<code>/opt/rocm-7.2.0/</code>）側での MIOpen の存在は確認していますが、現行 Ollama bundle-first パスとの交差は未観測です。</li>
+        <li>MIOpen が LLM 推論に関与する経路が将来の Ollama / ggml バージョンで生じる可能性は排除しません。</li>
       </ul>
       <ul class="en">
-        <li>Whether MIOpen is involved in LLM execution has not been confirmed.</li>
-        <li>CNN-domain findings are not directly generalized to LLM domains.</li>
-      </ul>
-    </section>
-
-    <section class="card">
-      <h2><span class="ja">追記予定</span><span class="en">Planned</span></h2>
-      <ul class="ja">
-        <li>LLM 実行での関与有無の追加検証。</li>
-      </ul>
-      <ul class="en">
-        <li>Additional verification of MIOpen involvement in LLM execution to be added.</li>
+        <li>MIOpen's presence in the system ROCm tree (<code>/opt/rocm-7.2.0/</code>) is not denied, but its intersection with the current bundle-first Ollama path is unobserved.</li>
+        <li>Future Ollama/ggml versions may create a path involving MIOpen; this is not ruled out.</li>
       </ul>
     </section>
 
     <div class="note">
-      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
-      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は確定次第更新します。</span>
+      <span class="en">Content is grounded in observation logs. Open questions are updated as findings solidify.</span>
     </div>
 
   </div>

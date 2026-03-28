@@ -47,12 +47,16 @@
       <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
       <ul class="ja">
         <li><code>ROCm-repos/hipBLASLt/</code> の TensileLite サブディレクトリに gfx1201 参照が 250 超含まれており、sparse GEMM テスト構成等で明示的に参照されています（ソース確認）。</li>
-        <li>RX9070XT Ollama bundle（<code>/usr/local/lib/ollama/rocm/</code>）内に <code>libhipblaslt.so</code> が含まれているかは未確認です。</li>
+        <li>RX9070XT 実機の <code>/usr/local/lib/ollama/rocm/</code> に <code>libhipblaslt.so.0.10.60303</code> が存在することを確認（Phase C bundle scan）。</li>
+        <li>Phase C の新規 runner 起動後の <code>/proc/&lt;runner&gt;/maps</code> に <code>libhipblaslt.so.0.10.60303</code> が記録されており、実行時にロードされていることが確認されました。</li>
+        <li><code>readelf -d /usr/local/lib/ollama/rocm/librocblas.so.4</code> の直接 <code>NEEDED</code> に <code>libhipblaslt.so.0</code> が含まれており、librocblas.so.4 → libhipblaslt.so.0 の依存エッジが確認されています。</li>
         <li>ggml の <code>vendors/hip.h</code> が remapping する API 群（<code>cublasGemmEx</code> 等）は hipBLAS を向いており、hipBLASLt の直接 call site はソース上で確認していません。</li>
       </ul>
       <ul class="en">
         <li><code>ROCm-repos/hipBLASLt/</code>'s TensileLite subdirectory contains over 250 gfx1201 references, with explicit references in sparse GEMM test configurations (source-confirmed).</li>
-        <li>Whether <code>libhipblaslt.so</code> is included in the RX9070XT Ollama bundle (<code>/usr/local/lib/ollama/rocm/</code>) has not been confirmed.</li>
+        <li>Confirmed <code>libhipblaslt.so.0.10.60303</code> exists under <code>/usr/local/lib/ollama/rocm/</code> on the RX9070XT live machine (Phase C bundle scan).</li>
+        <li><code>/proc/&lt;runner&gt;/maps</code> after Phase C fresh runner startup records <code>libhipblaslt.so.0.10.60303</code>, confirming it is loaded at runtime.</li>
+        <li><code>readelf -d /usr/local/lib/ollama/rocm/librocblas.so.4</code> shows <code>libhipblaslt.so.0</code> in direct <code>NEEDED</code> entries — the librocblas.so.4 → libhipblaslt.so.0 dependency edge is confirmed.</li>
         <li>The API remapping in ggml's <code>vendors/hip.h</code> (e.g., <code>cublasGemmEx</code>) targets hipBLAS; no direct hipBLASLt call sites have been confirmed in the source.</li>
       </ul>
     </section>

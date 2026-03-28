@@ -25,49 +25,56 @@
 
     <section class="hero">
       <h1>rocSOLVER</h1>
-      <p class="ja">rocSOLVER の整理ページです。現時点では主経路解析の補助的な位置づけです。</p>
-      <p class="en">Summary page for rocSOLVER. It currently plays a supporting role relative to primary-path analysis.</p>
+      <p class="ja">LAPACK 互換の GPU 線形代数ソルバーライブラリです。LU 分解・QR 分解・固有値計算などを rocBLAS 上で実装します。RX9070XT の Ollama bundle に <code>librocsolver.so.0.3.60303</code> が含まれており、hipBLAS 経由で間接的にロードされることが確認されています。</p>
+      <p class="en">A LAPACK-compatible GPU linear algebra solver library. Implements LU/QR factorization and eigenvalue computations on top of rocBLAS. <code>librocsolver.so.0.3.60303</code> is confirmed present in the RX9070XT Ollama bundle and loaded indirectly via hipBLAS.</p>
+      <div class="hero-meta">
+        <span class="badge badge-confirmed ja">RX9070XT: bundle に存在・ロード確認（Phase C）</span>
+        <span class="badge badge-confirmed en">RX9070XT: bundle present, loaded (Phase C)</span>
+        <span class="badge badge-limited ja">LLM 推論への直接寄与: 未確定</span>
+        <span class="badge badge-limited en">Direct LLM inference role: unresolved</span>
+      </div>
     </section>
 
+    <!-- 位置づけ -->
     <section class="card">
-      <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
+      <h2><span class="ja">ROCm スタックにおける位置づけ</span><span class="en">Position in the ROCm Stack</span></h2>
+      <p class="ja">rocSOLVER は rocBLAS の上位に位置する LAPACK 層です。LU・QR・Cholesky 分解、固有値計算などを提供します。Transformer ベースの LLM 推論は主として行列積（GEMM）と attention に依存するため、rocSOLVER の演算（分解系）は通常の推論ループに現れません。</p>
+      <p class="en">rocSOLVER is a LAPACK layer built on top of rocBLAS. It provides LU/QR/Cholesky factorizations and eigenvalue computations. Transformer-based LLM inference relies primarily on GEMM and attention, so rocSOLVER's decomposition operations do not appear in the standard inference loop.</p>
+    </section>
+
+    <!-- 観測済み事実 -->
+    <section class="card">
+      <h2><span class="ja">観測済み事実（RX9070XT / Phase C）</span><span class="en">Observed Facts (RX9070XT / Phase C)</span></h2>
       <ul class="ja">
-        <li>このワークスペースの LLM 調査では、rocSOLVER を主観測対象としていません。</li>
-        <li>主経路（rocBLAS/Tensile/ggml-hip）の観測を優先する方針です。</li>
+        <li><code>/usr/local/lib/ollama/rocm/librocsolver.so.0.3.60303</code> が bundle 内に存在することを確認（Phase C bundle scan）。</li>
+        <li>Phase C の新規 runner 起動後の <code>/proc/&lt;runner&gt;/maps</code> に <code>librocsolver.so.0.3.60303</code> が記録されており、実行時にロードされています。</li>
+        <li><code>readelf -d /usr/local/lib/ollama/rocm/libhipblas.so.2</code> の直接 <code>NEEDED</code> に <code>librocsolver.so.0</code> が含まれており、libhipblas.so.2 → librocsolver.so.0 の依存エッジが確認されています。</li>
+        <li><code>deepseek-r1-distill-qwen-7b:q4_k_m</code> の Q4_K_M 推論ループ（MMVQ / MMQ / Flash Attn 主経路）において、rocSOLVER の演算（分解系）が dispatch されたかは未確定です。</li>
       </ul>
       <ul class="en">
-        <li>rocSOLVER is not treated as a primary observation target in this workspace's LLM investigation.</li>
-        <li>The investigation prioritizes primary paths (rocBLAS/Tensile/ggml-hip).</li>
+        <li><code>/usr/local/lib/ollama/rocm/librocsolver.so.0.3.60303</code> confirmed present in the bundle (Phase C bundle scan).</li>
+        <li><code>/proc/&lt;runner&gt;/maps</code> after Phase C fresh runner startup records <code>librocsolver.so.0.3.60303</code>, confirming it is loaded at runtime.</li>
+        <li><code>readelf -d /usr/local/lib/ollama/rocm/libhipblas.so.2</code> shows <code>librocsolver.so.0</code> in direct <code>NEEDED</code> entries — the libhipblas.so.2 → librocsolver.so.0 dependency edge is confirmed.</li>
+        <li>Whether rocSOLVER operations (decompositions) were dispatched during the Q4_K_M inference loop (primary path: MMVQ / MMQ / Flash Attn) is unresolved.</li>
       </ul>
     </section>
 
+    <!-- 未確定事項 -->
     <section class="card">
       <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
       <ul class="ja">
-        <li>rocSOLVER の寄与が実行結果に及ぶ範囲は未確定です。</li>
-        <li>世代ごとの差異を rocSOLVER で説明できるかは未観測です。</li>
+        <li>ロードはされているが、LLM 推論ループ中に rocSOLVER の演算が実際に呼ばれたかは未確定です（dispatch-safe observer なし）。</li>
+        <li>hipBLAS が rocSOLVER を内部的に使用するケース（存在する場合）の詳細は未確認です。</li>
       </ul>
       <ul class="en">
-        <li>The extent of rocSOLVER's contribution to observed runtime outcomes is undetermined.</li>
-        <li>Whether generation differences can be explained via rocSOLVER remains unobserved.</li>
-      </ul>
-    </section>
-
-    <section class="card">
-      <h2><span class="ja">追記予定</span><span class="en">Planned</span></h2>
-      <ul class="ja">
-        <li>GPU 世代別の関連性と観測有無を条件つきで追記。</li>
-        <li>必要時に主経路との差分観測を追加。</li>
-      </ul>
-      <ul class="en">
-        <li>Add condition-bounded relevance and observation status per GPU generation.</li>
-        <li>Add differential observations versus primary paths when needed.</li>
+        <li>While loaded, whether rocSOLVER operations are actually called during the LLM inference loop is unresolved (no dispatch-safe observer).</li>
+        <li>Details of any hipBLAS internal use of rocSOLVER (if any) have not been confirmed.</li>
       </ul>
     </section>
 
     <div class="note">
-      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
-      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は確定次第更新します。</span>
+      <span class="en">Content is grounded in observation logs. Open questions are updated as findings solidify.</span>
     </div>
 
   </div>

@@ -50,38 +50,43 @@
       <div class="call-chain">
 <span class="target">libggml-hip.so</span>          <span class="branch ja">（587 MiB .hip_fatbin 含む）</span><span class="branch en">(includes 587 MiB .hip_fatbin)</span>
   <span class="arrow">→</span> <span class="target">libhipblas.so.2.3.60303</span>
-      <span class="arrow">→</span> <span class="target">librocblas.so.4.3.60303</span>
-            <span class="arrow">→</span> <span class="target">libamdhip64.so.6</span>
-                  <span class="arrow">→</span> <span class="target">libhsa-runtime64.so.1</span>
+  │     <span class="arrow">→</span> <span class="target">librocsolver.so.0.3.60303</span>
+  │     <span class="arrow">→</span> <span class="target">librocblas.so.4.3.60303</span>
+  │           <span class="arrow">→</span> <span class="target">libhipblaslt.so.0.10.60303</span>
+  <span class="arrow">→</span> <span class="target">librocblas.so.4.3.60303</span>
+  <span class="arrow">→</span> <span class="target">libamdhip64.so.6.3.60303</span>
+        <span class="arrow">→</span> <span class="target">libhsa-runtime64.so.1.14.60303</span>
+        <span class="arrow">→</span> <span class="target">libamd_comgr.so.2.8.60303</span>
+        <span class="arrow">→</span> <span class="target">librocprofiler-register.so.0.4.0</span>
+        <span class="arrow">→</span> <span class="target">libdrm.so.2.123.0</span> / <span class="target">libdrm_amdgpu.so.1.123.0</span>
 
 rocblas/library/              <span class="branch ja">（gfx1201 ターゲット 56 ファイル）</span><span class="branch en">(56 gfx1201-targeted files)</span>
   Kernels.so-000-gfx1201.hsaco
   TensileLibrary_lazy_gfx1201_*.dat / *.so  <span class="branch ja">（variants）</span><span class="branch en">(variants)</span>
       </div>
-      <table class="data-table" style="margin-top:10px;">
+      <p class="ja" style="margin:8px 0 4px;font-size:.85em;color:var(--muted);">Phase C: /proc/&lt;runner&gt;/maps で確認した全ロード済みライブラリ</p>
+      <p class="en" style="margin:8px 0 4px;font-size:.85em;color:var(--muted);">Phase C: All loaded libraries confirmed in /proc/&lt;runner&gt;/maps</p>
+      <table class="data-table" style="margin-top:4px;">
         <thead>
           <tr>
-            <th><span class="ja">パス</span><span class="en">Path</span></th>
-            <th><span class="ja">内容</span><span class="en">Contents</span></th>
+            <th><span class="ja">ライブラリ</span><span class="en">Library</span></th>
+            <th><span class="ja">経路</span><span class="en">Route</span></th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td><code>/usr/local/lib/ollama/rocm/libggml-hip.so</code></td>
-            <td><span class="ja">.hip_fatbin 587 MiB（多ターゲット custom hsaco 群）</span><span class="en">.hip_fatbin 587 MiB (multi-target custom hsacos)</span></td>
-          </tr>
-          <tr>
-            <td><code>/usr/local/lib/ollama/rocm/libhipblas.so.2.3.60303</code></td>
-            <td><span class="ja">hipBLAS marshalling layer</span><span class="en">hipBLAS marshalling layer</span></td>
-          </tr>
-          <tr>
-            <td><code>/usr/local/lib/ollama/rocm/librocblas.so.4.3.60303</code></td>
-            <td><span class="ja">rocBLAS（Tensile kernel 配置を同梱）</span><span class="en">rocBLAS (with Tensile kernel layout bundled)</span></td>
-          </tr>
-          <tr>
-            <td><code>/usr/local/lib/ollama/rocm/rocblas/library/</code></td>
-            <td><span class="ja">gfx1201 ターゲット 56 ファイル（Kernels.so + TensileLibrary variants）</span><span class="en">56 gfx1201-targeted files (Kernels.so + TensileLibrary variants)</span></td>
-          </tr>
+          <tr><td><code>libggml-base.so.0.0.0</code></td><td><span class="ja">/usr/local/lib/ollama/（直接）</span><span class="en">/usr/local/lib/ollama/ (direct)</span></td></tr>
+          <tr><td><code>libggml-hip.so</code></td><td><span class="ja">rocm/ 直接</span><span class="en">rocm/ direct</span></td></tr>
+          <tr><td><code>libhipblas.so.2.3.60303</code></td><td><span class="ja">libggml-hip.so の NEEDED</span><span class="en">NEEDED by libggml-hip.so</span></td></tr>
+          <tr><td><code>librocblas.so.4.3.60303</code></td><td><span class="ja">libggml-hip.so の NEEDED</span><span class="en">NEEDED by libggml-hip.so</span></td></tr>
+          <tr><td><code>libhipblaslt.so.0.10.60303</code></td><td><span class="ja">librocblas.so.4 の NEEDED</span><span class="en">NEEDED by librocblas.so.4</span></td></tr>
+          <tr><td><code>librocsolver.so.0.3.60303</code></td><td><span class="ja">libhipblas.so.2 の NEEDED</span><span class="en">NEEDED by libhipblas.so.2</span></td></tr>
+          <tr><td><code>libamdhip64.so.6.3.60303</code></td><td><span class="ja">libggml-hip.so の NEEDED</span><span class="en">NEEDED by libggml-hip.so</span></td></tr>
+          <tr><td><code>libhsa-runtime64.so.1.14.60303</code></td><td><span class="ja">libamdhip64.so.6 経由</span><span class="en">via libamdhip64.so.6</span></td></tr>
+          <tr><td><code>libamd_comgr.so.2.8.60303</code></td><td><span class="ja">libamdhip64.so.6 経由</span><span class="en">via libamdhip64.so.6</span></td></tr>
+          <tr><td><code>librocprofiler-register.so.0.4.0</code></td><td><span class="ja">libamdhip64.so.6 経由</span><span class="en">via libamdhip64.so.6</span></td></tr>
+          <tr><td><code>libdrm.so.2.123.0</code></td><td><span class="ja">libamdhip64.so.6 経由</span><span class="en">via libamdhip64.so.6</span></td></tr>
+          <tr><td><code>libdrm_amdgpu.so.1.123.0</code></td><td><span class="ja">libamdhip64.so.6 経由</span><span class="en">via libamdhip64.so.6</span></td></tr>
+          <tr><td><code>rocblas/library/</code></td><td><span class="ja">gfx1201 ターゲット 56 ファイル（Kernels.so + TensileLibrary variants）</span><span class="en">56 gfx1201-targeted files (Kernels.so + TensileLibrary variants)</span></td></tr>
         </tbody>
       </table>
     </section>
