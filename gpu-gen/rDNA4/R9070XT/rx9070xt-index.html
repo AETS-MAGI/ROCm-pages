@@ -27,23 +27,31 @@
 
     <section class="hero">
       <h1>RX9070XT <span style="font-size:1.1rem;font-weight:400;opacity:.8;">rDNA4</span></h1>
-      <p class="ja">RX9070XT（rDNA4）の経路観測・最適化調査の入口です。MI25 由来の方法論を移植するパイロット（C14 系）を実施中です。</p>
-      <p class="en">Entry point for RX9070XT (rDNA4) path observation and optimization study. The C14-series pilot transplanting methodology from MI25 is in progress.</p>
+      <p class="ja">RX9070XT（rDNA4 / gfx1201）の経路観測・最適化調査の入口です。MI25 由来の多層観測方法論を移植する C14 pilot として、Phase A–F（ソース追跡〜ランタイム相関）を完了しています。</p>
+      <p class="en">Entry point for RX9070XT (rDNA4 / gfx1201) path observation and optimization study. Phase A–F (source trace through runtime correlation) of the C14 pilot transplanting MI25 methodology are complete.</p>
+      <div class="hero-meta">
+        <span class="badge badge-env">gfx1201 / ROCm 7.2.0</span>
+        <span class="badge badge-env">Ollama 0.17.4</span>
+        <span class="badge badge-phase ja">Phase A–F 完了</span>
+        <span class="badge badge-phase en">Phase A–F Complete</span>
+      </div>
     </section>
 
     <section class="card">
       <h2><span class="ja">観測済み事実</span><span class="en">Observed Facts</span></h2>
       <ul class="ja">
-        <li>ROCm 経路（gfx1201 / HIP backend）観測を取得済み。</li>
-        <li>legacy rocprof で operation trace を取得し、dispatch 相当観測を前進させた。</li>
-        <li>dispatch-safe observer 候補を確保済み。</li>
-        <li>現 anchor 条件では trace 非空かつ direct GEMM 可視 0 という状態を再現。</li>
+        <li>plain <code>ollama serve</code> で <code>inference compute library=ROCm compute=gfx1201</code> を確認。<code>offloaded 29/29 layers to GPU</code>・<code>Flash Attention was auto, set to enabled</code> を取得しました（2026-03-27）。</li>
+        <li>runtime bundle は <code>/usr/local/lib/ollama/rocm/</code> が先行し、<code>libggml-hip.so</code> → <code>libhipblas.so</code> → <code>librocblas.so</code> → <code>libamdhip64.so</code> の依存チェーンを確認しました。</li>
+        <li>逆アセンブリで gfx1201 向け custom hsaco（Q4_K MMVQ・MMQ・Flash Attn・RoPE）と BLAS 側 <code>Cijk_*</code> family の両方を isolate 済みです。</li>
+        <li>resident phase-proxy probe: <code>prompt_eval_count = 3</code>（MMVQ 圏）・<code>11</code>（MMQ-eligible 圏）・<code>290</code>（境界候補）。</li>
+        <li><code>rocprofv3</code> wrap は bootstrap を壊す（CPU fallback に落ちる）ことを確認。<code>rocprofv3 --attach</code> は ptrace_scope=1 でブロック。dispatch-safe observer はまだ確保できていません。</li>
       </ul>
       <ul class="en">
-        <li>ROCm path observation for gfx1201 / HIP backend obtained.</li>
-        <li>Operation trace acquired via legacy rocprof; dispatch-equivalent observation advanced.</li>
-        <li>Dispatch-safe observer candidates secured.</li>
-        <li>Non-empty trace with direct GEMM visibility = 0 reproduced under current anchor conditions.</li>
+        <li>Plain <code>ollama serve</code> confirmed <code>inference compute library=ROCm compute=gfx1201</code>, <code>offloaded 29/29 layers to GPU</code>, and <code>Flash Attention was auto, set to enabled</code> (2026-03-27).</li>
+        <li>Runtime bundle uses <code>/usr/local/lib/ollama/rocm/</code> first; confirmed dependency chain: <code>libggml-hip.so</code> → <code>libhipblas.so</code> → <code>librocblas.so</code> → <code>libamdhip64.so</code>.</li>
+        <li>Disassembly isolated both gfx1201 custom hsacos (Q4_K MMVQ/MMQ, Flash Attn, RoPE) and the BLAS-side <code>Cijk_*</code> family.</li>
+        <li>Resident phase-proxy probe: <code>prompt_eval_count = 3</code> (MMVQ-compatible), <code>11</code> (MMQ-eligible), <code>290</code> (boundary candidate).</li>
+        <li>Confirmed that <code>rocprofv3</code> wrap breaks bootstrap (CPU fallback). <code>rocprofv3 --attach</code> blocked by ptrace_scope=1. A dispatch-safe observer has not yet been secured.</li>
       </ul>
     </section>
 
@@ -59,12 +67,14 @@
     <section class="card">
       <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
       <ul class="ja">
-        <li>MI25 と同じ可視化軸（direct GEMM 名）が現条件で得られるとはまだ言えません。</li>
-        <li>operation trace と個別 shape / phase の厳密因果は未確定です。</li>
+        <li>short live case での BLAS 側 <code>Cijk_*</code> family の参加有無は未確定です。</li>
+        <li><code>prompt_eval_count = 290</code> 境界が MMQ heuristic 超過（fallback）か internal chunking かは未確定です。</li>
+        <li>dispatch-safe observer なしでは、per-kernel attribution は推論にとどまります。</li>
       </ul>
       <ul class="en">
-        <li>Obtaining the same visualization axis as MI25 (direct GEMM names) under current conditions has not been confirmed.</li>
-        <li>Precise causality between operation traces and individual shapes/phases is undetermined.</li>
+        <li>Whether the BLAS-side <code>Cijk_*</code> family participated in the short live case is unresolved.</li>
+        <li>Whether the <code>prompt_eval_count = 290</code> boundary is MMQ heuristic overflow (fallback) or internal chunking is unresolved.</li>
+        <li>Without a dispatch-safe observer, per-kernel attribution remains inference only.</li>
       </ul>
     </section>
 
