@@ -99,6 +99,66 @@
       </div>
     </section>
 
+    <!-- ── やさしく言うと（たとえ話） ────────────────────────────── -->
+    <section class="card">
+      <h2>
+        <span class="ja">やさしく言うと——たとえ話でまず理解する</span>
+        <span class="en">In Plain Terms — Start With an Analogy</span>
+      </h2>
+
+      <p class="ja">
+        GPU の中でどの「仕事」が動いているかを見たい。
+        でも問題がある。<strong>のぞこうとすると、機械そのものが止まる。</strong>
+      </p>
+      <p class="en">
+        We want to see which "job" is running inside the GPU.
+        But there's a problem: <strong>if you try to look, the machine stops running.</strong>
+      </p>
+
+      <p class="ja">
+        いろんな方法を試した。結果を順に言う：
+      </p>
+      <p class="en">
+        We tried several approaches. Here's what happened:
+      </p>
+
+      <ul class="ja">
+        <li>🔭 <strong>カメラを設置しようとした</strong>（rocprofv3 wrap）<br>
+          → カメラを置いた瞬間、GPU が「ない」と誤認されて止まった。カメラを置く前に終わった。</li>
+        <li>🚪 <strong>別の入口からこっそり入ろうとした</strong>（--attach）<br>
+          → 扉に鍵がかかっていた（OS のセキュリティ設定）。鍵を外せば入れるが、それは「普通の環境」ではなくなる。</li>
+        <li>🪟 <strong>外から小さな窓を通して見た</strong>（ROCBLAS_LAYER）<br>
+          → 「部屋が使われている」ことは分かった。でも「どの仕事をしているか」は窓が小さすぎて見えなかった。</li>
+        <li>📊 <strong>部屋から出てくる「数字のメーター」を読んだ</strong>（phase proxy）<br>
+          → 中には入れないが、外に出てくる数字を読んで「たぶんこっちの仕事をしている」と推理できた。<br>
+          → <strong>しかも、数字が変わる条件（プロンプトの長さ）を自分で操作できる。</strong></li>
+      </ul>
+      <ul class="en">
+        <li>🔭 <strong>Tried to set up a camera</strong> (rocprofv3 wrap)<br>
+          → The moment the camera was placed, the GPU was misdetected as absent and stopped. It ended before anything was recorded.</li>
+        <li>🚪 <strong>Tried to sneak in through another door</strong> (--attach)<br>
+          → The door was locked (OS security setting). Unlocking it would work, but that would no longer be a "standard environment."</li>
+        <li>🪟 <strong>Looked through a small window from outside</strong> (ROCBLAS_LAYER)<br>
+          → We could tell "the room is in use." But the window was too small to see which job was running.</li>
+        <li>📊 <strong>Read the "meter" coming out of the room</strong> (phase proxy)<br>
+          → Can't enter, but by reading numbers that come out, we can infer "it's probably doing this job."<br>
+          → <strong>And we can deliberately control the condition that changes the number (prompt length).</strong></li>
+      </ul>
+
+      <div class="callout callout-inferred">
+        <span class="ja">
+          これは「あきらめた」ではなく「その環境で唯一有効な科学的手段を選んだ」。
+          外から読める数字を手がかりに内部を推理する——これは実験科学として普通のやり方。
+          地震計も、MRI も、温度計も、みんな「間接的に内部を読む」手段。
+        </span>
+        <span class="en">
+          This is not "giving up" — it is "choosing the only scientifically valid approach available in that environment."
+          Inferring the interior from externally readable signals is standard experimental science.
+          Seismometers, MRIs, thermometers — all read the interior indirectly.
+        </span>
+      </div>
+    </section>
+
     <!-- ── Observer 制約マップ（図） ──────────────────────────────── -->
     <section class="card">
       <h2>
@@ -518,6 +578,21 @@
           On the binary side, `bundle_0030` carries `IQ1_S` MMVQ (`ggml_type19 1..8`) while `bundle_0082` carries `IQ1_S` MMQ (`ggml_type19 8..128`).
           On the live side, `prompt_eval_count = 7` reads as `MMVQ-compatible`, while `13` reads as `MMQ-eligible`.
           This is still not exact dispatch proof, but it means `IQ1_S` can now be narrowed across source, binary, and phase-proxy layers.
+        </span>
+      </div>
+
+      <div class="callout callout-inferred" style="margin-top:12px;">
+        <span class="ja">
+          その次の近縁比較対象としての `Q5_K_M` も footing はかなり強い。
+          source 側では `Q5_K` は `MMVQ` / `MMQ` の両方に入り、AMD heuristic でも `Q4_K` と同じ `<= 256` 拡張を共有する。
+          binary 側でも `bundle_0030` に `Q5_K` MMVQ anchor があり、fatbin 全体には `Q5_K` MMQ symbol evidence もある。
+          ただし current Ollama helper path はまだ狭く、`Q5_K_M` の次の実務ボトルネックは local artifact を確保して direct-import/live case を作ること。
+        </span>
+        <span class="en">
+          The next near-neighbor comparison target, `Q5_K_M`, already has strong footing as well.
+          In source, `Q5_K` enters both `MMVQ` and `MMQ`, and in the AMD heuristic it shares the same `<= 256` extension as `Q4_K`.
+          On the binary side, `bundle_0030` already gives a `Q5_K` MMVQ anchor, and the full fatbin shows `Q5_K` MMQ symbol evidence too.
+          But the current Ollama helper path is still narrower, so the next practical bottleneck for `Q5_K_M` is to acquire a local artifact and build a direct-import/live case.
         </span>
       </div>
     </section>

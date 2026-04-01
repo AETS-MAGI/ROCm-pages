@@ -25,21 +25,44 @@
 
     <section class="hero">
       <h1>ggml-hip</h1>
-      <p class="ja">ggml の HIP バックエンドです。Ollama が推論時にロードする <code>libggml-hip.so</code> として配布され、quantized matmul・Flash Attention・RoPE などの custom kernel を gfx1201 を含む複数 AMD GPU ターゲット向けに内包しています。</p>
-      <p class="en">The HIP backend for ggml. Distributed as <code>libggml-hip.so</code> loaded by Ollama at inference time. Embeds custom kernels for quantized matmul, Flash Attention, RoPE, and more, targeting multiple AMD GPU architectures including gfx1201.</p>
+      <p class="ja" style="font-size:1.05rem;font-weight:600;color:#fff;margin-bottom:10px;">
+        このページで得られる理解：<em>libggml-hip.so の .hip_fatbin には gfx1200/gfx1201 向け custom kernel が埋め込まれているが、gfx900（MI25）には存在しない——この非対称性が「世代ごとの世界観」を決定づける。</em>
+      </p>
+      <p class="en" style="font-size:1.05rem;font-weight:600;color:#fff;margin-bottom:10px;">
+        What you'll gain here: <em>libggml-hip.so's .hip_fatbin contains custom kernels for gfx1200/gfx1201 but not for gfx900 (MI25) — this asymmetry is what determines each generation's "observation worldview."</em>
+      </p>
       <div class="hero-meta">
         <span class="badge badge-env">libggml-hip.so</span>
         <span class="badge badge-env">.hip_fatbin 587 MiB</span>
-        <span class="badge badge-confirmed ja">RX9070XT: 実機観測済み</span>
-        <span class="badge badge-confirmed en">RX9070XT: Observed live</span>
+        <span class="badge badge-confirmed ja">gfx1200 / gfx1201: fatbin 内ターゲット確認</span>
+        <span class="badge badge-confirmed en">gfx1200 / gfx1201: fatbin targets confirmed</span>
+        <span class="badge badge-confirmed ja">gfx900 / gfx942: fatbin 内に未検出</span>
+        <span class="badge badge-confirmed en">gfx900 / gfx942: Not found in fatbin</span>
       </div>
     </section>
 
-    <!-- 位置づけ -->
+    <!-- ── このページの結論 ─────────────────────────────────── -->
+    <section class="card">
+      <h2><span class="ja">このページの結論</span><span class="en">Page Conclusion</span></h2>
+      <ul class="ja">
+        <li><code>libggml-hip.so</code> の <code>.hip_fatbin</code>（587 MiB）に <code>gfx1200</code> / <code>gfx1201</code> 向け custom kernel が埋め込まれていることを文字列スキャンで確認。</li>
+        <li>同スキャンで <code>gfx900</code> / <code>gfx942</code> のターゲット文字列は検出されなかった——これは MI25（gfx900）の「fallback が主戦場」を ggml-hip レベルで直接支持する証拠。</li>
+        <li>gfx1201 向けには MMVQ / MMQ / Flash Attention / RoPE の custom kernel family が存在し、逆アセンブリで確認済み（wavefront_size=32、v_mfma なし）。</li>
+        <li>どの bundle が実際の live case で使われたかは、dispatch-safe observer なしには確定しない。</li>
+      </ul>
+      <ul class="en">
+        <li>String scan confirmed <code>gfx1200</code> / <code>gfx1201</code> target strings embedded in <code>libggml-hip.so</code>'s <code>.hip_fatbin</code> (587 MiB).</li>
+        <li>The same scan found no <code>gfx900</code> / <code>gfx942</code> target strings — this directly supports the "fallback as main stage" worldview for MI25 (gfx900) at the ggml-hip level.</li>
+        <li>For gfx1201: MMVQ / MMQ / Flash Attention / RoPE custom kernel families exist and are confirmed via disassembly (wavefront_size=32, no v_mfma).</li>
+        <li>Which bundle was used in the actual live case cannot be determined without a dispatch-safe observer.</li>
+      </ul>
+    </section>
+
+    <!-- ── ROCm スタックにおける位置づけ ───────────────────── -->
     <section class="card">
       <h2><span class="ja">ROCm スタックにおける位置づけ</span><span class="en">Position in the ROCm Stack</span></h2>
       <p class="ja">ggml-hip は ggml の backend abstraction 上に実装された HIP 特化バックエンドです。CUDA 側の <code>ggml-cuda</code> と同一ソース系統（<code>ggml-cuda.cu</code> / <code>mmq.cu</code> / <code>mmvq.cu</code> など）から HIP ビルドされます。<code>vendors/hip.h</code> が <code>cublasCreate</code> 等の CUDA API を hipBLAS 等価物にリマップし、コードの共通化を実現しています。</p>
-      <p class="en">ggml-hip is the HIP-specialized backend implemented on top of ggml's backend abstraction. It shares the same source family as <code>ggml-cuda</code> (<code>ggml-cuda.cu</code>, <code>mmq.cu</code>, <code>mmvq.cu</code>, etc.), built with HIP. <code>vendors/hip.h</code> remaps <code>cublasCreate</code> and related CUDA APIs to hipBLAS equivalents, enabling a shared codebase across both platforms.</p>
+      <p class="en">ggml-hip is the HIP-specialized backend on top of ggml's backend abstraction. It shares the same source family as <code>ggml-cuda</code> (<code>ggml-cuda.cu</code>, <code>mmq.cu</code>, <code>mmvq.cu</code>, etc.), built with HIP. <code>vendors/hip.h</code> remaps <code>cublasCreate</code> and related CUDA APIs to hipBLAS equivalents, enabling a shared codebase.</p>
       <div class="call-chain">
 <span class="ja">Ollama runner</span><span class="en">Ollama runner</span>
   <span class="arrow">↓</span> ml.NewBackend(<span class="target">"ggml"</span>) → ggml_backend_load_all_from_path()
@@ -50,23 +73,101 @@
       <span class="branch ja">その他</span><span class="branch en">otherwise</span>       <span class="arrow">→</span>  <span class="alt">hipBLAS → rocBLAS</span>
   <span class="arrow">↓</span> Flash Attn <span class="arrow">→</span> <span class="target">flash_attn_ext_f16</span>  <span class="branch">(custom hsaco)</span>
       </div>
+      <p class="ja" style="margin-top:10px;">→ 次の問い：<strong>この dispatch 分岐で使われる custom kernel は、どの GPU 世代向けに存在するのか？</strong></p>
+      <p class="en" style="margin-top:10px;">→ Next question: <strong>Which GPU generations have custom kernels available for these dispatch branches?</strong></p>
     </section>
 
-    <!-- 観測済み事実 -->
+    <!-- ── 世代横断：fatbin ターゲット ─────────────────────── -->
     <section class="card">
-      <h2><span class="ja">観測済み事実（RX9070XT / gfx1201）</span><span class="en">Observed Facts (RX9070XT / gfx1201)</span></h2>
+      <h2><span class="ja">世代横断：.hip_fatbin 内ターゲット</span><span class="en">Cross-Generation: .hip_fatbin Targets</span></h2>
+
+      <p class="ja">
+        <strong>観測ポイント：</strong>libggml-hip.so の .hip_fatbin にどの GPU 世代向け kernel が存在するか。<br>
+        <strong>文脈：</strong>この有無が「custom kernel で動く」か「BLAS fallback が主」かを世代ごとに決定づける。<br>
+        <strong>ソース：</strong><code>strings -a /usr/local/lib/ollama/rocm/libggml-hip.so</code> による target 文字列スキャン（Phase D 実機確認）
+      </p>
+      <p class="en">
+        <strong>Observation point:</strong> Which GPU generations have kernels embedded in libggml-hip.so's .hip_fatbin.<br>
+        <strong>Context:</strong> Presence or absence here determines whether a generation runs on "custom kernels" or "BLAS fallback as primary."<br>
+        <strong>Source:</strong> Target string scan via <code>strings -a /usr/local/lib/ollama/rocm/libggml-hip.so</code> (Phase D live confirmed)
+      </p>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th><span class="ja">世代</span><span class="en">Generation</span></th>
+            <th>GFX</th>
+            <th><span class="ja">fatbin 内ターゲット</span><span class="en">fatbin targets</span></th>
+            <th><span class="ja">custom kernel</span><span class="en">custom kernel</span></th>
+            <th><span class="ja">世界観への含意</span><span class="en">Worldview implication</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>GCN5 / MI25</strong></td>
+            <td><code>gfx900</code></td>
+            <td><span class="badge badge-confirmed ja">未検出</span><span class="badge badge-confirmed en">Not found</span></td>
+            <td><span class="ja">なし</span><span class="en">None</span></td>
+            <td><span class="ja"><strong>BLAS fallback が唯一の行列演算経路</strong>。Tensile / rocBLAS 経由のみ。fallback が主戦場である理由がここで確定する。</span><span class="en"><strong>BLAS fallback is the only matrix compute path.</strong> Only via Tensile / rocBLAS. This is the evidence that fallback is the main stage.</span></td>
+          </tr>
+          <tr style="background:#fef9f0;">
+            <td><strong>RDNA3 / RX7900</strong></td>
+            <td><code>gfx1100</code> 系</td>
+            <td><span class="badge badge-unresolved ja">本スキャン対象外</span><span class="badge badge-unresolved en">Not in this scan</span></td>
+            <td>—</td>
+            <td><span class="ja">gfx1200/gfx1201 と同一バンドルに含まれる可能性あり（未確認）</span><span class="en">May be in the same bundle as gfx1200/gfx1201 (unconfirmed)</span></td>
+          </tr>
+          <tr style="background:#fef9f0;">
+            <td><strong>RDNA3.5 / RX7900 GRE</strong></td>
+            <td><code>gfx1200</code></td>
+            <td><span class="badge badge-confirmed ja">確認済み</span><span class="badge badge-confirmed en">Confirmed</span></td>
+            <td><span class="ja">あり（gfx1201 と共通 bundle 系）</span><span class="en">Present (same bundle family as gfx1201)</span></td>
+            <td><span class="ja">gfx1201 と同様の custom kernel 経路が利用可能</span><span class="en">Same custom kernel paths as gfx1201 available</span></td>
+          </tr>
+          <tr style="background:#fef9f0;">
+            <td><strong>RDNA4 / RX9070XT</strong></td>
+            <td><code>gfx1201</code></td>
+            <td><span class="badge badge-confirmed ja">確認済み</span><span class="badge badge-confirmed en">Confirmed</span></td>
+            <td><span class="ja">あり（MMVQ / MMQ / FA / RoPE）</span><span class="en">Present (MMVQ / MMQ / FA / RoPE)</span></td>
+            <td><span class="ja">custom kernel が使える。どの経路が実際に使われるかは ne11 と観測条件に依存</span><span class="en">Custom kernels available. Which path is actually used depends on ne11 and observation conditions</span></td>
+          </tr>
+          <tr>
+            <td><strong>CDNA4 / MI300X</strong></td>
+            <td><code>gfx942</code></td>
+            <td><span class="badge badge-confirmed ja">未検出</span><span class="badge badge-confirmed en">Not found</span></td>
+            <td><span class="ja">なし（この bundle では）</span><span class="en">None (in this bundle)</span></td>
+            <td><span class="ja">Ollama ROCm bundle は MI300X 向けに gfx942 custom kernel を埋め込んでいない可能性。別ビルドが存在するか未確認。</span><span class="en">The Ollama ROCm bundle may not embed gfx942 custom kernels for MI300X. Whether a separate build exists is unconfirmed.</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-confirmed">
+        <span class="ja"><strong>重要：</strong>gfx900（MI25）で MMVQ / MMQ の custom kernel 経路が存在しないことは、「fallback が主戦場」世界観をコードレベルで裏付ける直接証拠。MI25 では BLAS 経由が唯一の行列演算経路である。</span>
+        <span class="en"><strong>Important:</strong> The absence of MMVQ / MMQ custom kernel paths for gfx900 (MI25) is direct code-level evidence for the "fallback as main stage" worldview. On MI25, BLAS mediation is the only matrix compute path.</span>
+      </div>
+
+      <p class="ja" style="margin-top:10px;">→ 次の問い：<strong>gfx1201 向けには具体的にどんな bundle が埋め込まれているのか？</strong></p>
+      <p class="en" style="margin-top:10px;">→ Next question: <strong>What specific bundles are embedded for gfx1201?</strong></p>
+    </section>
+
+    <!-- ── gfx1201 bundle 詳細 ──────────────────────────────── -->
+    <section class="card">
+      <h2><span class="ja">gfx1201 bundle 詳細（RX9070XT 実機確認）</span><span class="en">gfx1201 Bundle Details (RX9070XT Live Confirmed)</span></h2>
+
+      <p class="ja"><strong>観測ポイント：</strong>gfx1201 向け bundle の具体的な kernel family と dispatch 上の役割。</p>
+      <p class="en"><strong>Observation point:</strong> Concrete kernel families and dispatch roles for gfx1201 bundles.</p>
+
       <ul class="ja">
-        <li><code>/usr/local/lib/ollama/rocm/libggml-hip.so</code> を <code>ldd</code> で確認。依存チェーン：<code>libhipblas.so.2.3.60303</code> → <code>librocblas.so.4.3.60303</code> → <code>libamdhip64.so.6</code> → <code>hsa-runtime64</code>。</li>
-        <li><code>.hip_fatbin</code> セクションは 587 MiB。<code>__CLANG_OFFLOAD_BUNDLE__</code> が連結されたストリームであり、単一の per-target blob ではありません。</li>
+        <li><code>.hip_fatbin</code> セクションは 587 MiB。<code>__CLANG_OFFLOAD_BUNDLE__</code> が連結されたストリームであり、単一の per-target blob ではない。</li>
         <li><code>clang-offload-bundler --list</code> で <code>hipv4-amdgcn-amd-amdhsa--gfx1201</code> ターゲットの存在を確認。</li>
-        <li>gfx1201 固有の全 bundle は wavefront_size = 32。現行 inspect ウィンドウでは <code>v_mfma</code> 命令は検出されていません。</li>
+        <li>gfx1201 固有の全 bundle は wavefront_size = 32。<code>v_mfma</code> 命令は現行 inspect ウィンドウでは未検出。</li>
       </ul>
       <ul class="en">
-        <li>Confirmed <code>/usr/local/lib/ollama/rocm/libggml-hip.so</code> via <code>ldd</code>. Dependency chain: <code>libhipblas.so.2.3.60303</code> → <code>librocblas.so.4.3.60303</code> → <code>libamdhip64.so.6</code> → <code>hsa-runtime64</code>.</li>
         <li>The <code>.hip_fatbin</code> section is 587 MiB, a concatenated <code>__CLANG_OFFLOAD_BUNDLE__</code> stream — not a single per-target blob.</li>
-        <li>Confirmed <code>hipv4-amdgcn-amd-amdhsa--gfx1201</code> target presence via <code>clang-offload-bundler --list</code>.</li>
-        <li>All gfx1201-targeted bundles have wavefront_size = 32. No <code>v_mfma</code> instructions detected in the current inspection window.</li>
+        <li><code>hipv4-amdgcn-amd-amdhsa--gfx1201</code> target presence confirmed via <code>clang-offload-bundler --list</code>.</li>
+        <li>All gfx1201 bundles: wavefront_size=32. No <code>v_mfma</code> detected in the current inspection window.</li>
       </ul>
+
       <table class="data-table" style="margin-top:10px;">
         <thead>
           <tr>
@@ -77,29 +178,73 @@
           </tr>
         </thead>
         <tbody>
-          <tr><td><code>bundle_0012</code></td><td>173 KB</td><td><code>dequantize_block_q4_K&lt;float&gt;</code></td><td><span class="ja">Q4_K dequant (v_fma:130, global_load:325)</span><span class="en">Q4_K dequant (v_fma:130, global_load:325)</span></td></tr>
+          <tr><td><code>bundle_0012</code></td><td>173 KB</td><td><code>dequantize_block_q4_K&lt;float&gt;</code></td><td><span class="ja">Q4_K dequant（v_fma:130, global_load:325）</span><span class="en">Q4_K dequant (v_fma:130, global_load:325)</span></td></tr>
           <tr><td><code>bundle_0014</code></td><td>210 KB</td><td><code>cpy_f32_q&lt;q4_0&gt;</code></td><td><span class="ja">quantized copy / transpose helper</span><span class="en">quantized copy / transpose helper</span></td></tr>
           <tr><td><code>bundle_0019</code></td><td>337 KB</td><td><code>flash_attn_ext_f16&lt;...&gt;</code></td><td><span class="ja">Flash Attention（多数 template variant）</span><span class="en">Flash Attention (many template variants)</span></td></tr>
-          <tr><td><code>bundle_0030</code></td><td>1019 KB</td><td><code>mul_mat_vec_q&lt;Q4_K,1,false&gt;</code></td><td><span class="ja">Q4_K MMVQ anchor (sgpr:32–34, vgpr:26–61)</span><span class="en">Q4_K MMVQ anchor (sgpr:32–34, vgpr:26–61)</span></td></tr>
+          <tr style="background:#f0f7ff;"><td><code>bundle_0030</code></td><td>1019 KB</td><td><code>mul_mat_vec_q&lt;Q4_K,1,false&gt;</code></td><td><span class="ja"><strong>Q4_K MMVQ anchor</strong>（decode 経路の主候補）sgpr:32–34, vgpr:26–61</span><span class="en"><strong>Q4_K MMVQ anchor</strong> (primary candidate for decode path) sgpr:32–34, vgpr:26–61</span></td></tr>
           <tr><td><code>bundle_0037</code></td><td>17 KB</td><td><code>quantize_mmq_q8_1&lt;layout0/1/2&gt;</code></td><td><span class="ja">MMQ repack helper</span><span class="en">MMQ repack helper</span></td></tr>
-          <tr><td><code>bundle_0039</code></td><td>332 KB</td><td><code>rope_multi/rope_neox/rope_norm</code></td><td><span class="ja">RoPE family (sgpr:19–29, vgpr:19–20)</span><span class="en">RoPE family (sgpr:19–29, vgpr:19–20)</span></td></tr>
-          <tr><td><code>bundle_0096</code></td><td>918 KB</td><td><code>mul_mat_q&lt;Q4_K,8,false&gt;</code></td><td><span class="ja">exact Q4_K MMQ anchor (sgpr:36, vgpr:51)</span><span class="en">exact Q4_K MMQ anchor (sgpr:36, vgpr:51)</span></td></tr>
+          <tr><td><code>bundle_0039</code></td><td>332 KB</td><td><code>rope_multi/rope_neox/rope_norm</code></td><td><span class="ja">RoPE family（sgpr:19–29, vgpr:19–20）</span><span class="en">RoPE family (sgpr:19–29, vgpr:19–20)</span></td></tr>
+          <tr style="background:#f0f7ff;"><td><code>bundle_0096</code></td><td>918 KB</td><td><code>mul_mat_q&lt;Q4_K,8,false&gt;</code></td><td><span class="ja"><strong>Q4_K MMQ anchor</strong>（prefill / large-batch 経路の主候補）sgpr:36, vgpr:51</span><span class="en"><strong>Q4_K MMQ anchor</strong> (primary candidate for prefill / large-batch path) sgpr:36, vgpr:51</span></td></tr>
         </tbody>
       </table>
     </section>
 
-    <!-- 未確定事項 -->
+    <!-- ── 示せること / 示せないこと ───────────────────────── -->
+    <section class="card">
+      <h2><span class="ja">示せること / 示せないこと</span><span class="en">What Can and Cannot Be Shown</span></h2>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th><span class="ja">示せること</span><span class="en">Can Show</span></th>
+            <th><span class="ja">示せないこと</span><span class="en">Cannot Show</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="ja">gfx1200 / gfx1201 向け custom kernel が fatbin 内に存在する（文字列スキャン確認）</span><span class="en">gfx1200 / gfx1201 custom kernels exist in the fatbin (string scan confirmed)</span></td>
+            <td><span class="ja">live case でどの bundle が実際に dispatch されたか（dispatch-safe observer なし）</span><span class="en">Which bundle was actually dispatched in the live case (no dispatch-safe observer)</span></td>
+          </tr>
+          <tr>
+            <td><span class="ja">gfx900 / gfx942 向け custom kernel が fatbin 内に存在しないこと（文字列スキャン）</span><span class="en">gfx900 / gfx942 custom kernels are absent from the fatbin (string scan)</span></td>
+            <td><span class="ja">gfx942（MI300X）の別 Ollama build が gfx942 custom kernel を持つかは未確認</span><span class="en">Whether a separate gfx942 Ollama build includes gfx942 custom kernels is unconfirmed</span></td>
+          </tr>
+          <tr>
+            <td><span class="ja">bundle_0030（MMVQ）・bundle_0096（MMQ）・bundle_0019（FA）の逆アセンブリ確認（wavefront_size=32）</span><span class="en">Disassembly confirmed for bundle_0030 (MMVQ), bundle_0096 (MMQ), bundle_0019 (FA) — wavefront_size=32</span></td>
+            <td><span class="ja">.hip_fatbin スキャンは bounded であり、後半に未抽出 cluster が残っている可能性</span><span class="en">The .hip_fatbin scan was bounded; additional clusters may remain in later sections</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ── 未確定事項 ──────────────────────────────────────── -->
     <section class="card">
       <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
       <ul class="ja">
-        <li><code>.hip_fatbin</code> のスキャンは bounded であり、後半に未抽出の <code>mul_mat_q</code> cluster が残っている可能性があります。</li>
-        <li>live short case での各 bundle の実際の参加比率は、dispatch-safe observer なしには確定しません。</li>
-        <li>Flash Attention entry の一部は helper trampoline であり、1シンボル＝1 kernel body の単純解釈が成立しない箇所があります。</li>
+        <li>live short case での各 bundle の実際の参加比率は、dispatch-safe observer なしには確定しない。</li>
+        <li>Flash Attention entry の一部は helper trampoline であり、1シンボル＝1 kernel body の単純解釈が成立しない箇所がある。</li>
+        <li>gfx942（MI300X）向けの Ollama 別 bundle に custom kernel が存在するか。</li>
+        <li>gfx900 が BLAS fallback のみで動く場合、throughput はどの程度か（MI25 実機 rocprofv3 による定量化が可能）。</li>
       </ul>
       <ul class="en">
-        <li>The <code>.hip_fatbin</code> scan was bounded; additional <code>mul_mat_q</code> clusters may remain in later sections.</li>
-        <li>The actual participation ratio of each bundle in the live short case cannot be determined without a dispatch-safe observer.</li>
-        <li>Some Flash Attention entries are helper trampolines; the simple one-symbol-to-one-kernel-body interpretation does not hold for those cases.</li>
+        <li>Actual participation ratio of each bundle in the live short case cannot be determined without a dispatch-safe observer.</li>
+        <li>Some Flash Attention entries are helper trampolines; the simple one-symbol-to-one-kernel-body interpretation does not hold there.</li>
+        <li>Whether a separate gfx942 Ollama bundle includes custom kernels for MI300X.</li>
+        <li>If gfx900 runs on BLAS fallback alone, what is the throughput? (Quantifiable via rocprofv3 on live MI25 hardware.)</li>
+      </ul>
+    </section>
+
+    <!-- ── 次の観測点 ──────────────────────────────────────── -->
+    <section class="card">
+      <h2><span class="ja">次の観測点</span><span class="en">Next Observation Points</span></h2>
+      <ul class="ja">
+        <li><a href="../../gpu-gen/rDNA4/R9070XT/rx9070xt-path.html">RX9070XT 経路観測</a> — MMVQ / MMQ / BLAS の dispatch 分岐と phase proxy による確認</li>
+        <li><a href="../rocBLAS/rocblas-index.html">rocBLAS</a> — gfx900 / gfx942 での BLAS fallback の受け手</li>
+        <li><a href="../../gpu-gen/rDNA4/R9070XT/rx9070xt-optimize-method.html">Observer 制約マップ</a> — なぜ direct observation ができないのか</li>
+      </ul>
+      <ul class="en">
+        <li><a href="../../gpu-gen/rDNA4/R9070XT/rx9070xt-path.html">RX9070XT Path Observation</a> — MMVQ / MMQ / BLAS dispatch branching and phase proxy confirmation</li>
+        <li><a href="../rocBLAS/rocblas-index.html">rocBLAS</a> — The recipient of BLAS fallback for gfx900 / gfx942</li>
+        <li><a href="../../gpu-gen/rDNA4/R9070XT/rx9070xt-optimize-method.html">Observer Constraint Map</a> — Why direct observation is not possible</li>
       </ul>
     </section>
 

@@ -25,59 +25,207 @@
 
     <section class="hero">
       <h1>Tensile</h1>
-      <p class="ja">AMD GPU 向けの GEMM / テンソル収縮カーネルを自動生成するベンチマーク駆動のカーネルジェネレータです。rocBLAS に組み込まれ、<code>Cijk_*</code> 命名規則の per-target hsaco を事前生成します。gfx1201 は公式サポートアーキテクチャとして登録されています。</p>
-      <p class="en">A benchmark-driven kernel generator that automatically creates optimized GEMM and tensor contraction kernels for AMD GPUs. Integrated into rocBLAS, it pre-generates per-target hsacos with the <code>Cijk_*</code> naming convention. gfx1201 is registered as a supported architecture.</p>
+      <p class="ja" style="font-size:1.05rem;font-weight:600;color:#fff;margin-bottom:10px;">
+        このページで得られる理解：<em>Tensile が生成した GEMM kernel は、どの世代に向けてビルドされているのか——ソースコードの登録状況と、実際に dispatch されるかどうかのギャップを記録する。</em>
+      </p>
+      <p class="en" style="font-size:1.05rem;font-weight:600;color:#fff;margin-bottom:10px;">
+        What you'll gain here: <em>Which GPU generations Tensile-generated GEMM kernels are built for — and the gap between source registration and whether they're actually dispatched.</em>
+      </p>
       <div class="hero-meta">
-        <span class="badge badge-confirmed ja">gfx1201: サポート済み</span>
-        <span class="badge badge-confirmed en">gfx1201: Supported</span>
-        <span class="badge badge-confirmed ja">RX9070XT: Cijk_* 逆アセンブリ確認</span>
-        <span class="badge badge-confirmed en">RX9070XT: Cijk_* disassembly confirmed</span>
+        <span class="badge badge-confirmed ja">gfx900 / gfx942 / gfx1201: ソース登録確認</span>
+        <span class="badge badge-confirmed en">gfx900 / gfx942 / gfx1201: Source registration confirmed</span>
+        <span class="badge badge-unresolved ja">gfx900 / gfx1201: 実 dispatch 未確認</span>
+        <span class="badge badge-unresolved en">gfx900 / gfx1201: Actual dispatch unconfirmed</span>
       </div>
     </section>
 
-    <!-- 位置づけ -->
+    <!-- ── このページの結論 ─────────────────────────────────── -->
+    <section class="card">
+      <h2><span class="ja">このページの結論</span><span class="en">Page Conclusion</span></h2>
+      <ul class="ja">
+        <li>gfx900（MI25）・gfx942（MI300X）・gfx1201（RX9070XT）の 3 世代はいずれも Tensile の <code>BASE_ARCHITECTURES</code> に登録済みで、ビルド対象として扱われる。</li>
+        <li>gfx1201 は逆アセンブリで <code>Cijk_*</code> family の実在を確認済み（wavefront_size=32、v_mfma なし）。</li>
+        <li>gfx900 は登録されているが、ggml-hip 側に gfx900 向け custom kernel が存在しないため、BLAS 経路での Tensile kernel 利用が実際の主経路である可能性が高い。</li>
+        <li>dispatch-safe observer なしには、catalog に含まれる kernel と実際に選ばれる kernel を結びつけることはできない。</li>
+      </ul>
+      <ul class="en">
+        <li>All three generations — gfx900 (MI25), gfx942 (MI300X), gfx1201 (RX9070XT) — are registered in Tensile's <code>BASE_ARCHITECTURES</code> and treated as build targets.</li>
+        <li>gfx1201: <code>Cijk_*</code> family confirmed via disassembly (wavefront_size=32, no v_mfma).</li>
+        <li>gfx900 is registered, but since ggml-hip has no gfx900 custom kernels, Tensile kernels via the BLAS path are likely the primary route on MI25.</li>
+        <li>Without a dispatch-safe observer, linking catalog entries to actually-selected kernels is not possible.</li>
+      </ul>
+    </section>
+
+    <!-- ── ROCm スタックにおける位置づけ ───────────────────── -->
     <section class="card">
       <h2><span class="ja">ROCm スタックにおける位置づけ</span><span class="en">Position in the ROCm Stack</span></h2>
       <p class="ja">Tensile は rocBLAS（一次）と hipBLASLt（TensileLite 経由）のバックエンドカーネルジェネレータです。GPU アーキテクチャ仕様を入力に、ベンチマーク自動調整（auto-tuning）を経てアセンブリレベルの最適 kernel を出力し、hsaco として <code>rocblas/library/</code> に配置します。</p>
       <p class="en">Tensile is the backend kernel generator for rocBLAS (primary) and hipBLASLt (via TensileLite). Given GPU architecture specifications, it produces assembly-level optimized kernels through automated benchmarking (auto-tuning), placing the resulting hsacos under <code>rocblas/library/</code>.</p>
       <div class="call-chain">
 Tensile (<span class="ja">ビルド時</span><span class="en">at build time</span>)
-  <span class="arrow">→</span> <span class="target">Cijk_*_gfx1201.hsaco</span>  <span class="branch">→ rocblas/library/Kernels.so-000-gfx1201.hsaco</span>
+  <span class="arrow">→</span> <span class="target">Cijk_*_gfx{900,942,1201}.hsaco</span>  <span class="branch">→ rocblas/library/Kernels.so-000-gfx*.hsaco</span>
 
 <span class="ja">実行時（rocBLAS 経由）:</span><span class="en">At runtime (via rocBLAS):</span>
-  rocBLAS <span class="arrow">→</span> <span class="target">Cijk_*</span> kernel dispatch
+  rocBLAS <span class="arrow">→</span> <span class="target">Processor enum lookup</span> <span class="arrow">→</span> <span class="target">Cijk_*</span> kernel dispatch
       </div>
+      <p class="ja" style="margin-top:10px;">→ 次の問い：<strong>「登録されている」は「ビルドされた kernel がある」ことを意味するが、「使われる」ことを意味しない。どの世代に向けて kernel が存在するのか？</strong></p>
+      <p class="en" style="margin-top:10px;">→ Next question: <strong>"Registered" means "a built kernel exists" — not that it will be used. Which generations have kernels built for them?</strong></p>
     </section>
 
-    <!-- gfx1201 対応 -->
+    <!-- ── 世代横断：ソース登録状況 ─────────────────────────── -->
     <section class="card">
-      <h2><span class="ja">gfx1201 対応状況</span><span class="en">gfx1201 Support Status</span></h2>
+      <h2><span class="ja">世代横断：Tensile ソース登録状況</span><span class="en">Cross-Generation: Tensile Source Registration</span></h2>
+
+      <p class="ja">
+        <strong>観測ポイント：</strong>どの GPU 世代が Tensile のビルド対象として登録されているか。<br>
+        <strong>文脈：</strong>「世代ごとの世界観」フレームで gfx900/gfx942/gfx1201 を比較するため、ソース側の登録状況を確認する。<br>
+        <strong>ソース：</strong><code>Tensile リポジトリ / next-cmake/cmake/TensileSupportedArchitectures.cmake</code>（line 32–51）および <code>Tensile/Tensile/Common.py</code>（line 320–331）
+      </p>
+      <p class="en">
+        <strong>Observation point:</strong> Which GPU generations are registered as Tensile build targets.<br>
+        <strong>Context:</strong> To compare gfx900/gfx942/gfx1201 under the "per-generation worldview" frame, confirm source-side registration.<br>
+        <strong>Source:</strong> <code>Tensile repository / next-cmake/cmake/TensileSupportedArchitectures.cmake</code> (lines 32–51) and <code>Tensile/Tensile/Common.py</code> (lines 320–331)
+      </p>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th><span class="ja">世代</span><span class="en">Generation</span></th>
+            <th>GFX</th>
+            <th><span class="ja">BASE_ARCHITECTURES</span><span class="en">BASE_ARCHITECTURES</span></th>
+            <th><span class="ja">Common.py コード名</span><span class="en">Common.py codename</span></th>
+            <th><span class="ja">xnack バリアント</span><span class="en">xnack variants</span></th>
+            <th><span class="ja">世界観</span><span class="en">Worldview</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>GCN5 / MI25</strong></td>
+            <td><code>gfx900</code></td>
+            <td><span class="badge badge-confirmed ja">登録済み（line 34）</span><span class="badge badge-confirmed en">Registered (line 34)</span></td>
+            <td><code>vega10</code></td>
+            <td><span class="ja">なし</span><span class="en">None</span></td>
+            <td><span class="ja">fallback が主戦場——ggml-hip に gfx900 向け kernel なし</span><span class="en">Fallback is the main stage — no gfx900 custom kernels in ggml-hip</span></td>
+          </tr>
+          <tr style="background:#fef9f0;">
+            <td><strong>RDNA4 / RX9070XT</strong></td>
+            <td><code>gfx1201</code></td>
+            <td><span class="badge badge-confirmed ja">登録済み（line 51）</span><span class="badge badge-confirmed en">Registered (line 51)</span></td>
+            <td><code>gfx1201</code></td>
+            <td><span class="ja">なし</span><span class="en">None</span></td>
+            <td><span class="ja">Cijk_* 実在確認済み、dispatch は observer 制約で未確定</span><span class="en">Cijk_* confirmed present; dispatch unresolved due to observer constraints</span></td>
+          </tr>
+          <tr>
+            <td><strong>CDNA4 / MI300X</strong></td>
+            <td><code>gfx942</code></td>
+            <td><span class="badge badge-confirmed ja">登録済み（line 38）</span><span class="badge badge-confirmed en">Registered (line 38)</span></td>
+            <td><code>aquavanjaram942</code></td>
+            <td><code>gfx942:xnack+</code> / <code>gfx942:xnack-</code></td>
+            <td><span class="ja">本命経路（正規ルートの確認が主）</span><span class="en">Primary path expected; canonical route confirmation is the main work</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-confirmed">
+        <span class="ja">3 世代とも <code>BASE_ARCHITECTURES</code> に登録済み。ただし gfx900 は ggml-hip 側に custom kernel を持たないため、LLM 推論での Tensile kernel 利用は BLAS fallback 経由に限定される可能性が高い。</span>
+        <span class="en">All three generations are registered in <code>BASE_ARCHITECTURES</code>. However, since ggml-hip has no gfx900 custom kernels, Tensile kernel usage in LLM inference on MI25 is likely limited to the BLAS fallback path.</span>
+      </div>
+
+      <p class="ja" style="margin-top:10px;">→ 次の問い：<strong>gfx1201 向けに実際に生成された Tensile kernel とはどんなものか？</strong></p>
+      <p class="en" style="margin-top:10px;">→ Next question: <strong>What do the actual Tensile kernels generated for gfx1201 look like?</strong></p>
+    </section>
+
+    <!-- ── gfx1201 実機観測 ────────────────────────────────── -->
+    <section class="card">
+      <h2><span class="ja">gfx1201 実機観測（RX9070XT）</span><span class="en">gfx1201 Live Observation (RX9070XT)</span></h2>
+
+      <p class="ja"><strong>観測ポイント：</strong>gfx1201 向け Tensile kernel が実際に bundle に存在し、逆アセンブリで確認できるか。</p>
+      <p class="en"><strong>Observation point:</strong> Whether gfx1201 Tensile kernels actually exist in the live bundle and can be confirmed via disassembly.</p>
+
       <ul class="ja">
-        <li><code>Tensile/next-cmake/cmake/TensileSupportedArchitectures.cmake</code>（line 51）に <code>gfx1201</code> がサポートアーキテクチャとして登録されています。</li>
-        <li><code>Tensile/Tensile/Common.py</code>（line 331）でも同様に登録済みです。</li>
-        <li>RX9070XT 実機 bundle に <code>Kernels.so-000-gfx1201.hsaco</code> が含まれることを確認（Phase C）。</li>
+        <li>RX9070XT 実機 bundle（<code>/usr/local/lib/ollama/rocm/rocblas/library/</code>）に gfx1201 ターゲットのファイルが <strong>56 本</strong>存在（Phase C 確認）。</li>
+        <li><code>Kernels.so-000-gfx1201.hsaco</code>（standalone ELF AMD GPU object）が含まれることを確認。</li>
         <li>Phase E 逆アセンブリで <code>Cijk_S_GA</code>（sgpr:14, vgpr:10）・<code>Cijk_S_PostGSU3</code>（sgpr:21, vgpr:11）等を確認。いずれも wavefront_size=32。</li>
+        <li><code>v_mfma</code> 命令は現行 inspect ウィンドウでは検出なし（matrix multiply-accumulate の未使用を示唆するが、inspect window が全 kernel をカバーしているわけではない）。</li>
       </ul>
       <ul class="en">
-        <li><code>gfx1201</code> is registered as a supported architecture in <code>Tensile/next-cmake/cmake/TensileSupportedArchitectures.cmake</code> (line 51).</li>
-        <li>Also registered in <code>Tensile/Tensile/Common.py</code> (line 331).</li>
-        <li>Confirmed that <code>Kernels.so-000-gfx1201.hsaco</code> is present in the RX9070XT live bundle (Phase C).</li>
-        <li>Phase E disassembly confirmed <code>Cijk_S_GA</code> (sgpr:14, vgpr:10) and <code>Cijk_S_PostGSU3</code> (sgpr:21, vgpr:11), both with wavefront_size=32.</li>
+        <li><strong>56 gfx1201-targeted files</strong> found in the RX9070XT live bundle (<code>/usr/local/lib/ollama/rocm/rocblas/library/</code>) (Phase C confirmed).</li>
+        <li><code>Kernels.so-000-gfx1201.hsaco</code> (standalone ELF AMD GPU object) confirmed present.</li>
+        <li>Phase E disassembly confirmed <code>Cijk_S_GA</code> (sgpr:14, vgpr:10) and <code>Cijk_S_PostGSU3</code> (sgpr:21, vgpr:11), both wavefront_size=32.</li>
+        <li>No <code>v_mfma</code> instructions in the current inspection window (suggests matrix multiply-accumulate not used, but window does not cover all kernels).</li>
       </ul>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th><span class="ja">項目</span><span class="en">Item</span></th>
+            <th><span class="ja">確認値</span><span class="en">Confirmed Value</span></th>
+            <th><span class="ja">ソース</span><span class="en">Source</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="ja">gfx1201 ファイル数</span><span class="en">gfx1201 file count</span></td><td>56（Kernels.so + TensileLibrary variants）</td><td>Phase C 実機確認</td></tr>
+          <tr><td>wavefront_size</td><td>32</td><td>Phase E 逆アセンブリ / Disassembly</td></tr>
+          <tr><td><span class="ja">主要 kernel family</span><span class="en">Primary kernel families</span></td><td><code>Cijk_S_GA</code>・<code>Cijk_S_PostGSU3</code>・<code>Cijk_S_PostGSU3_VW2</code></td><td>Phase E 逆アセンブリ / Disassembly</td></tr>
+          <tr><td>v_mfma</td><td><span class="badge badge-unresolved ja">inspect window 内では未検出</span><span class="badge badge-unresolved en">Not detected in inspect window</span></td><td>Phase E</td></tr>
+        </tbody>
+      </table>
     </section>
 
-    <!-- 未確定事項 -->
+    <!-- ── 示せること / 示せないこと ───────────────────────── -->
+    <section class="card">
+      <h2><span class="ja">示せること / 示せないこと</span><span class="en">What Can and Cannot Be Shown</span></h2>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th><span class="ja">示せること</span><span class="en">Can Show</span></th>
+            <th><span class="ja">示せないこと</span><span class="en">Cannot Show</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="ja">gfx900 / gfx942 / gfx1201 全世代が Tensile ビルド対象として登録されている（ソース確認）</span><span class="en">All three generations (gfx900/gfx942/gfx1201) are registered as Tensile build targets (source-confirmed)</span></td>
+            <td><span class="ja">登録 = 実際に dispatch される、ではない。catalog 上の存在と実行は別</span><span class="en">Registration ≠ actually dispatched. Catalog presence and execution are separate</span></td>
+          </tr>
+          <tr>
+            <td><span class="ja">gfx1201 向け <code>Cijk_*</code> kernel が bundle に存在すること（Phase C/E 実機確認）</span><span class="en">gfx1201 <code>Cijk_*</code> kernels exist in the live bundle (Phase C/E confirmed)</span></td>
+            <td><span class="ja">LLM 推論中に <code>Cijk_*</code> が dispatch されたかは、dispatch-safe observer なしには確定不可</span><span class="en">Whether <code>Cijk_*</code> was dispatched during LLM inference cannot be confirmed without a dispatch-safe observer</span></td>
+          </tr>
+          <tr>
+            <td><span class="ja">gfx900 は ggml-hip fatbin に custom kernel を持たないこと（文字列スキャン確認）</span><span class="en">gfx900 has no custom kernels in the ggml-hip fatbin (string scan confirmed)</span></td>
+            <td><span class="ja">gfx900 での BLAS 経由 Tensile dispatch の詳細（どの kernel が選ばれるか）は未観測</span><span class="en">Details of BLAS-mediated Tensile dispatch on gfx900 (which kernel is selected) remain unobserved</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ── 未確定事項 ──────────────────────────────────────── -->
     <section class="card">
       <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
       <ul class="ja">
-        <li>catalog 項目と実行 kernel の厳密対応は、dispatcher attribution なしには確定しません。</li>
-        <li>RX9070XT short live case で <code>Cijk_*</code> family が実際に dispatch されたかは未確定です。</li>
-        <li>MI25 と RX9070XT で同一 shape に対する Tensile kernel 選択がどう異なるかは未観測です。</li>
+        <li>gfx900 実機（MI25）で BLAS fallback 経由の <code>Cijk_*</code> dispatch が実際に起きているか。rocprofv3 による直接観測が有効な世代のため、確認可能なはず。</li>
+        <li>gfx942（MI300X）向けの Tensile kernel bundle が実際にどの <code>Cijk_*</code> family を含むか（ビルド済み hsaco の inventory）。</li>
+        <li><code>v_mfma</code> の欠如が inspect window の限界なのか、gfx1201 向けビルドの設計上の選択なのか。</li>
       </ul>
       <ul class="en">
-        <li>Strict correspondence between catalog entries and executed kernels is not confirmed without dispatcher attribution.</li>
-        <li>Whether the <code>Cijk_*</code> family was actually dispatched in the RX9070XT short live case is unresolved.</li>
-        <li>How Tensile kernel selection differs for the same shape between MI25 and RX9070XT has not been observed.</li>
+        <li>Whether BLAS-fallback-mediated <code>Cijk_*</code> dispatch actually occurs on gfx900 (MI25). Since rocprofv3 direct observation is available on this generation, it should be confirmable.</li>
+        <li>Which <code>Cijk_*</code> families the gfx942 (MI300X) Tensile kernel bundle actually contains (hsaco inventory).</li>
+        <li>Whether the absence of <code>v_mfma</code> reflects the inspect window's limits or a deliberate design choice in the gfx1201 build.</li>
+      </ul>
+    </section>
+
+    <!-- ── 次の観測点 ──────────────────────────────────────── -->
+    <section class="card">
+      <h2><span class="ja">次の観測点</span><span class="en">Next Observation Points</span></h2>
+      <ul class="ja">
+        <li><a href="../rocBLAS/rocblas-index.html">rocBLAS</a> — Processor enum による世代識別と kernel ロードの仕組み</li>
+        <li><a href="../ggml-hip/ggml-hip-index.html">ggml-hip</a> — fatbin 内の世代別ターゲット（gfx900/gfx942 が存在しない理由）</li>
+        <li><a href="../../gpu-gen/rDNA4/R9070XT/rx9070xt-path.html">RX9070XT 経路観測</a> — dispatch 分岐（MMVQ / MMQ / BLAS）の実際</li>
+      </ul>
+      <ul class="en">
+        <li><a href="../rocBLAS/rocblas-index.html">rocBLAS</a> — Generation identification via Processor enum and kernel loading mechanics</li>
+        <li><a href="../ggml-hip/ggml-hip-index.html">ggml-hip</a> — Per-generation targets in the fatbin (why gfx900/gfx942 are absent)</li>
+        <li><a href="../../gpu-gen/rDNA4/R9070XT/rx9070xt-path.html">RX9070XT Path Observation</a> — Actual dispatch branching (MMVQ / MMQ / BLAS)</li>
       </ul>
     </section>
 
