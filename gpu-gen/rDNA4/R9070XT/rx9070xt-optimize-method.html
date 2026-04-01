@@ -479,6 +479,17 @@
           </tr>
         </tbody>
       </table>
+
+      <p class="ja" style="margin-top:14px;">
+        この一般 map を広げる最初の別枝としては <strong>IQ1_S</strong> を先に置く。
+        理由は、source 上で `MMVQ` / `MMQ` の両方に entry があり、しかも既存の RDNA4 fatbin には `bundle_0082` という `gfx1201` `mul_mat_q` anchor がすでに見えているから。
+        `Q5_K_M` はその次に回す。
+      </p>
+      <p class="en" style="margin-top:14px;">
+        The first branch to broaden this general map with is <strong>IQ1_S</strong>.
+        The reason is that it already has source-side entry into both `MMVQ` and `MMQ`, and the current RDNA4 fatbin already exposes a `gfx1201` `mul_mat_q` anchor in `bundle_0082`.
+        `Q5_K_M` comes after that.
+      </p>
     </section>
 
     <!-- ── 次の観測点 ─────────────────────────────────────────────── -->
@@ -500,7 +511,7 @@
         </li>
         <li>
           <strong>observer が blocked な間の次善策：</strong>
-          `Q4_K_M` ケース研究を維持しつつ、`tensor type -> MMVQ / MMQ / BLAS fallback` の量子化横断 dispatch map を source から先に広げる。
+          `Q4_K_M` ケース研究を維持しつつ、まず `IQ1_S` を別枝比較対象として固定し、そのうえで `tensor type -> MMVQ / MMQ / BLAS fallback` の量子化横断 dispatch map を広げる。
         </li>
         <li>
           <strong>このページを読んだ後は：</strong>
@@ -521,7 +532,7 @@
         </li>
         <li>
           <strong>Best next move while observers remain blocked:</strong>
-          Keep the `Q4_K_M` case study, but broaden the source-side `tensor type -> MMVQ / MMQ / BLAS fallback` dispatch map before adding more workloads.
+          Keep the `Q4_K_M` case study, fix `IQ1_S` as the first alternative branch, then broaden the source-side `tensor type -> MMVQ / MMQ / BLAS fallback` map before adding more workloads.
         </li>
         <li>
           <strong>After this page:</strong>
