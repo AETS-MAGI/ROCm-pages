@@ -22,55 +22,212 @@
 
     <section class="hero">
       <h1>ROCm-pages</h1>
-      <p class="ja">AMD ROCm スタックの実装挙動を、GPU 世代ごとに観測・記録する技術ノートです。</p>
-      <p class="en">Technical notes recording AMD ROCm stack behavior per GPU generation, grounded in observation logs.</p>
-    </section>
 
-    <section class="card">
-      <h2><span class="ja">このサイトについて</span><span class="en">About This Site</span></h2>
+      <p class="ja" style="font-size:1.05rem;font-weight:600;color:#fff;margin-bottom:10px;">
+        このサイトで得られる理解：<em>AMD ROCm スタックで LLM を動かすとき、GPU の中で「何が」「どの経路で」実行されているのか——動いたかどうかではなく、なぜそのパスを通ったかを記録する。</em>
+      </p>
+      <p class="en" style="font-size:1.05rem;font-weight:600;color:#fff;margin-bottom:10px;">
+        What you'll gain here: <em>when running LLMs on AMD ROCm, "what" is executing and "which path" it takes inside the GPU — not just "does it work" but "why did it take that path."</em>
+      </p>
+
       <p class="ja">
-        ROCm スタックの挙動を「動いたかどうか」だけでなく、「なぜそのパスを通ったか」まで記録します。
-        観測済み事実と未確定事項を分けて扱い、再現条件を明示します。
+        GPU の推論経路は、ソースコードに書いてあっても実行時にしか決まらない。
+        同じ GPU でも量子化方式・バッチサイズ・observer の有無で通る経路が変わる。
+        このサイトはその経路を、証拠クラスを明示しながら観測・記録する。
       </p>
       <p class="en">
-        This site documents ROCm stack behavior not just in terms of "did it work" but "why did it take that path."
-        Observed facts and open questions are kept separate; reproduction conditions are stated explicitly.
+        GPU inference paths are specified in source code, but only determined at runtime.
+        The same GPU can take different paths depending on quantization, batch size, or whether an observer is active.
+        This site observes and records those paths, with explicit evidence classification.
       </p>
+
+      <div class="hero-meta">
+        <span class="badge badge-env">GCN5 / MI25</span>
+        <span class="badge badge-env">RDNA4 / RX9070XT</span>
+        <span class="badge badge-env">CDNA4 / MI300X</span>
+        <span class="badge badge-env">Ollama + ggml-hip</span>
+      </div>
     </section>
 
+    <!-- ── 世代ごとの観測世界観 ──────────────────────────────────── -->
     <section class="card">
-      <h2><span class="ja">観測状況</span><span class="en">Investigation Status</span></h2>
+      <h2>
+        <span class="ja">3 つの GPU 世代、3 つの「観測世界」</span>
+        <span class="en">Three GPU Generations, Three "Observation Worlds"</span>
+      </h2>
+
+      <p class="ja">
+        GPU 世代を単なる「サポート状況の違い」ではなく、<strong>観測そのものの性格の違い</strong>として捉えるのがこのサイトの設計軸。
+        どの世代を読むかによって、問いの立て方が変わる。
+      </p>
+      <p class="en">
+        The design axis of this site treats GPU generations not as simple "support status differences" but as <strong>differences in the very nature of observation</strong>.
+        Which generation you read changes how the question is framed.
+      </p>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th><span class="ja">世代</span><span class="en">Generation</span></th>
+            <th><span class="ja">観測世界の性格</span><span class="en">Observation World</span></th>
+            <th><span class="ja">調査状況</span><span class="en">Status</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <strong>GCN5 / MI25</strong><br>
+              <code>gfx900</code>
+            </td>
+            <td>
+              <span class="ja"><strong>fallback が主戦場。</strong>本命経路は通らない前提で観測する。fallback の構造を正確に記録することが価値。rocprofv3 が有効で直接観測できる世代。</span>
+              <span class="en"><strong>Fallback is the main stage.</strong> Observe assuming the primary path won't run. Accurately mapping fallback structure is the value. Direct observation via rocprofv3 is available.</span>
+            </td>
+            <td><span class="badge badge-confirmed ja">観測進行中</span><span class="badge badge-confirmed en">Active observation</span></td>
+          </tr>
+          <tr style="background:#fef9f0;">
+            <td>
+              <strong>RDNA4 / RX9070XT</strong><br>
+              <code>gfx1201</code>
+            </td>
+            <td>
+              <span class="ja"><strong>通るものと通らないものが混在。観測しないと分からない。</strong>observer が軒並みブロックされる中で、phase proxy による間接観測が唯一の現実的手段。研究として最も面白い世代。</span>
+              <span class="en"><strong>Mixed: some paths run, some don't. Must observe to know.</strong> With all direct observers blocked, phase proxy is the only viable approach. The most interesting generation as research.</span>
+            </td>
+            <td><span class="badge badge-inferred ja">Phase A–F 完了 / 調査中</span><span class="badge badge-inferred en">Phase A–F done / ongoing</span></td>
+          </tr>
+          <tr>
+            <td>
+              <strong>CDNA4 / MI300X</strong><br>
+              <code>gfx942</code>
+            </td>
+            <td>
+              <span class="ja"><strong>ほぼ本命が通る（要確認）。</strong>正規ルートの確認が主。直接観測環境の整備が先行課題。</span>
+              <span class="en"><strong>Primary path expected to run (needs confirmation).</strong> Verifying the canonical path is the main work. Setting up direct observation is the prerequisite.</span>
+            </td>
+            <td><span class="badge badge-limited ja">枠組み先行</span><span class="badge badge-limited en">Scaffold only</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ── 初めて来た人へ：読み進め方 ─────────────────────────── -->
+    <section class="card">
+      <h2>
+        <span class="ja">初めて来た方へ — どこから読むか</span>
+        <span class="en">New Here? — Where to Start</span>
+      </h2>
+
+      <p class="ja">
+        このサイトは複数の「入口」がある。目的に合わせて選んでほしい。
+      </p>
+      <p class="en">
+        This site has several entry points. Choose based on your goal.
+      </p>
+
       <ul class="ja">
-        <li><strong>GCN5 / MI25</strong> — 最も観測が進んでいる世代。<code>fallback_confirmed</code> / <code>dispatch_confirmed</code> 確認済み。同一 run 比で最大約 9.4x の tok/s 改善を観測（条件限定）。</li>
-        <li><strong>rDNA4 / RX9070XT</strong> — 方法論移植パイロット実施中（C14 系）。ROCm 経路・dispatch observer 確保済み。</li>
-        <li><strong>cDNA4 / MI300X</strong> — 枠組み先行。実測追記はこれから。</li>
+        <li>
+          <strong>「なぜこの調査が難しく面白いのか」を知りたい →</strong>
+          <a href="gpu-gen/rDNA4/R9070XT/rx9070xt-investigation-overview.html">RX9070XT 調査の読み方</a><br>
+          C14 portability pilot の背景、observer 問題、世代ごとの観測世界観を平易に解説。
+        </li>
+        <li>
+          <strong>「どの kernel が実際に選ばれるのか」を知りたい →</strong>
+          <a href="gpu-gen/rDNA4/R9070XT/rx9070xt-path.html">RX9070XT 経路観測</a><br>
+          dispatch 分岐（MMVQ / MMQ / BLAS）の理論から binary 確認・phase proxy まで3ステップで追う。
+        </li>
+        <li>
+          <strong>「なぜ直接観測できないのか」を知りたい →</strong>
+          <a href="gpu-gen/rDNA4/R9070XT/rx9070xt-optimize-method.html">Observer 制約マップ</a><br>
+          rocprofv3・--attach・ROCBLAS_LAYER を試した消去法の記録。
+        </li>
+        <li>
+          <strong>「Ollama はどのライブラリを使っているのか」を知りたい →</strong>
+          <a href="ROCm-common/bundle/rocm-bundle-index.html">ROCm バンドル</a><br>
+          12 ライブラリの依存チェーンと bundle-first ロードの仕組み。
+        </li>
+        <li>
+          <strong>GPU 世代別・ROCm コンポーネント別の全ページ一覧 →</strong>
+          <a href="gpu-gen/index.html">GPU 世代別</a> / <a href="ROCm-common/rocm-index.html">ROCm コンポーネント</a>
+        </li>
       </ul>
       <ul class="en">
-        <li><strong>GCN5 / MI25</strong> — Most advanced investigation. <code>fallback_confirmed</code> / <code>dispatch_confirmed</code> verified. Up to ~9.4× tok/s improvement observed in same-run comparisons (conditions constrained).</li>
-        <li><strong>rDNA4 / RX9070XT</strong> — Methodology portability pilot in progress (C14 series). ROCm path and dispatch-safe observer established.</li>
-        <li><strong>cDNA4 / MI300X</strong> — Scaffold only. Measurements pending.</li>
+        <li>
+          <strong>Want to understand "why this investigation is hard and interesting"? →</strong>
+          <a href="gpu-gen/rDNA4/R9070XT/rx9070xt-investigation-overview.html">How to Read the RX9070XT Investigation</a><br>
+          Plain-language explanation of the C14 pilot background, observer problem, and per-generation observation worldview.
+        </li>
+        <li>
+          <strong>Want to know "which kernel actually gets selected"? →</strong>
+          <a href="gpu-gen/rDNA4/R9070XT/rx9070xt-path.html">RX9070XT Path Observation</a><br>
+          Three-step trace from dispatch branch theory (MMVQ / MMQ / BLAS) through binary confirmation and phase proxy.
+        </li>
+        <li>
+          <strong>Want to know "why direct observation is blocked"? →</strong>
+          <a href="gpu-gen/rDNA4/R9070XT/rx9070xt-optimize-method.html">Observer Constraint Map</a><br>
+          Record of the elimination process — rocprofv3, --attach, ROCBLAS_LAYER, all failed.
+        </li>
+        <li>
+          <strong>Want to know "which libraries Ollama actually uses"? →</strong>
+          <a href="ROCm-common/bundle/rocm-bundle-index.html">ROCm Bundle</a><br>
+          12-library dependency chain and bundle-first loading mechanics.
+        </li>
+        <li>
+          <strong>Full page index by GPU generation or ROCm component →</strong>
+          <a href="gpu-gen/index.html">GPU Generations</a> / <a href="ROCm-common/rocm-index.html">ROCm Components</a>
+        </li>
       </ul>
     </section>
 
+    <!-- ── サイトの方針 ──────────────────────────────────────────── -->
     <section class="card">
-      <h2><span class="ja">セクション一覧</span><span class="en">Sections</span></h2>
-      <ul class="nav-list">
-        <li><a href="gpu-gen/index.html"><span class="ja">GPU 世代別</span><span class="en">GPU Generations</span></a></li>
-        <li><a href="ROCm-common/rocm-index.html"><span class="ja">ROCm 共通コンポーネント</span><span class="en">ROCm Components</span></a></li>
-        <li><a href="LLVM/llvm-index.html">LLVM</a></li>
-      </ul>
-    </section>
+      <h2>
+        <span class="ja">サイトの方針 — 何を記録し、何を記録しないか</span>
+        <span class="en">Site Policy — What Is and Is Not Recorded</span>
+      </h2>
 
-    <section class="card">
-      <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
-      <ul class="ja">
-        <li>kernel / solver レベルの厳密な因果関係は、現時点では確定していません。</li>
-        <li>未観測のケースや他ワークロードへの一般化は保留します。</li>
-      </ul>
-      <ul class="en">
-        <li>Precise causal attribution at the kernel/solver level has not been confirmed.</li>
-        <li>Generalization to unobserved cases and other workloads is withheld.</li>
-      </ul>
+      <p class="ja">
+        このサイトは「動いた / 動かなかった」ではなく「なぜそのパスを通ったか」を記録する。
+        証拠クラスを色分けし、推論と事実を分けて扱う。
+      </p>
+      <p class="en">
+        This site records "why did it take that path" rather than "did it work / did it not."
+        Evidence classes are color-coded; inferences and confirmed facts are kept separate.
+      </p>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th><span class="ja">表示</span><span class="en">Display</span></th>
+            <th><span class="ja">意味</span><span class="en">Meaning</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="badge badge-confirmed">確認済み / Confirmed</span></td>
+            <td><span class="ja">実機コマンド・ログ・逆アセンブリで直接確認した事実</span><span class="en">Directly confirmed via live commands, logs, or disassembly</span></td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-inferred">推論 / Inferred</span></td>
+            <td><span class="ja">確認した事実から論理的に導かれる解釈。直接確認ではない</span><span class="en">Interpretation derived from confirmed facts. Not directly confirmed</span></td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-unresolved">未確定 / Unresolved</span></td>
+            <td><span class="ja">observer 制約または未実施の観測により確定できない事項</span><span class="en">Cannot be determined due to observer constraints or pending observations</span></td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-limited">制約あり / Limited</span></td>
+            <td><span class="ja">部分的に確認できているが tool 制限により完全ではない</span><span class="en">Partially confirmed but incomplete due to tool limitations</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="ja" style="margin-top:10px;">
+        「未確定が多い」ことは品質の低さを意味しない——未確定を正直に記録することがこのサイトの品質基準。
+      </p>
+      <p class="en" style="margin-top:10px;">
+        "Many unresolved items" does not indicate low quality — honestly recording what is unresolved is this site's quality standard.
+      </p>
     </section>
 
     <div class="note">

@@ -505,6 +505,21 @@
           So for current Ollama, the accurate statement is: `IQ1_S` has a narrow requantize helper path, but existing-GGUF direct import does work.
         </span>
       </div>
+
+      <div class="callout callout-inferred" style="margin-top:12px;">
+        <span class="ja">
+          さらに bounded probe では、`IQ1_S` も `Q4_K` に近い二段構えで読めた。
+          binary 側では `bundle_0030` に `IQ1_S` MMVQ (`ggml_type19 1..8`)、`bundle_0082` に `IQ1_S` MMQ (`ggml_type19 8..128`) があり、
+          live prompt window でも `prompt_eval_count = 7` は `MMVQ-compatible`、`13` は `MMQ-eligible` と読むのが自然。
+          まだ exact dispatch proof ではないが、`IQ1_S` も source / binary / phase proxy の三層で narrowing できるところまで来た。
+        </span>
+        <span class="en">
+          A bounded probe also suggests that `IQ1_S` can be read in a two-stage pattern similar to `Q4_K`.
+          On the binary side, `bundle_0030` carries `IQ1_S` MMVQ (`ggml_type19 1..8`) while `bundle_0082` carries `IQ1_S` MMQ (`ggml_type19 8..128`).
+          On the live side, `prompt_eval_count = 7` reads as `MMVQ-compatible`, while `13` reads as `MMQ-eligible`.
+          This is still not exact dispatch proof, but it means `IQ1_S` can now be narrowed across source, binary, and phase-proxy layers.
+        </span>
+      </div>
     </section>
 
     <!-- ── 次の観測点 ─────────────────────────────────────────────── -->

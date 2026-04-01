@@ -23,106 +23,231 @@
     </div>
 
     <section class="hero">
-      <h1><span class="ja">ROCm 共通コンポーネント</span><span class="en">ROCm Components</span></h1>
-      <p class="ja">LLM 推論に関わる ROCm 共通コンポーネント（数学ライブラリ・推論基盤）を、観測状況とともに整理します。</p>
-      <p class="en">ROCm components relevant to LLM inference — math libraries and inference stack — organized with observation status.</p>
+      <h1>
+        <span class="ja">ROCm 共通コンポーネント — LLM 推論で何が実際に関与するのか</span>
+        <span class="en">ROCm Components — What Is Actually Involved in LLM Inference?</span>
+      </h1>
+
+      <p class="ja" style="font-size:1.05rem;font-weight:600;color:#fff;margin-bottom:10px;">
+        このページで得られる理解：<em>Ollama で LLM を動かしたとき、ROCm の各コンポーネントのうちどれが「ロードされているか」「実際に演算を担っているか」——その区別がこのページの核心。</em>
+      </p>
+      <p class="en" style="font-size:1.05rem;font-weight:600;color:#fff;margin-bottom:10px;">
+        What you'll gain here: <em>when running LLMs on Ollama, which ROCm components are "loaded" vs. which are "actually handling computation" — that distinction is the core of this page.</em>
+      </p>
+
+      <p class="ja">
+        ROCm には多数のコンポーネントがある。しかし Ollama での LLM 推論に関与するのは、その一部だ。
+        Phase C で <code>/proc/maps</code> を確認したところ、ロードされていないコンポーネントもあれば、
+        ロードはされているが dispatch されたかが不明なコンポーネントもある。
+        このページはその区別を整理するハブとして機能する。
+      </p>
+      <p class="en">
+        ROCm includes many components. But only a subset is involved in Ollama LLM inference.
+        Phase C's <code>/proc/maps</code> check found some components not loaded at all,
+        and others loaded but with uncertain dispatch status.
+        This page serves as the hub for organizing those distinctions.
+      </p>
+
       <div class="hero-meta">
-        <span class="badge badge-env ja">対象: Ollama / ggml-hip / gfx1201</span>
-        <span class="badge badge-env en">Target: Ollama / ggml-hip / gfx1201</span>
-        <span class="badge badge-confirmed ja">Phase C: runner maps 確認済み</span>
-        <span class="badge badge-confirmed en">Phase C: runner maps confirmed</span>
+        <span class="badge badge-env">Ollama / ggml-hip</span>
+        <span class="badge badge-env">gfx1201 / RX9070XT</span>
+        <span class="badge badge-confirmed ja">Phase C: maps 確認済み</span>
+        <span class="badge badge-confirmed en">Phase C: maps confirmed</span>
       </div>
     </section>
 
+    <!-- ── このページの結論 ──────────────────────────────────────── -->
     <section class="card">
-      <h2><span class="ja">観測済み事実（RX9070XT / Phase C）</span><span class="en">Observed Facts (RX9070XT / Phase C)</span></h2>
-      <ul class="ja">
-        <li>RX9070XT の Ollama runner process maps（Phase C）に記録されたコンポーネント: <code>libggml-hip.so</code> / <code>libhipblas.so.2</code> / <code>librocblas.so.4</code> / <code>libhipblaslt.so.0</code> / <code>librocsolver.so.0</code> / <code>libamdhip64.so.6</code> / <code>libhsa-runtime64.so.1</code>。</li>
-        <li><code>libMIOpen</code> および <code>libMIGraphX</code> は同 maps に不在（Ollama LLM 推論パスへの関与は未観測）。</li>
-        <li>Ollama runner は <code>LD_LIBRARY_PATH=/usr/local/lib/ollama:/usr/local/lib/ollama/rocm</code> を設定しており、bundle 内のコンポーネントが system ROCm より優先してロードされます。</li>
-      </ul>
-      <ul class="en">
-        <li>Components recorded in the RX9070XT Ollama runner process maps (Phase C): <code>libggml-hip.so</code> / <code>libhipblas.so.2</code> / <code>librocblas.so.4</code> / <code>libhipblaslt.so.0</code> / <code>librocsolver.so.0</code> / <code>libamdhip64.so.6</code> / <code>libhsa-runtime64.so.1</code>.</li>
-        <li><code>libMIOpen</code> and <code>libMIGraphX</code> are absent from those maps (involvement in Ollama LLM inference path is unobserved).</li>
-        <li>Ollama runner sets <code>LD_LIBRARY_PATH=/usr/local/lib/ollama:/usr/local/lib/ollama/rocm</code>, so bundle components load ahead of system ROCm.</li>
-      </ul>
+      <h2>
+        <span class="ja">このページの結論</span>
+        <span class="en">Page Conclusion</span>
+      </h2>
+      <div class="callout callout-confirmed">
+        <span class="ja">
+          Phase C で確認したロード済みコンポーネント：<code>libggml-hip</code> / <code>libhipblas</code> / <code>librocblas</code> / <code>libhipblaslt</code> / <code>librocsolver</code> / <code>libamdhip64</code> / <code>libhsa-runtime64</code> の 7 本（+ DRM 系）。<br>
+          <strong>不在</strong>：<code>libMIOpen</code> / <code>libMIGraphX</code> は maps に現れず、LLM 推論パスへの関与は観測されていない。<br>
+          ただし「ロードされている ≠ 演算を担っている」。dispatch の直接確認は observer 制約により不可。
+        </span>
+        <span class="en">
+          Components confirmed loaded in Phase C: <code>libggml-hip</code> / <code>libhipblas</code> / <code>librocblas</code> / <code>libhipblaslt</code> / <code>librocsolver</code> / <code>libamdhip64</code> / <code>libhsa-runtime64</code> (plus DRM libraries).<br>
+          <strong>Absent</strong>: <code>libMIOpen</code> / <code>libMIGraphX</code> do not appear in maps — no involvement in the LLM inference path is observed.<br>
+          However, "loaded ≠ handling computation." Direct dispatch confirmation is blocked by observer constraints.
+        </span>
+      </div>
     </section>
 
+    <!-- ── コンポーネント一覧 ─────────────────────────────────────── -->
     <section class="card">
-      <h2><span class="ja">コンポーネント一覧</span><span class="en">Components</span></h2>
+      <h2>
+        <span class="ja">コンポーネント一覧（RX9070XT / Phase C 観測状況）</span>
+        <span class="en">Component List (RX9070XT / Phase C Observation Status)</span>
+      </h2>
+
+      <p class="ja"><strong>観測ポイント：</strong> 各コンポーネントが Ollama LLM 推論でどう関与しているか（していないか）。</p>
+      <p class="en"><strong>Observation target:</strong> How (or whether) each component is involved in Ollama LLM inference.</p>
+
       <table class="data-table">
         <thead>
           <tr>
             <th><span class="ja">コンポーネント</span><span class="en">Component</span></th>
             <th><span class="ja">LLM 推論での役割</span><span class="en">LLM Inference Role</span></th>
-            <th><span class="ja">Phase C 観測</span><span class="en">Phase C Observation</span></th>
+            <th><span class="ja">Phase C 観測</span><span class="en">Phase C Status</span></th>
+            <th><span class="ja">詳細</span><span class="en">Detail</span></th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><a href="bundle/rocm-bundle-index.html"><span class="ja">ROCm Bundle</span><span class="en">ROCm Bundle</span></a></td>
-            <td><span class="ja">bundle-first ロード基盤</span><span class="en">Bundle-first load foundation</span></td>
+            <td><strong><a href="bundle/rocm-bundle-index.html">ROCm Bundle</a></strong></td>
+            <td><span class="ja">bundle-first ロードの基盤。system ROCm より優先されるランタイム層。</span><span class="en">Bundle-first load foundation. Runtime layer prioritized over system ROCm.</span></td>
             <td><span class="badge badge-confirmed ja">確認済み</span><span class="badge badge-confirmed en">Confirmed</span></td>
+            <td><a href="bundle/rocm-bundle-index.html">→</a></td>
           </tr>
           <tr>
-            <td><a href="ggml-hip/ggml-hip-index.html">ggml-hip</a></td>
-            <td><span class="ja">HIP kernel dispatch 主経路</span><span class="en">Primary HIP kernel dispatch</span></td>
-            <td><span class="badge badge-confirmed ja">確認済み</span><span class="badge badge-confirmed en">Confirmed</span></td>
+            <td><strong><a href="ggml-hip/ggml-hip-index.html">ggml-hip</a></strong></td>
+            <td><span class="ja">HIP kernel dispatch の主経路。<code>.hip_fatbin</code>（587 MiB）に gfx1201 custom hsaco を格納。MMVQ / MMQ / Flash Attention / RoPE が入る。</span><span class="en">Primary HIP kernel dispatch path. Stores gfx1201 custom hsacos in <code>.hip_fatbin</code> (587 MiB). Contains MMVQ / MMQ / Flash Attention / RoPE.</span></td>
+            <td><span class="badge badge-confirmed ja">ロード・binary 確認</span><span class="badge badge-confirmed en">Load + binary confirmed</span></td>
+            <td><a href="ggml-hip/ggml-hip-index.html">→</a></td>
           </tr>
           <tr>
-            <td><a href="hipBLAS/hipblas-index.html">hipBLAS</a></td>
-            <td><span class="ja">BLAS fallback marshalling</span><span class="en">BLAS fallback marshalling</span></td>
+            <td><strong><a href="hipBLAS/hipblas-index.html">hipBLAS</a></strong></td>
+            <td><span class="ja">BLAS fallback 経路のゲートウェイ。ne11 が大きいとき rocBLAS へ委譲する。</span><span class="en">Gateway to the BLAS fallback path. Delegates to rocBLAS when ne11 is large.</span></td>
             <td><span class="badge badge-confirmed ja">ロード確認</span><span class="badge badge-confirmed en">Load confirmed</span></td>
+            <td><a href="hipBLAS/hipblas-index.html">→</a></td>
           </tr>
           <tr>
-            <td><a href="rocBLAS/rocblas-index.html">rocBLAS</a></td>
-            <td><span class="ja">GEMM kernel 実行（Tensile backend）</span><span class="en">GEMM execution (Tensile backend)</span></td>
+            <td><strong><a href="rocBLAS/rocblas-index.html">rocBLAS</a></strong></td>
+            <td><span class="ja">GEMM kernel 実行層（Tensile backend）。<code>rocblas/library/</code> に gfx1201 向け 56 ファイル。</span><span class="en">GEMM execution layer (Tensile backend). 56 gfx1201-targeted files in <code>rocblas/library/</code>.</span></td>
+            <td><span class="badge badge-confirmed ja">ロード・hsaco 確認</span><span class="badge badge-confirmed en">Load + hsaco confirmed</span></td>
+            <td><a href="rocBLAS/rocblas-index.html">→</a></td>
+          </tr>
+          <tr>
+            <td><strong><a href="hipBLASLt/hipblasslt-index.html">hipBLASLt</a></strong></td>
+            <td><span class="ja">大規模 GEMM / activation fusion 向け拡張 BLAS。rocBLAS 経由でロードされる。</span><span class="en">Extended BLAS for large-scale GEMM / activation fusion. Loaded via rocBLAS.</span></td>
             <td><span class="badge badge-confirmed ja">ロード確認</span><span class="badge badge-confirmed en">Load confirmed</span></td>
+            <td><a href="hipBLASLt/hipblasslt-index.html">→</a></td>
           </tr>
           <tr>
-            <td><a href="hipBLASLt/hipblasslt-index.html">hipBLASLt</a></td>
-            <td><span class="ja">拡張 GEMM（activation fusion 等）</span><span class="en">Extended GEMM (activation fusion etc.)</span></td>
-            <td><span class="badge badge-confirmed ja">ロード確認</span><span class="badge badge-confirmed en">Load confirmed</span></td>
-          </tr>
-          <tr>
-            <td><a href="Tensile/tensile-index.html">Tensile</a></td>
-            <td><span class="ja">rocBLAS kernel generator（ビルド時）</span><span class="en">rocBLAS kernel generator (build-time)</span></td>
+            <td><strong><a href="Tensile/tensile-index.html">Tensile</a></strong></td>
+            <td><span class="ja">rocBLAS kernel の生成器（ビルド時）。runtime には直接関与しないが、gfx1201 向け Cijk_* family の出所。</span><span class="en">rocBLAS kernel generator (build-time). Not directly involved at runtime, but the source of gfx1201 Cijk_* family.</span></td>
             <td><span class="badge badge-confirmed ja">gfx1201 hsaco 確認</span><span class="badge badge-confirmed en">gfx1201 hsaco confirmed</span></td>
+            <td><a href="Tensile/tensile-index.html">→</a></td>
           </tr>
           <tr>
-            <td><a href="rocSOLVER/rocsolver-index.html">rocSOLVER</a></td>
-            <td><span class="ja">LAPACK 演算（LLM 直接役割: 未確定）</span><span class="en">LAPACK ops (direct LLM role: unresolved)</span></td>
+            <td><strong><a href="rocSOLVER/rocsolver-index.html">rocSOLVER</a></strong></td>
+            <td><span class="ja">LAPACK 演算ライブラリ。hipBLAS 経由でロード。LLM 推論での直接役割は未確定。</span><span class="en">LAPACK operations library. Loaded via hipBLAS. Direct role in LLM inference is unresolved.</span></td>
             <td><span class="badge badge-confirmed ja">ロード確認</span><span class="badge badge-confirmed en">Load confirmed</span></td>
+            <td><a href="rocSOLVER/rocsolver-index.html">→</a></td>
           </tr>
           <tr>
-            <td><a href="MIOpen/miopen-index.html">MIOpen</a></td>
-            <td><span class="ja">DNN プリミティブ（LLM パス: 不在）</span><span class="en">DNN primitives (LLM path: absent)</span></td>
+            <td><strong><a href="MIOpen/miopen-index.html">MIOpen</a></strong></td>
+            <td><span class="ja">DNN プリミティブライブラリ。Ollama LLM 推論パスへの関与は未観測。</span><span class="en">DNN primitives library. No involvement in Ollama LLM inference path observed.</span></td>
             <td><span class="badge badge-unresolved ja">maps に不在</span><span class="badge badge-unresolved en">Absent from maps</span></td>
+            <td><a href="MIOpen/miopen-index.html">→</a></td>
           </tr>
           <tr>
-            <td><a href="MIGraphX/migraphx-index.html">MIGraphX</a></td>
-            <td><span class="ja">グラフ推論エンジン（LLM パス: 不在）</span><span class="en">Graph inference engine (LLM path: absent)</span></td>
-            <td><span class="badge badge-unresolved ja">maps に不在</span><span class="badge badge-unresolved en">Absent from maps</span></td>
+            <td><strong><a href="MIGraphX/migraphx-index.html">MIGraphX</a></strong></td>
+            <td><span class="ja">グラフ推論エンジン。Ollama LLM 推論パスへの関与は未観測。bundle にも不在。</span><span class="en">Graph inference engine. No involvement in Ollama LLM inference path observed. Also absent from bundle.</span></td>
+            <td><span class="badge badge-unresolved ja">maps・bundle とも不在</span><span class="badge badge-unresolved en">Absent from maps and bundle</span></td>
+            <td><a href="MIGraphX/migraphx-index.html">→</a></td>
           </tr>
         </tbody>
       </table>
     </section>
 
+    <!-- ── load ≠ dispatch ────────────────────────────────────────── -->
+    <section class="card">
+      <h2>
+        <span class="ja">示せること / 示せないこと — load ≠ dispatch</span>
+        <span class="en">What Can and Cannot Be Shown — load ≠ dispatch</span>
+      </h2>
+
+      <p class="ja">
+        この一覧で「ロード確認」と書いてあるコンポーネントは、<code>/proc/maps</code> に現れていることが事実として確認されている。
+        しかし <strong>「ロードされている」と「LLM 推論ループ中に実際に演算を担った」は別の問題</strong>。
+      </p>
+      <p class="en">
+        Components listed as "load confirmed" have been factually confirmed to appear in <code>/proc/maps</code>.
+        However, <strong>"loaded" and "actually handled computation during the LLM inference loop" are separate questions</strong>.
+      </p>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th><span class="ja">示せること</span><span class="en">Can Show</span></th>
+            <th><span class="ja">示せないこと</span><span class="en">Cannot Show</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="ja">各ライブラリが <code>/proc/maps</code> に現れること（ロードの事実）</span><span class="en">Each library appears in <code>/proc/maps</code> (the fact of loading)</span></td>
+            <td><span class="ja">そのライブラリの演算が推論中に dispatch されたか</span><span class="en">Whether that library's operations were dispatched during inference</span></td>
+          </tr>
+          <tr>
+            <td><span class="ja">MIOpen / MIGraphX が maps に不在（Ollama LLM パスでは使われていない）</span><span class="en">MIOpen / MIGraphX absent from maps (not used in Ollama LLM path)</span></td>
+            <td><span class="ja">rocSOLVER / hipBLASLt がロード後に実際に呼ばれたか</span><span class="en">Whether rocSOLVER / hipBLASLt were actually called after loading</span></td>
+          </tr>
+          <tr>
+            <td><span class="ja">bundle-first で system ROCm より bundle が優先されること</span><span class="en">Bundle takes priority over system ROCm (bundle-first)</span></td>
+            <td><span class="ja">各コンポーネントが推論の何フェーズで・何回呼ばれたか（dispatch-safe observer が必要）</span><span class="en">How many times each component was called and in which inference phase (dispatch-safe observer required)</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ── 未確定事項 ─────────────────────────────────────────────── -->
     <section class="card">
       <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
       <ul class="ja">
-        <li>rocSOLVER・hipBLASLt がロードされているものの、Q4_K_M 推論ループ中に実際の演算を dispatch したかは、dispatch-safe observer なしには確定しません。</li>
-        <li>BLAS-side の Cijk_* kernel family が短 live case で実際に呼ばれたかは未確定です（MMVQ / MMQ 主経路が優位の可能性が高い）。</li>
+        <li>rocSOLVER・hipBLASLt がロードされているものの、Q4_K_M 推論ループ中に実際の演算を dispatch したかは、dispatch-safe observer なしには確定しない。</li>
+        <li>BLAS-side の Cijk_* kernel family が短 live case で実際に呼ばれたかは未確定（MMVQ / MMQ 主経路が優位の可能性が高い）。</li>
+        <li>他 GPU 世代（gfx900 / gfx942）での maps 状況は別途確認が必要。</li>
       </ul>
       <ul class="en">
         <li>Although rocSOLVER and hipBLASLt are loaded, whether they dispatched operations during the Q4_K_M inference loop cannot be confirmed without a dispatch-safe observer.</li>
         <li>Whether the BLAS-side Cijk_* kernel family was actually called in the short live case is unresolved (MMVQ/MMQ primary path is likely dominant).</li>
+        <li>Maps status for other GPU generations (gfx900 / gfx942) requires separate confirmation.</li>
+      </ul>
+    </section>
+
+    <!-- ── 次の観測点 ─────────────────────────────────────────────── -->
+    <section class="card">
+      <h2>
+        <span class="ja">次の観測点</span>
+        <span class="en">Where to Look Next</span>
+      </h2>
+      <ul class="ja">
+        <li>
+          <strong>「ロードされた」の先を知りたい →</strong>
+          <a href="../gpu-gen/rDNA4/R9070XT/rx9070xt-path.html">RX9070XT 経路観測</a>（どの kernel が dispatch 圏に入ったか・phase proxy による近似）
+        </li>
+        <li>
+          <strong>なぜ dispatch を直接確認できないかを知りたい →</strong>
+          <a href="../gpu-gen/rDNA4/R9070XT/rx9070xt-optimize-method.html">Observer 制約マップ</a>
+        </li>
+        <li>
+          <strong>bundle 全体の依存構造を見たい →</strong>
+          <a href="bundle/rocm-bundle-index.html">ROCm バンドル</a>（12 ライブラリの有向グラフ付き）
+        </li>
+      </ul>
+      <ul class="en">
+        <li>
+          <strong>Want to go beyond "was loaded"? →</strong>
+          <a href="../gpu-gen/rDNA4/R9070XT/rx9070xt-path.html">RX9070XT Path Observation</a> (which kernels entered the dispatch zone / phase proxy approximation)
+        </li>
+        <li>
+          <strong>Want to understand why direct dispatch confirmation is blocked? →</strong>
+          <a href="../gpu-gen/rDNA4/R9070XT/rx9070xt-optimize-method.html">Observer Constraint Map</a>
+        </li>
+        <li>
+          <strong>Want to see the full bundle dependency structure? →</strong>
+          <a href="bundle/rocm-bundle-index.html">ROCm Bundle</a> (with directed graph of 12 libraries)
+        </li>
       </ul>
     </section>
 
     <div class="note">
-      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
-      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+      <span class="ja">掲載情報は観測記録に基づきます。「示せないこと」欄は observer 制約による限界であり、調査の欠如ではありません。</span>
+      <span class="en">Content is grounded in observation logs. "Cannot Show" entries reflect observer constraints, not gaps in investigation effort.</span>
     </div>
 
   </div>

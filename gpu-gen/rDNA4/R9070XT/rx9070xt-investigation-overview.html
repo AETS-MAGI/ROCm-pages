@@ -443,6 +443,21 @@
           live path?"
         </span>
       </div>
+
+      <div class="callout callout-inferred" style="margin-top:12px;">
+        <span class="ja">
+          さらに `IQ1_S` は、source と binary だけでなく bounded phase proxy でも narrowing が始まっている。
+          `bundle_0030` には `IQ1_S` MMVQ (`1..8`) が、`bundle_0082` には `IQ1_S` MMQ (`8..128`) があり、
+          small direct-import case の live prompt window でも `7` は MMVQ-compatible、`13` は MMQ-eligible と読むのが自然。
+          ここでも `存在する`・`import できる`・`その family が live case を支配する` を別段階として扱うのが重要。
+        </span>
+        <span class="en">
+          `IQ1_S` is now narrowing not only in source and binary space, but also through bounded phase proxy.
+          `bundle_0030` carries `IQ1_S` MMVQ (`1..8`) while `bundle_0082` carries `IQ1_S` MMQ (`8..128`),
+          and in the small direct-import live case the prompt windows read `7` as MMVQ-compatible and `13` as MMQ-eligible.
+          Here too, it is important to treat `exists`, `can be imported`, and `owns the live case` as separate stages.
+        </span>
+      </div>
     </section>
 
     <!-- ── Observer 問題 ──────────────────────────────────────────── -->

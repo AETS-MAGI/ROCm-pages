@@ -1,11 +1,13 @@
 <!doctype html>
 <html lang="ja" data-lang="ja">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>GPU Generations | ROCm-pages</title>
   <link rel="stylesheet" href="../assets/css/style.css" />
 </head>
+
 <body>
   <div class="wrap">
 
@@ -24,8 +26,8 @@
 
     <section class="hero">
       <h1><span class="ja">GPU 世代別</span><span class="en">GPU Generations</span></h1>
-      <p class="ja">GCN5 / rDNA4 / cDNA4 の GPU 世代ごとに、観測状況と経路調査の結果を整理します。</p>
-      <p class="en">Observations and path investigation results organized by GPU generation: GCN5, rDNA4, and cDNA4.</p>
+      <p class="ja">GCN5 / rDNA4 / cDNA3 の GPU 世代ごとに、観測状況と経路調査の結果を整理します。</p>
+      <p class="en">Observations and path investigation results organized by GPU generation: GCN5, rDNA4, and cDNA3.</p>
     </section>
 
     <section class="card">
@@ -33,21 +35,21 @@
       <ul class="ja">
         <li><strong>GCN5</strong> — MI25 が主対象。観測が最も進んでいる。</li>
         <li><strong>rDNA4</strong> — RX9070XT で方法論移植パイロット（C14 系）を実施中。</li>
-        <li><strong>cDNA4</strong> — MI300X は枠組み先行。移植計画を保持。</li>
+        <li><strong>cDNA3</strong> — MI300X は枠組み先行。移植計画を保持。</li>
       </ul>
       <ul class="en">
         <li><strong>GCN5</strong> — MI25 is the primary target; most advanced investigation.</li>
         <li><strong>rDNA4</strong> — Methodology portability pilot underway on RX9070XT (C14 series).</li>
-        <li><strong>cDNA4</strong> — MI300X scaffold prepared; transplant plan in place.</li>
+        <li><strong>cDNA3</strong> — MI300X scaffold prepared; transplant plan in place.</li>
       </ul>
     </section>
 
     <section class="card">
       <h2><span class="ja">世代ページ</span><span class="en">Generation Pages</span></h2>
       <ul class="nav-list">
-        <li><a href="GCN5/gcn5-index.html">GCN5</a></li>
-        <li><a href="rDNA4/rdna4-index.html">rDNA4</a></li>
-        <li><a href="cDNA4/cdna4-index.html">cDNA4</a></li>
+        <li><a href="GCN5/gcn5-index.html">GCN5(gfx900系)</a></li>
+        <li><a href="rDNA4/rdna4-index.html">rDNA4(gfx1200系)</a></li>
+        <li><a href="cDNA3/cdna3-index.html">cDNA3(gfx940系)</a></li>
       </ul>
     </section>
 
@@ -65,10 +67,12 @@
 
     <div class="note">
       <span class="ja">掲載情報は観測記録に基づきます。未確定事項は各ページの「未確定事項」欄に明示し、確定次第更新します。</span>
-      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on each page and updated as findings solidify.</span>
+      <span class="en">Content is grounded in observation logs. Uncertain items are listed under "Open Questions" on
+        each page and updated as findings solidify.</span>
     </div>
 
   </div>
   <script src="../assets/js/main.js"></script>
 </body>
+
 </html>
