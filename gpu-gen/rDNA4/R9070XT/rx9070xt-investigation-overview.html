@@ -747,10 +747,44 @@
         touching the runtime at all?</p>
 
       <p class="ja">
-        wrap も attach も layer log も機能しない状況で、改めてソース側の dispatch 分岐を確認した。
-        MMVQ / MMQ の分岐は <code>ne11</code>（≈ prompt token 数）で決まる。
-        Ollama の response JSON の <code>prompt_eval_count</code> を <code>ne11</code> の近似指標として使えないか——それが phase proxy。
+        wrap も attach も layer log も機能しない状況で、改めてソース側の dispatch（GPU へどの仕事を回すかの割り当て）分岐を確認した。
+        MMVQ（1トークンずつ返す場面で使われやすい専用カーネル経路）/ MMQ（最初にプロンプトをまとめて読む場面で使われやすい専用カーネル経路）の分岐は、
+        <code>ne11</code>（行列の列数——この調査では、だいたいプロンプトのトークン数に対応）で決まる。
+        Ollama の response JSON の <code>prompt_eval_count</code>（Ollama が返す「プロンプトを何トークン処理したか」の数値）を
+        <code>ne11</code> の近似指標として使えないか——それが phase proxy。
       </p>
+      <p class="en">
+        With wrap, attach, and layer log all non-functional, we revisited the source dispatch logic
+        (dispatch = the assignment of which job goes to the GPU).
+        The MMVQ (the dedicated kernel path favored in single-token generation) / MMQ
+        (the dedicated kernel path favored when reading the full prompt upfront) branch is
+        determined by <code>ne11</code> (matrix column count — in this investigation, roughly corresponding to prompt token count).
+        Could <code>prompt_eval_count</code> in Ollama's response JSON (the number "how many prompt tokens were processed" that Ollama returns)
+        serve as a proxy for <code>ne11</code>? — that is the phase proxy.
+      </p>
+
+      <div class="callout callout-confirmed" style="margin-top:10px;">
+        <span class="ja">
+          <strong>実際に何をしているか（手の動き）：</strong><br>
+          ① 短いプロンプトを Ollama に投げる（例：3トークン）<br>
+          ② 返ってきた response JSON の <code>prompt_eval_count</code> を読む → <code>3</code><br>
+          ③ これは <code>ne11 = 3 ≤ 8</code> → <strong>MMVQ の担当圏に入っているはず</strong> と推理<br><br>
+          ④ 長いプロンプトを投げる（例：11トークン）<br>
+          ⑤ <code>prompt_eval_count</code> を読む → <code>11</code><br>
+          ⑥ これは <code>8 &lt; ne11 ≤ 256</code> → <strong>MMQ の担当圏に入っているはず</strong> と推理<br><br>
+          → GPU の動作は壊れない。「プロンプトの長さを変えることで、どの担当圏に入るかを自分で制御できる」のがこの手法の強み。
+        </span>
+        <span class="en">
+          <strong>Concretely, what you do (the hand movements):</strong><br>
+          ① Send a short prompt to Ollama (e.g., 3 tokens)<br>
+          ② Read <code>prompt_eval_count</code> from the response JSON → <code>3</code><br>
+          ③ Since <code>ne11 = 3 ≤ 8</code> → infer <strong>"it's in MMVQ territory"</strong><br><br>
+          ④ Send a longer prompt (e.g., 11 tokens)<br>
+          ⑤ Read <code>prompt_eval_count</code> → <code>11</code><br>
+          ⑥ Since <code>8 &lt; ne11 ≤ 256</code> → infer <strong>"it's in MMQ territory"</strong><br><br>
+          → GPU operation is not disrupted. The key strength: "by varying prompt length, you can deliberately control which zone gets entered."
+        </span>
+      </div>
       <p class="en">
         With wrap, attach, and layer log all non-functional, we revisited the source dispatch logic.
         The MMVQ/MMQ branch is determined by <code>ne11</code> (≈ prompt token count).
