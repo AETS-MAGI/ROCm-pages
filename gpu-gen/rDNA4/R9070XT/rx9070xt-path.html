@@ -275,7 +275,7 @@
             <td>11</td>
             <td>1</td>
             <td>—</td>
-            <td><span class="badge badge-inferred ja">MMQ-eligible 圏（bundle_0096 候補）</span><span class="badge badge-inferred en">MMQ-eligible (bundle_0096 candidate)</span></td>
+            <td><span class="badge badge-inferred ja">bundle_0096 寄り（MMQ 側）</span><span class="badge badge-inferred en">bundle_0096-leaning (MMQ-side)</span></td>
           </tr>
           <tr>
             <td><code>long_np1</code></td>
@@ -298,13 +298,13 @@
         <span class="ja">
           <strong>ステップ 3 の現時点で最も筋のいい読み：</strong><br>
           short case（<code>prompt_eval_count = 3</code>）は ne11 ≤ 8 の MMVQ 圏に入っていると読むのが最も自然。
-          medium case（<code>11</code>）は MMQ-eligible 圏、<code>bundle_0096</code> が候補。
+          medium case（<code>11</code>）は <code>bundle_0030</code> の `1..8` 圏を超えており、bounded cluster 内では <code>bundle_0096</code> 側がより自然。
           long case（<code>290</code>）は BLAS fallback または internal chunking のどちらかであり、現時点では切り分けできない。
         </span>
         <span class="en">
           <strong>Step 3 — strongest current reading:</strong><br>
           The short case (<code>prompt_eval_count = 3</code>) most naturally falls into the MMVQ zone (ne11 ≤ 8).
-          The medium case (<code>11</code>) is in the MMQ-eligible zone, with <code>bundle_0096</code> as the candidate.
+          The medium case (<code>11</code>) sits above the <code>bundle_0030</code> `1..8` range, so within the bounded cluster it aligns more naturally with <code>bundle_0096</code>.
           The long case (<code>290</code>) is either BLAS fallback or internal chunking — not yet distinguishable.
         </span>
       </div>
@@ -409,13 +409,13 @@
     <section class="card">
       <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
       <ul class="ja">
-        <li>short live case が <code>bundle_0096</code> の MMQ family をどの程度踏んだかは直接確定していない。</li>
+        <li>short live case が <code>bundle_0096</code> を直接踏んだか、それとも同型の別 Q4_K MMQ bundle だったかは直接確定していない。</li>
         <li>BLAS-side <code>Cijk_*</code> family が live short case に入ったかも未確定。</li>
         <li><code>prompt_eval_count = 290</code> 境界が fallback か internal chunking かは未確定。</li>
         <li>非破壊 observer が得られた場合、上記すべてを再確認する必要がある。</li>
       </ul>
       <ul class="en">
-        <li>How much the short live case exercised the <code>bundle_0096</code> MMQ family is not directly confirmed.</li>
+        <li>It is not directly confirmed whether the short live case exercised <code>bundle_0096</code> itself or another structurally similar Q4_K MMQ bundle.</li>
         <li>Whether the BLAS-side <code>Cijk_*</code> family entered the short live case is also unresolved.</li>
         <li>Whether the <code>prompt_eval_count = 290</code> boundary is fallback-driven or due to internal chunking is unresolved.</li>
         <li>All of the above should be revisited once a non-distorting observer becomes available.</li>

@@ -71,7 +71,7 @@
         <li>plain <code>ollama serve</code> が <code>inference compute library=ROCm compute=gfx1201</code> を報告し、<code>offloaded 29/29 layers to GPU</code>、<code>Flash Attention was auto, set to enabled</code>、<code>graph splits = 2</code> を確認しました。</li>
         <li>cold generate: <code>load_duration = 17.455s</code>、<code>prompt_eval_duration = 0.0238s</code>、<code>eval_duration = 0.306s</code>。hot（resident）generate: <code>load_duration = 0.083s</code>、<code>prompt_eval_duration = 0.0248s</code>、<code>eval_duration = 0.149s</code>。</li>
         <li>runtime bundle は <code>/usr/local/lib/ollama/rocm/</code> が先行し、<code>libggml-hip.so</code> → <code>libhipblas.so</code> → <code>librocblas.so</code> → <code>libamdhip64.so</code> → <code>hsa-runtime64</code> という依存チェーンを確認しました。</li>
-        <li><code>libggml-hip.so</code> 内の <code>.hip_fatbin</code>（587 MiB）から gfx1201 向け custom hsaco 群を isolate 済みです：<code>bundle_0012</code>（Q4_K dequant）・<code>bundle_0019</code>（Flash Attn）・<code>bundle_0030</code>（Q4_K MMVQ）・<code>bundle_0037</code>（MMQ repack）・<code>bundle_0039</code>（RoPE）・<code>bundle_0096</code>（exact Q4_K MMQ）。</li>
+        <li><code>libggml-hip.so</code> 内の <code>.hip_fatbin</code>（587 MiB）から gfx1201 向け custom hsaco 群を isolate 済みです：<code>bundle_0012</code>（Q4_K dequant）・<code>bundle_0019</code>（Flash Attn）・<code>bundle_0030</code>（Q4_K MMVQ, `1..8`）・<code>bundle_0037</code>（MMQ repack）・<code>bundle_0039</code>（RoPE）・<code>bundle_0096</code>（exact Q4_K MMQ, `8..128`）。</li>
         <li>BLAS 側にも <code>rocblas/library/Kernels.so-000-gfx1201.hsaco</code> の <code>Cijk_*</code> family が存在することを逆アセンブリで確認しました。</li>
         <li>resident phase-proxy probe: <code>prompt_eval_count = 3</code>（MMVQ 圏）・<code>11</code>（MMQ-eligible 圏）・<code>290</code>（fallback/chunking 境界候補）・decode-heavy <code>eval_count = 16, eval_duration = 0.1479s</code>。</li>
       </ul>
@@ -79,7 +79,7 @@
         <li>Plain <code>ollama serve</code> reported <code>inference compute library=ROCm compute=gfx1201</code>, with <code>offloaded 29/29 layers to GPU</code>, <code>Flash Attention was auto, set to enabled</code>, and <code>graph splits = 2</code> confirmed.</li>
         <li>Cold generate: <code>load_duration = 17.455s</code>, <code>prompt_eval_duration = 0.0238s</code>, <code>eval_duration = 0.306s</code>. Hot (resident) generate: <code>load_duration = 0.083s</code>, <code>prompt_eval_duration = 0.0248s</code>, <code>eval_duration = 0.149s</code>.</li>
         <li>The runtime bundle uses <code>/usr/local/lib/ollama/rocm/</code> first, with the confirmed dependency chain: <code>libggml-hip.so</code> → <code>libhipblas.so</code> → <code>librocblas.so</code> → <code>libamdhip64.so</code> → <code>hsa-runtime64</code>.</li>
-        <li>gfx1201 custom hsacos isolated from the <code>.hip_fatbin</code> (587 MiB) inside <code>libggml-hip.so</code>: <code>bundle_0012</code> (Q4_K dequant), <code>bundle_0019</code> (Flash Attn), <code>bundle_0030</code> (Q4_K MMVQ), <code>bundle_0037</code> (MMQ repack), <code>bundle_0039</code> (RoPE), <code>bundle_0096</code> (exact Q4_K MMQ).</li>
+        <li>gfx1201 custom hsacos isolated from the <code>.hip_fatbin</code> (587 MiB) inside <code>libggml-hip.so</code>: <code>bundle_0012</code> (Q4_K dequant), <code>bundle_0019</code> (Flash Attn), <code>bundle_0030</code> (Q4_K MMVQ, `1..8`), <code>bundle_0037</code> (MMQ repack), <code>bundle_0039</code> (RoPE), <code>bundle_0096</code> (exact Q4_K MMQ, `8..128`).</li>
         <li>The BLAS side also carries <code>Cijk_*</code> family kernels in <code>rocblas/library/Kernels.so-000-gfx1201.hsaco</code>, confirmed by disassembly.</li>
         <li>Resident phase-proxy probe: <code>prompt_eval_count = 3</code> (MMVQ-compatible), <code>11</code> (MMQ-eligible), <code>290</code> (fallback/chunking boundary candidate), decode-heavy <code>eval_count = 16, eval_duration = 0.1479s</code>.</li>
       </ul>
@@ -123,14 +123,14 @@
         <li><strong>decode 側</strong>は custom <code>Q4_K mul_mat_vec_q</code>（<code>bundle_0030</code>）と最も強く整合しており、BLAS 支配を積極的に示す証拠は現時点ではありません。</li>
         <li><strong>Attention</strong> は Flash Attention が有効であることを runtime で確認しており、custom <code>flash_attn_ext_f16</code>（<code>bundle_0019</code>）family で処理されているとみるのが自然です。明示的な KQ/KQV GEMM 可視性の欠如はこの説明と整合します。</li>
         <li><strong>RoPE</strong> は custom gfx1201 family として <code>bundle_0039</code> に isolate 済みです。</li>
-        <li><strong>prompt 側（11〜12 token 窓）</strong>は MMVQ 閾値を超えており、<code>bundle_0096</code>（exact <code>Q4_K mul_mat_q</code>）が MMQ-eligible であるとみなせます。</li>
+        <li><strong>prompt 側（11〜12 token 窓）</strong>は MMVQ 閾値を超えており、bounded cluster 内では <code>bundle_0030</code> より <code>bundle_0096</code>（exact <code>Q4_K mul_mat_q</code>）と強く整合します。</li>
         <li><code>ROCBLAS_LAYER=9</code> では <code>rocblas_create_handle</code> のみ観測。direct GEMM 名が見えないことは path 不在の証拠ではなく、custom kernel 優位・Flash Attention・observer 制約の複合で説明できます。</li>
       </ul>
       <ul class="en">
         <li><strong>Decode-side</strong> aligns most strongly with custom <code>Q4_K mul_mat_vec_q</code> (<code>bundle_0030</code>); no positive evidence for BLAS dominance exists at this stage.</li>
         <li><strong>Attention</strong> was explicitly confirmed as Flash Attention enabled at runtime, aligning naturally with the custom <code>flash_attn_ext_f16</code> family (<code>bundle_0019</code>). The absence of visible KQ/KQV GEMM names is consistent with this explanation.</li>
         <li><strong>RoPE</strong> is isolated as a concrete custom gfx1201 family in <code>bundle_0039</code>.</li>
-        <li><strong>Prompt-side (~11–12 token window)</strong> crosses the MMVQ threshold, making <code>bundle_0096</code> (exact <code>Q4_K mul_mat_q</code>) MMQ-eligible.</li>
+        <li><strong>Prompt-side (~11–12 token window)</strong> crosses the MMVQ threshold and, within the bounded cluster, aligns more strongly with <code>bundle_0096</code> (exact <code>Q4_K mul_mat_q</code>) than with <code>bundle_0030</code>.</li>
         <li><code>ROCBLAS_LAYER=9</code> only observed <code>rocblas_create_handle</code>. The absence of direct GEMM names is not evidence of a shallow path — it is better explained by the combination of custom-kernel dominance, Flash Attention routing, and observer constraints.</li>
       </ul>
     </section>

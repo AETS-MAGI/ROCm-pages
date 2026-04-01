@@ -32,20 +32,44 @@
         <span class="ja">なぜ直接観測できないのか</span>
         <span class="en">Why Direct Observation Is Blocked</span>
       </h1>
+
+      <p class="ja" style="font-size:1.05rem;font-weight:600;color:var(--blue-deep);margin-bottom:10px;">
+        このページで得られる理解：<em>RX9070XT + Ollama の環境では「どの kernel が今動いているか」を直接読む手段が現時点で存在しない</em>、という事実の確認と、その理由の記録。
+      </p>
+      <p class="en" style="font-size:1.05rem;font-weight:600;color:var(--blue-deep);margin-bottom:10px;">
+        What you'll gain here: the confirmed fact that <em>no means currently exists to directly read which kernel is active in RX9070XT + Ollama</em>, along with a record of why each approach fails.
+      </p>
+
       <p class="ja">
         このページが追う問いは一つ。<strong>RX9070XT 上の Ollama で、どの GPU kernel が使われているかを直接読める手段は存在するのか？</strong><br>
-        答えは「現時点では No」。このページでは、その「No」に至るまでに試したすべての手段と、
-        それぞれが何を壊し、何を教えてくれたかを記録する。
-        <em>observer が壊れることは失敗ではなく、gfx1201 における観測可能性の地図である。</em>
+        答えは「現時点では No」。wrap も attach も layer も、すべて機能しない。
+        消去法の末に残るのは <strong>phase proxy（response JSON）だけ</strong>。<br>
+        これは C14 portability pilot が「直接観測」ではなく「多層証拠の積み上げ」で進む理由の核心でもある。
       </p>
       <p class="en">
         One question drives this page: <strong>is there any means to directly read which GPU kernel is active on Ollama running on RX9070XT?</strong><br>
-        The answer is currently No. This page documents every approach tried, what each one broke,
-        and what each failure revealed.
-        <em>A broken observer is not a failure — it is a map of observability on gfx1201.</em>
+        The answer is currently No. Wrap, attach, and layer logging all fail.
+        What remains by elimination is <strong>only the phase proxy (response JSON)</strong>.<br>
+        This is also the core reason why the C14 portability pilot proceeds via multi-layer inference rather than direct observation.
       </p>
+
+      <div class="callout callout-unresolved" style="margin:10px 0 14px;">
+        <span class="ja">
+          <strong>驚きポイント：</strong>
+          通常の profiling 手段（wrap・attach・layer log）を使おうとすると、GPU 自体が動かなくなるか、OS に止められるか、見たいものが見えないかのいずれかになる。
+          つまり <strong>「何が動いているか」は、標準的な手段では読めない</strong>。
+        </span>
+        <span class="en">
+          <strong>The surprising part:</strong>
+          Every standard profiling approach (wrap, attach, layer log) either causes the GPU to stop being used,
+          is blocked by the OS, or lacks sufficient granularity to see what matters.
+          In short, <strong>there is no standard means to read "what is running."</strong>
+        </span>
+      </div>
+
       <div class="hero-meta">
         <span class="badge badge-env">gfx1201</span>
+        <span class="badge badge-env">C14 pilot</span>
         <span class="badge badge-unresolved ja">直接 observer: 全滅</span>
         <span class="badge badge-unresolved en">Direct observers: all blocked</span>
         <span class="badge badge-confirmed ja">phase proxy: 唯一の有効手段</span>
@@ -61,14 +85,16 @@
       </h2>
       <div class="callout callout-confirmed">
         <span class="ja">
-          試した直接 observer はすべて機能しない（wrap → CPU fallback、--attach → ptrace ブロック、ROCBLAS_LAYER → 粒度不足）。
-          消去法の末、<strong>phase proxy（response JSON の <code>prompt_eval_count</code>）が runtime を壊さない唯一の観測手段</strong>として残る。
-          これは「観測の失敗」ではなく「gfx1201 + Ollama の環境における observer 問題の確認」として記録する。
+          試した直接 observer はすべて機能しない（wrap → CPU fallback、--attach → ptrace ブロック、ROCBLAS_LAYER → 粒度不足）。<br>
+          消去法の末に残るのは <strong>phase proxy（response JSON の <code>prompt_eval_count</code>）だけ</strong>。
+          これは「優れた手段を選んだ」ではなく、<strong>「他がすべて機能しない状況で唯一生き残った手段」</strong>。<br>
+          この事実が、C14 pilot が直接観測ではなく多層証拠の積み上げで進む理由を直接説明する。
         </span>
         <span class="en">
-          All direct observer approaches tried are non-functional (wrap → CPU fallback, --attach → ptrace blocked, ROCBLAS_LAYER → insufficient granularity).
-          By elimination, <strong>the phase proxy (<code>prompt_eval_count</code> from response JSON) is the only runtime-safe observation method</strong>.
-          This is documented not as a failure, but as a confirmed map of the observer problem on gfx1201 + Ollama.
+          All direct observer approaches tried are non-functional (wrap → CPU fallback, --attach → ptrace blocked, ROCBLAS_LAYER → insufficient granularity).<br>
+          By elimination, <strong>only the phase proxy (<code>prompt_eval_count</code> from response JSON) remains</strong>.
+          This was not chosen for its quality — it is <strong>the last approach standing after all others failed</strong>.<br>
+          This is the direct explanation for why the C14 pilot proceeds via multi-layer inference rather than direct observation.
         </span>
       </div>
     </section>

@@ -177,6 +177,23 @@
           </div>
         </li>
 
+        <li>
+          <span class="tl-date">2026-04-01</span>
+          <div class="tl-body">
+            <div class="tl-phase"><span class="ja">Follow-up — bounded cluster 再点検</span><span class="en">Follow-up — Bounded Cluster Recheck</span></div>
+            <div class="tl-text ja">
+              既知の <code>bundle_0027 / 0030 / 0037 / 0039 / 0082 / 0096</code> だけを再点検。
+              <code>bundle_0030</code> の <code>Q4_K mul_mat_vec_q</code> は <code>1..8</code>、<code>bundle_0096</code> の exact <code>Q4_K mul_mat_q</code> は <code>8..128</code>、<code>bundle_0082</code> は <code>IQ1_S</code> と整理できた。
+              これにより、short resident case の prompt 側 <code>11-12</code> 窓は、bounded cluster 内では <code>bundle_0096</code> とより強く整合すると判断した。
+            </div>
+            <div class="tl-text en">
+              Rechecked only the known <code>bundle_0027 / 0030 / 0037 / 0039 / 0082 / 0096</code> cluster.
+              Fixed that <code>bundle_0030</code> carries <code>Q4_K mul_mat_vec_q</code> for <code>1..8</code>, <code>bundle_0096</code> carries exact <code>Q4_K mul_mat_q</code> for <code>8..128</code>, and <code>bundle_0082</code> is an <code>IQ1_S</code> neighbor.
+              This makes the prompt-side <code>11-12</code> window in the short resident case align more strongly with <code>bundle_0096</code> within the bounded cluster.
+            </div>
+          </div>
+        </li>
+
       </ul>
     </section>
 
@@ -184,12 +201,12 @@
     <section class="card">
       <h2><span class="ja">未確定事項（現時点）</span><span class="en">Open Questions (Current)</span></h2>
       <ul class="ja">
-        <li>short resident case が <code>bundle_0096</code> MMQ family を実際にどの程度踏んだか。</li>
+        <li>short resident case が <code>bundle_0096</code> 自体を踏んだか、それとも別の同型 Q4_K MMQ bundle だったか。</li>
         <li>BLAS-side <code>Cijk_*</code> family の live phase ownership（short case での参加有無）。</li>
         <li><code>prompt_eval_count = 290</code> 境界：MMQ heuristic 超過（fallback）か internal chunking か。</li>
       </ul>
       <ul class="en">
-        <li>How much the short resident case exercised the <code>bundle_0096</code> MMQ family.</li>
+        <li>Whether the short resident case exercised <code>bundle_0096</code> itself or another structurally similar Q4_K MMQ bundle.</li>
         <li>Live phase ownership of the BLAS-side <code>Cijk_*</code> family (whether it participated in the short case).</li>
         <li>The <code>prompt_eval_count = 290</code> boundary: MMQ heuristic overflow (fallback) or internal chunking?</li>
       </ul>
