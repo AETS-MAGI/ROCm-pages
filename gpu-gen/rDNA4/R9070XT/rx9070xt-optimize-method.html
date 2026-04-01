@@ -33,10 +33,10 @@
         <span class="en">Why Direct Observation Is Blocked</span>
       </h1>
 
-      <p class="ja" style="font-size:1.05rem;font-weight:600;color:var(--blue-deep);margin-bottom:10px;">
+      <p class="ja" style="font-size:1.05rem;font-weight:600;color:#fff;margin-bottom:10px;">
         このページで得られる理解：<em>RX9070XT + Ollama の環境では「どの kernel が今動いているか」を直接読む手段が現時点で存在しない</em>、という事実の確認と、その理由の記録。
       </p>
-      <p class="en" style="font-size:1.05rem;font-weight:600;color:var(--blue-deep);margin-bottom:10px;">
+      <p class="en" style="font-size:1.05rem;font-weight:600;color:#fff;margin-bottom:10px;">
         What you'll gain here: the confirmed fact that <em>no means currently exists to directly read which kernel is active in RX9070XT + Ollama</em>, along with a record of why each approach fails.
       </p>
 
@@ -419,6 +419,68 @@
       </div>
     </section>
 
+    <!-- ── 次の方法論ステップ ───────────────────────────────────── -->
+    <section class="card">
+      <h2>
+        <span class="ja">次の方法論ステップ — 量子化横断 dispatch map</span>
+        <span class="en">Next Method Step — Quantization-Agnostic Dispatch Map</span>
+      </h2>
+
+      <p class="ja">
+        direct observer がまだ blocked のままなので、次に広げるべきなのは workload を無秩序に増やすことではなく、
+        <strong>source 側で tensor type から dispatch family への地図を先に作ること</strong>。
+        ここでは、いまの <code>Q4_K_M</code> case study と、量子化方式をまたぐ一般 map を意図的に分ける。
+      </p>
+      <p class="en">
+        With direct observers still blocked, the next expansion is not to add workloads indiscriminately,
+        but to <strong>build a source-side map from tensor type to dispatch family first</strong>.
+        We intentionally separate the current <code>Q4_K_M</code> case study from the broader cross-quantization map.
+      </p>
+
+      <div class="callout callout-limited">
+        <span class="ja">
+          ここで重要なのは、<code>file type</code> と <code>tensor type</code> が同じではないこと。
+          `Q4_K_M` というラベルを持つモデルでも、実際の tensor 側では `Q4_K` だけでなく `Q5_K` / `Q6_K` / `Q8_0` が混ざりうる。
+        </span>
+        <span class="en">
+          The key point is that <code>file type</code> and <code>tensor type</code> are not the same.
+          Even a model labeled <code>Q4_K_M</code> can contain tensor-side mixes such as `Q4_K`, `Q5_K`, `Q6_K`, and `Q8_0`.
+        </span>
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th><span class="ja">見る層</span><span class="en">Layer to map</span></th>
+            <th><span class="ja">今回固定したこと</span><span class="en">What is now fixed</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="ja">量子化ラベル</span><span class="en">Quantization label</span></td>
+            <td>
+              <span class="ja"><code>Q4_K_M</code> のような file type は model-level label であり、tensor-level reality を全部は表さない。</span>
+              <span class="en">A file type such as <code>Q4_K_M</code> is a model-level label and does not fully describe tensor-level reality.</span>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="ja">matmul 分岐</span><span class="en">Matmul split</span></td>
+            <td>
+              <span class="ja">quantized matmul は source 上で <code>MMVQ (≤ 8)</code> / <code>MMQ</code> / BLAS fallback に分かれる。</span>
+              <span class="en">Quantized matmul splits in source into <code>MMVQ (≤ 8)</code>, <code>MMQ</code>, and BLAS fallback.</span>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="ja">隣接 op</span><span class="en">Adjacent ops</span></td>
+            <td>
+              <span class="ja"><code>get_rows</code>、dequant/convert、RoPE、attention は量子化 coverage が揃わないので、同一 map と見なさない。</span>
+              <span class="en"><code>get_rows</code>, dequant/convert, RoPE, and attention do not share one uniform quantization coverage map.</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
     <!-- ── 次の観測点 ─────────────────────────────────────────────── -->
     <section class="card">
       <h2>
@@ -437,6 +499,10 @@
           改善を証明できないだけでなく退化も見逃す。
         </li>
         <li>
+          <strong>observer が blocked な間の次善策：</strong>
+          `Q4_K_M` ケース研究を維持しつつ、`tensor type -> MMVQ / MMQ / BLAS fallback` の量子化横断 dispatch map を source から先に広げる。
+        </li>
+        <li>
           <strong>このページを読んだ後は：</strong>
           <a href="rx9070xt-path.html">経路観測ページ</a>（どの kernel が存在し、phase proxy で何を読んだか）と
           <a href="rx9070xt-investigation-overview.html">調査概観</a>（C14 portability pilot 全体像）。
@@ -452,6 +518,10 @@
           <strong>Prerequisite for optimization phase:</strong>
           A dispatch-safe observer must be secured first. Starting optimization without it means
           you cannot prove improvements — and cannot detect regressions.
+        </li>
+        <li>
+          <strong>Best next move while observers remain blocked:</strong>
+          Keep the `Q4_K_M` case study, but broaden the source-side `tensor type -> MMVQ / MMQ / BLAS fallback` dispatch map before adding more workloads.
         </li>
         <li>
           <strong>After this page:</strong>
