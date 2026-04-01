@@ -67,6 +67,8 @@
         <span class="badge badge-env">C14 portability pilot</span>
         <span class="badge badge-env">gfx1201 / RDNA4</span>
         <span class="badge badge-phase">Phase A–F 完了</span>
+        <span class="badge badge-confirmed ja">IQ1_S direct import 確認</span>
+        <span class="badge badge-confirmed en">IQ1_S direct import confirmed</span>
       </div>
     </section>
 
@@ -81,7 +83,9 @@
           ① gfx1201 は「本命経路が通るかどうか」を観測で確認する必要がある唯一の世代——それがこの調査の研究的意義。<br>
           ② MI25 で使えた観測ツールは RDNA4 では全滅。「失敗」ではなく「観測可能性の地図」として記録する。<br>
           ③ 消去法の末に残るのは phase proxy（response JSON）だけ。多層証拠の積み上げがこの調査の方法論。<br>
-          ④ 「見えない」には2種類ある：observer が壊れているのか、実際に起きていないのか——この切り分けが調査の核心的な知的作業。
+          ④ 「見えない」には2種類ある：observer が壊れているのか、実際に起きていないのか——この切り分けが調査の核心的な知的作業。<br>
+          ⑤ 比較枝としての `IQ1_S` も、small single-file GGUF の direct import なら current Ollama で `100% GPU` resident case
+          まで到達する。
         </span>
         <span class="en">
           ① gfx1201 is the one generation where observation is required to determine whether the primary path actually
@@ -91,7 +95,9 @@
           ③ By elimination, only the phase proxy (response JSON) remains. Multi-layer evidence accumulation is the
           methodology.<br>
           ④ "Invisible" has two causes: a broken observer, or something genuinely not happening — distinguishing these
-          is the core intellectual work.
+          is the core intellectual work.<br>
+          ⑤ The comparative `IQ1_S` branch also reaches a `100% GPU` resident case on current Ollama when imported as a
+          small single-file GGUF.
         </span>
       </div>
     </section>
@@ -104,10 +110,11 @@
       </h2>
 
       <p class="ja">
-        <strong>観測のポイント：</strong> RX9070XT (gfx1201) は GPU 世代の中でどんな立ち位置にあるのか？
+        <strong>この研究と観測を理解するために：</strong> RX9070XT (gfx1201) は GPU 世代の中でどんな立ち位置にあるのか？
       </p>
       <p class="en">
-        <strong>Observation target:</strong> Where does RX9070XT (gfx1201) sit among GPU generations?
+        <strong>To understand this investigation and observations:</strong> Where does RX9070XT (gfx1201) sit among GPU
+        generations?
       </p>
 
       <p class="ja">
@@ -391,10 +398,13 @@
             <td>
               <span class="badge badge-inferred ja">近似のみ確定・直接確認は不可</span><span
                 class="badge badge-inferred en">Approximate only — direct confirmation blocked</span><br>
-              <span class="ja">short case は MMVQ 圏と読むのが最も筋がいい。ただし dispatch-safe observer がなく、直接確認はできない。<strong>これが現在の
-                  frontier。</strong></span>
-              <span class="en">Short case most naturally reads as MMVQ zone. However, without a dispatch-safe observer,
-                direct confirmation is impossible. <strong>This is the current frontier.</strong></span>
+              <span class="ja">current best reading は pure-MMVQ ではなく mixed-by-phase。decode 側は
+                MMVQ-compatible、short/medium prompt 側はすでに MMQ-eligible と読むのが最も筋がいい。ただし dispatch-safe observer
+                がなく、直接確認はできない。<strong>これが現在の frontier。</strong></span>
+              <span class="en">The current best reading is not pure MMVQ but mixed-by-phase. Decode looks
+                MMVQ-compatible, while short/medium prompt windows already read as MMQ-eligible. However, without a
+                dispatch-safe observer, direct confirmation is still impossible. <strong>This is the current
+                  frontier.</strong></span>
             </td>
           </tr>
         </tbody>
@@ -405,13 +415,32 @@
           <strong>ここで分かること：</strong>
           Phase A〜E は期待通りに進んだ。ソースは読め、バイナリは存在し、逆アセンブリも成功した。
           躓いたのは Phase F——「実際に動いた」を直接確認する段階で、全ての observer が機能しなかった。
-          だからこそ「バイナリが存在すること」と「実際に使われること」の間にギャップが残り続けている。
+          ただし proxy からの narrowing 自体は進んでおり、`q4_k_m` short resident case も pure-MMVQ ではなく mixed-by-phase 読みまで狭まっている。
+          それでもなお「バイナリが存在すること」と「実際に使われること」の間にギャップが残り続けている。
         </span>
         <span class="en">
           <strong>What this tells us:</strong>
           Phases A–E proceeded as expected. Source was readable, binaries exist, disassembly succeeded.
           The stumbling point was Phase F — at the stage of directly confirming "it actually ran," all observers failed.
-          That is why the gap between "the binary exists" and "it was actually used" persists.
+          But proxy-based narrowing did progress: even the `q4_k_m` short resident case has already narrowed from "pure
+          MMVQ" to a mixed-by-phase reading.
+          Even so, the gap between "the binary exists" and "it was actually used" still persists.
+        </span>
+      </div>
+
+      <div class="callout callout-confirmed" style="margin-top:12px;">
+        <span class="ja">
+          ただし practical ingest 側では前進がある。`IQ1_S` は requantize helper では狭いが、existing single-file GGUF の direct import は
+          current host で通り、
+          `ollama create -> api/generate -> ollama ps` まで成立した。つまり今の `IQ1_S` の未確定は「入口が通るか」ではなく、「live path の主体がどの `IQ1_S`
+          family か」に移っている。
+        </span>
+        <span class="en">
+          There is practical progress on the ingest side, though. `IQ1_S` remains narrow through the requantize helper,
+          but direct import of an existing single-file GGUF does work on the current host through `ollama create ->
+          api/generate -> ollama ps`.
+          So the remaining `IQ1_S` uncertainty is no longer "can it enter?" but rather "which `IQ1_S` family owns the
+          live path?"
         </span>
       </div>
     </section>

@@ -490,6 +490,21 @@
         The reason is that it already has source-side entry into both `MMVQ` and `MMQ`, and the current RDNA4 fatbin already exposes a `gfx1201` `mul_mat_q` anchor in `bundle_0082`.
         Practical-path analysis also split further: the `ollama create -q IQ1_S` requantize route is narrow, while direct import of an existing GGUF appears to remain a separate path. `Q5_K_M` comes after that.
       </p>
+
+      <div class="callout callout-confirmed" style="margin-top:12px;">
+        <span class="ja">
+          follow-up では、この practical split を実機で確認した。small single-file `IQ1_S` GGUF
+          (`Llama-3.2-1B-Instruct-UD-IQ1_S.gguf`) を `Modelfile` から direct import すると、
+          `ollama create -> show -> api/generate -> ollama ps` まで current host で成立し、resident case では `100% GPU` が見えた。
+          つまり current Ollama では、`IQ1_S` は「requantize helper は狭いが、existing GGUF direct import は通る」と書くのが正確。
+        </span>
+        <span class="en">
+          A follow-up practical check confirmed this split on real hardware. A small single-file `IQ1_S` GGUF
+          (`Llama-3.2-1B-Instruct-UD-IQ1_S.gguf`) successfully passed through `ollama create -> show -> api/generate -> ollama ps`
+          on the current host, and the resident case showed `100% GPU`.
+          So for current Ollama, the accurate statement is: `IQ1_S` has a narrow requantize helper path, but existing-GGUF direct import does work.
+        </span>
+      </div>
     </section>
 
     <!-- ── 次の観測点 ─────────────────────────────────────────────── -->
@@ -511,7 +526,7 @@
         </li>
         <li>
           <strong>observer が blocked な間の次善策：</strong>
-          `Q4_K_M` ケース研究を維持しつつ、まず `IQ1_S` を別枝比較対象として固定し、そのうえで `tensor type -> MMVQ / MMQ / BLAS fallback` の量子化横断 dispatch map を広げる。
+          `Q4_K_M` ケース研究を維持しつつ、direct-import が通ることを確認済みの `IQ1_S` を最初の別枝比較対象に置き、そのうえで `tensor type -> MMVQ / MMQ / BLAS fallback` の量子化横断 dispatch map を広げる。`Q5_K_M` はその次。
         </li>
         <li>
           <strong>このページを読んだ後は：</strong>
@@ -532,7 +547,7 @@
         </li>
         <li>
           <strong>Best next move while observers remain blocked:</strong>
-          Keep the `Q4_K_M` case study, fix `IQ1_S` as the first alternative branch, then broaden the source-side `tensor type -> MMVQ / MMQ / BLAS fallback` map before adding more workloads.
+          Keep the `Q4_K_M` case study, use the now-confirmed direct-import `IQ1_S` case as the first alternative branch, then broaden the source-side `tensor type -> MMVQ / MMQ / BLAS fallback` map before adding more workloads. `Q5_K_M` comes next.
         </li>
         <li>
           <strong>After this page:</strong>
