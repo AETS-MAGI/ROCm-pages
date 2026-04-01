@@ -45,22 +45,22 @@
       </p>
 
       <p class="ja">
-        この調査（C14 portability pilot）は、MI25 で確立した観測方法論を RDNA4 に移植する試みだ。
+        この調査（C14 portability pilot）は、MI25（AMD の古い世代の GPU）で確立した観測方法論を RDNA4（新しい世代）に移植する試みだ。
         ところが、MI25 で当然のように使えた観測ツールが RDNA4 では軒並み機能しない。
         その「機能しない」という事実が、そのまま研究の成果になる。
         <br>
-        RDNA4 / gfx1201 が特に面白いのは、GPU 世代としてちょうど「本命経路が通るかどうか」の境界にいるからだ。
-        fallback だけの世代でも、本命だけの世代でもない——観測しなければ分からない。
+        RDNA4 / gfx1201 が特に面白いのは、GPU 世代としてちょうど「本命経路（最適化された専用の計算ルート）が通るかどうか」の境界にいるからだ。
+        fallback（本命が使えないとき、別ルートに切り替えること）だけの世代でも、本命だけの世代でもない——観測しなければ分からない。
       </p>
       <p class="en">
         This investigation (C14 portability pilot) is an attempt to transplant the observation methodology established
-        for MI25 onto RDNA4.
+        for MI25 (an older AMD GPU generation) onto RDNA4 (a newer generation).
         But the observation tools that worked naturally for MI25 fail across the board on RDNA4.
         That fact — "it doesn't work" — is itself the research finding.
         <br>
         RDNA4 / gfx1201 is particularly interesting because, as a GPU generation, it sits right at the boundary of "does
-        the primary path actually run?"
-        Neither pure-fallback nor pure-primary — you have to observe to know.
+        the primary path (the optimized, dedicated compute route) actually run?"
+        Neither pure-fallback (switching to an alternate route when the primary is unavailable) nor pure-primary — you have to observe to know.
       </p>
 
       <div class="hero-meta">
@@ -72,6 +72,53 @@
         <span class="badge badge-confirmed ja">Q5_K_M direct import 確認</span>
         <span class="badge badge-confirmed en">Q5_K_M direct import confirmed</span>
       </div>
+    </section>
+
+    <!-- ── まず3行で ──────────────────────────────────────────────── -->
+    <section class="card">
+      <h2>
+        <span class="ja">まず3行で——この調査は何をしているのか</span>
+        <span class="en">In Three Lines — What This Investigation Is Doing</span>
+      </h2>
+
+      <div class="callout callout-confirmed">
+        <span class="ja">
+          ① GPU（グラフィックスカード）の中で「どの仕事が動いているか」を知りたい。<br>
+          ② でも直接のぞこうとすると、のぞいた瞬間に機械が止まる。<br>
+          ③ だから、外に出てくる数字やヒントを集めて、中で何が起きているかを推理する。
+        </span>
+        <span class="en">
+          ① We want to know which "jobs" are running inside the GPU (graphics card).<br>
+          ② But if we try to look directly, the machine stops the moment we look.<br>
+          ③ So instead, we collect clues and numbers that emerge from outside, and reason about what's happening inside.
+        </span>
+      </div>
+
+      <p class="ja">
+        もう少し具体的に言うと——GPU の中では、行列同士のかけ算（GEMM: LLM の推論の大半を占める演算）が
+        どの「仕事の担当カーネル（kernel: GPU の中で動く個々の仕事の単位）」に回されているかを、
+        実行時にしか確認できない。
+        ソースコードに経路が書いてあっても、実際にその経路を通るかどうかは動かしてみないと分からない。
+      </p>
+      <p class="en">
+        To be more specific — inside the GPU, which "kernel (the individual job unit running inside the GPU)"
+        handles the matrix multiplication (GEMM: the operation dominating most of LLM inference)
+        can only be confirmed at runtime.
+        Even if the source code describes a path, whether it's actually taken cannot be known until it runs.
+      </p>
+
+      <p class="ja">
+        <strong>たとえ話：</strong>
+        工場の機械が動いている。仕事の量によって「担当ライン A」か「担当ライン B」かを自動で選ぶ。
+        どちらのラインが動いているか知りたい。でも、確認しようとして機械に手を触れると止まってしまう。
+        だから「機械から出てくるメーターの数字」を読んで、どちらが動いているかを推理する——これがこの調査の本質だ。
+      </p>
+      <p class="en">
+        <strong>An analogy:</strong>
+        A factory machine is running. Depending on workload, it automatically selects "Line A" or "Line B."
+        We want to know which line is active. But touching the machine to check makes it stop.
+        So we read the meter numbers that come out from the machine, and reason about which line is running — that is the essence of this investigation.
+      </p>
     </section>
 
     <!-- ── このページの結論 ──────────────────────────────────────── -->
@@ -216,13 +263,14 @@
         RDNA4?</p>
 
       <p class="ja">
-        MI25 調査では「observe first, then optimize」の手順で観測クラスを確立した。
-        ロール: rocprofv3 による kernel 追跡・ROCBLAS_LAYER ログ・プロセスマップ観測の3本柱で「何が実行されたか」を直接確認できた。
+        MI25 調査では「observe first, then optimize（まず観測し、それから最適化する）」の手順で観測クラスを確立した。
+        3本の柱——<code>rocprofv3</code>（AMD GPU の標準観測ツール）による kernel（GPU の仕事の単位）追跡・<code>ROCBLAS_LAYER</code> ログ・プロセスマップ観測——で「何が実行されたか」を直接確認できた。
         C14 pilot はこの方法論を RX9070XT へ持ち込む試みだ。
       </p>
       <p class="en">
         The MI25 investigation established an observation class using an "observe first, then optimize" procedure.
-        Three pillars — rocprofv3 kernel tracing, ROCBLAS_LAYER logging, and process map observation — allowed direct
+        Three pillars — <code>rocprofv3</code> (AMD's standard GPU observation tool) kernel tracing,
+        <code>ROCBLAS_LAYER</code> logging, and process map observation — allowed direct
         confirmation of what was executed.
         C14 pilot is the attempt to bring this methodology to RX9070XT.
       </p>
@@ -245,7 +293,7 @@
 
       <p class="ja">
         Phase A–F はその切り分けのための設計。
-        ソース追跡で理論的な分岐を固め（A/B）、ライブラリとバイナリの存在を確認し（C/D）、逆アセンブリで実体を掴み（E）、runtime proxy で近似相関を取る（F）。
+        ソース追跡で理論的な分岐を固め（A/B）、ライブラリ（プログラムの部品）とバイナリ（実際に動く実行コード）の存在を確認し（C/D）、逆アセンブリ（実行コードを人間が読める形に変換すること）で実体を掴み（E）、runtime proxy（直接観測の代わりに外から読める値を手がかりにする手法）で近似相関を取る（F）。
         <strong>→ 次の問い：</strong> しかし、この手順を RDNA4 で実行しようとすると、何が壊れるのか？
       </p>
       <p class="en">
@@ -467,8 +515,9 @@
           existing single-file GGUF の direct import は current host で通り、resident case も `100% GPU` だった。
           bounded phase proxy では short window が `7`、medium window が `13` で、current best reading は
           `Q5_K` MMVQ-compatible / MMQ-eligible である。
-          ただし `Q5_K` MMQ 側は exact extracted hsaco ではなく fatbin-level symbol evidence に留まるので、
-          `Q5_K_M` の medium 側 ownership には `IQ1_S` より一段強い保留が残る。
+          さらに `Q5_K` MMQ 側も `bundle_0098` として exact extracted hsaco まで取れた。
+          そのため medium 側の読みは以前より強くなったが、なお `object exists` と `that object owned the live window` は別段階なので、
+          `Q5_K_M` の medium 側 ownership には still unresolved を残す。
         </span>
         <span class="en">
           `Q5_K_M` has also moved forward on the practical path. The current Ollama helper path remains narrow,
@@ -476,8 +525,24 @@
           `100% GPU`.
           In bounded phase proxy, the short window was `7` and the medium window was `13`, so the current best reading
           is `Q5_K` MMVQ-compatible / MMQ-eligible.
-          But the `Q5_K` MMQ side still stops at fatbin-level symbol evidence rather than an exact extracted hsaco, so
-          the medium-window ownership remains one step more tentative than `IQ1_S`.
+          The `Q5_K` MMQ side has now also been isolated as exact extracted hsaco in `bundle_0098`.
+          That strengthens the medium-window reading, but `object exists` and `that object owned the live window` are
+          still different stages, so medium-window ownership remains unresolved.
+        </span>
+      </div>
+
+      <div class="callout callout-confirmed" style="margin-top:12px;">
+        <span class="ja">
+          この比較を 3 本で並べると役割がはっきりする。
+          `Q4_K_M` は main case study、`Q5_K_M` は最も近い near-neighbor、`IQ1_S` は最初の branch broadener である。
+          3 本とも、source skeleton / exact extracted MMVQ-MMQ anchor / practical ingest viability / bounded phase proxy までは揃った。
+          つまり現在の共通ボトルネックは live ownership であり、method 自体は 1 本の量子化に閉じていない。
+        </span>
+        <span class="en">
+          Putting the three side by side makes their roles clearer.
+          `Q4_K_M` is the main case study, `Q5_K_M` is the closest near-neighbor, and `IQ1_S` is the first branch broadener.
+          All three now reach source skeleton, exact extracted MMVQ/MMQ anchors, practical ingest viability, and bounded phase proxy.
+          In other words, the shared bottleneck is now live ownership, and the method is no longer tied to a single quantization family.
         </span>
       </div>
     </section>
@@ -703,14 +768,14 @@
         </thead>
         <tbody>
           <tr>
-            <td><span class="ja">最小 prompt</span><span class="en">Minimal prompt</span></td>
-            <td>3</td>
+            <td><span class="ja">threshold 未満</span><span class="en">Below threshold</span></td>
+            <td>7 / 8</td>
             <td><span class="badge badge-confirmed ja">MMVQ 圏（ne11 ≤ 8）</span><span
                 class="badge badge-confirmed en">MMVQ zone (ne11 ≤ 8)</span></td>
           </tr>
           <tr>
-            <td><span class="ja">短文 prompt</span><span class="en">Short prompt</span></td>
-            <td>11</td>
+            <td><span class="ja">threshold 超え</span><span class="en">Above threshold</span></td>
+            <td>9 / 11 / 12</td>
             <td><span class="badge badge-inferred ja">MMQ-eligible 圏（bundle_0096 候補）</span><span
                 class="badge badge-inferred en">MMQ-eligible zone (bundle_0096 candidate)</span></td>
           </tr>

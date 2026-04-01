@@ -338,13 +338,13 @@
       <div class="callout callout-confirmed">
         <strong class="ja">何が起きたか（Phase F probe 結果）：</strong><strong class="en">What happened (Phase F probe results):</strong>
         <span class="ja">
-          <code>prompt_eval_count = 3</code> → MMVQ 圏（ne11 ≤ 8 に対応）。
-          <code>prompt_eval_count = 11</code> → MMQ-eligible 圏（8 &lt; ne11 ≤ 256 に対応）。
+          <code>prompt_eval_count = 7 / 8</code> → MMVQ 圏（ne11 ≤ 8 に対応）。
+          <code>prompt_eval_count = 9 / 11 / 12</code> → MMQ-eligible 圏（8 &lt; ne11 ≤ 256 に対応）。
           runtime は壊れず、GPU 上で正常に実行された。
         </span>
         <span class="en">
-          <code>prompt_eval_count = 3</code> → MMVQ zone (maps to ne11 ≤ 8).
-          <code>prompt_eval_count = 11</code> → MMQ-eligible zone (maps to 8 &lt; ne11 ≤ 256).
+          <code>prompt_eval_count = 7 / 8</code> → MMVQ zone (maps to ne11 ≤ 8).
+          <code>prompt_eval_count = 9 / 11 / 12</code> → MMQ-eligible zone (maps to 8 &lt; ne11 ≤ 256).
           The runtime was not disrupted; execution proceeded on GPU normally.
         </span>
       </div>
@@ -353,23 +353,19 @@
       <div class="callout callout-confirmed" style="margin-top:14px;">
         <span class="ja">
           <strong>実際にやっていること（手順）：</strong><br><br>
-          ① 短いプロンプトを Ollama に投げる（例：3トークン）<br>
-          ② response JSON を受け取り、<code>prompt_eval_count</code> を読む → <code>3</code><br>
-          ③ これは <code>ne11 = 3 ≤ 8</code> → <strong>MMVQ 圏に入っているはず</strong> と推理<br><br>
-          ④ 長いプロンプトを投げる（例：11トークン）<br>
-          ⑤ <code>prompt_eval_count</code> を読む → <code>11</code><br>
-          ⑥ これは <code>8 &lt; ne11 = 11 ≤ 256</code> → <strong>MMQ 圏に入っているはず</strong> と推理<br><br>
-          → runtime は壊れず、GPU 上で正常実行。「どのトークン数がどの分岐を踏むか」が分かった。
+          ① 単純な word ladder prompt を投げる（例：6語, 7語, 8語, 10語, 11語）<br>
+          ② response JSON の <code>prompt_eval_count</code> を読む → <code>7 / 8 / 9 / 11 / 12</code><br>
+          ③ <code>7 / 8</code> は <code>ne11 ≤ 8</code> → <strong>MMVQ 圏</strong> と読む<br>
+          ④ <code>9 / 11 / 12</code> は <code>8 &lt; ne11 ≤ 256</code> → <strong>MMQ 圏</strong> と読む<br><br>
+          → runtime は壊れず、GPU 上で正常実行。しかも <strong>`8 -> 9` の境界そのもの</strong> を外から踏み分けられた。
         </span>
         <span class="en">
           <strong>Concrete steps (what you actually do):</strong><br><br>
-          ① Send a short prompt to Ollama (e.g., 3 tokens)<br>
-          ② Read <code>prompt_eval_count</code> from response JSON → <code>3</code><br>
-          ③ Since <code>ne11 = 3 ≤ 8</code> → infer <strong>"it's in the MMVQ zone"</strong><br><br>
-          ④ Send a long prompt (e.g., 11 tokens)<br>
-          ⑤ Read <code>prompt_eval_count</code> → <code>11</code><br>
-          ⑥ Since <code>8 &lt; ne11 = 11 ≤ 256</code> → infer <strong>"it's in the MMQ zone"</strong><br><br>
-          → Runtime intact, GPU running normally. We can now see which token count triggers which branch.
+          ① Send a simple word-ladder prompt (e.g., 6, 7, 8, 10, 11 words)<br>
+          ② Read <code>prompt_eval_count</code> from response JSON → <code>7 / 8 / 9 / 11 / 12</code><br>
+          ③ Read <code>7 / 8</code> as <strong>MMVQ-side</strong> because <code>ne11 ≤ 8</code><br>
+          ④ Read <code>9 / 11 / 12</code> as <strong>MMQ-side</strong> because <code>8 &lt; ne11 ≤ 256</code><br><br>
+          → Runtime intact, GPU running normally. We can now straddle the <strong>`8 -> 9` transition itself</strong>.
         </span>
       </div>
 
@@ -619,8 +615,9 @@
           small single-file `Q5_K_M` GGUF の direct import は current host で通り、
           `ollama create -> show -> api/generate -> ollama ps` まで成立した。
           bounded probe では short window が `prompt_eval_count = 7`、medium window が `13` で、resident runner も `100% GPU` だった。
-          ただし MMQ 側は fatbin-level symbol evidence まではあるが exact extracted hsaco が未 isolate なので、
-          `13` window は `MMQ-eligible` とまでは言えても exact object ownership はまだ unresolved。
+          さらに `Q5_K` MMQ 側も `bundle_0098` として exact extracted `gfx1201` hsaco まで取れた。
+          なので `13` window は source だけでなく exact object 側からも `MMQ-eligible` と読める。
+          ただし extracted object の存在と live dispatch の実証は別なので、exact runtime ownership はまだ unresolved。
         </span>
         <span class="en">
           The next near-neighbor comparison target, `Q5_K_M`, is no longer just source/binary footing.
@@ -628,8 +625,32 @@
           on the current host.
           In the bounded probe, the short window stayed at `prompt_eval_count = 7`, the medium window reached `13`,
           and the resident runner remained `100% GPU`.
-          But the MMQ side still stops at fatbin-level symbol evidence rather than an exact extracted hsaco, so the
-          `13` window is only `MMQ-eligible`, not exact object ownership.
+          The `Q5_K` MMQ side has now also been isolated as exact extracted `gfx1201` hsaco in `bundle_0098`.
+          That means the `13` window is `MMQ-eligible` not only from source shape, but also from exact object presence.
+          Even so, extracted-object presence and live dispatch proof are different stages, so exact runtime ownership
+          remains unresolved.
+        </span>
+      </div>
+
+      <div class="callout callout-confirmed" style="margin-top:12px;">
+        <span class="ja">
+          ここまでで比較の三本柱も固まった。現在の整理は、
+          `Q4_K_M` = main case study、
+          `Q5_K_M` = もっとも近い near-neighbor、
+          `IQ1_S` = 最初の branch broadener、
+          という役割分担である。
+          3 本とも source skeleton、exact extracted MMVQ/MMQ anchor、practical ingest/runtime viability、bounded phase proxy までは揃った。
+          つまり次の未確定は「object があるか」ではなく、「live window をどれが支配したか」である。
+        </span>
+        <span class="en">
+          At this point the three-way comparison frame is also fixed.
+          The current division is:
+          `Q4_K_M` = main case study,
+          `Q5_K_M` = closest near-neighbor,
+          `IQ1_S` = first branch broadener.
+          All three now have source skeletons, exact extracted MMVQ/MMQ anchors, practical ingest/runtime viability,
+          and bounded phase-proxy narrowing.
+          So the next uncertainty is no longer "does the object exist?" but rather "which object owned the live window?"
         </span>
       </div>
     </section>
