@@ -24,31 +24,133 @@
     </div>
 
     <section class="hero">
-      <h1><span class="ja">ROCm バンドル</span><span class="en">ROCm Bundle</span></h1>
-      <p class="ja">Ollama が使用する ROCm ランタイムバンドルの構造と、RX9070XT 実機で確認した配置を記録します。バンドル優先ロードにより、system ROCm とは独立した stack で動作します。</p>
-      <p class="en">Documents the structure of the ROCm runtime bundle used by Ollama and the layout confirmed on the RX9070XT live machine. Bundle-first loading ensures operation against an independent stack from system ROCm.</p>
+      <h1>
+        <span class="ja">ROCm バンドル — Ollama はどのライブラリをどう使っているのか</span>
+        <span class="en">ROCm Bundle — Which Libraries Does Ollama Use, and How?</span>
+      </h1>
+
+      <p class="ja" style="font-size:1.05rem;font-weight:600;color:#fff;margin-bottom:10px;">
+        このページで得られる理解：<em>Ollama が system ROCm とは独立した bundle-first stack で動作すること、12 ライブラリの依存チェーンが確認されていること、そして「ロードされている ≠ 使われている」という重要な区別。</em>
+      </p>
+      <p class="en" style="font-size:1.05rem;font-weight:600;color:#fff;margin-bottom:10px;">
+        What you'll gain here: <em>Ollama runs on a bundle-first stack independent of system ROCm; a 12-library dependency chain is confirmed; and the critical distinction that "loaded ≠ dispatched."</em>
+      </p>
+
+      <p class="ja">
+        Ollama は GPU 推論に ROCm を使うが、system にインストールされた ROCm をそのまま使うわけではない。
+        <code>/usr/local/lib/ollama/rocm/</code> 以下の自前バンドルを優先し、system ROCm より先にロードする。
+        このページでは、RX9070XT 実機での Phase C 観測でどのライブラリが実際にロードされたか、
+        そしてそのロードが何を意味し、何を意味しないかを記録する。
+      </p>
+      <p class="en">
+        Ollama uses ROCm for GPU inference, but not the system-installed ROCm directly.
+        It prioritizes its own bundle under <code>/usr/local/lib/ollama/rocm/</code>, loading it before system ROCm.
+        This page records which libraries were actually loaded in Phase C observation on RX9070XT,
+        and what that loading does — and does not — tell us.
+      </p>
+
       <div class="hero-meta">
         <span class="badge badge-env">/usr/local/lib/ollama/rocm/</span>
-        <span class="badge badge-confirmed ja">RX9070XT: 実機確認済み（Phase C）</span>
+        <span class="badge badge-confirmed ja">RX9070XT: Phase C 実機確認済み</span>
         <span class="badge badge-confirmed en">RX9070XT: Confirmed live (Phase C)</span>
       </div>
     </section>
 
-    <!-- 観測済み事実 -->
+    <!-- ── このページの結論 ──────────────────────────────────────── -->
     <section class="card">
-      <h2><span class="ja">観測済み事実（RX9070XT / Phase C）</span><span class="en">Observed Facts (RX9070XT / Phase C)</span></h2>
-      <ul class="ja">
-        <li>Ollama の runner は <code>LD_LIBRARY_PATH</code> と <code>OLLAMA_LIBRARY_PATH</code> を bundle root で先行設定し、system ROCm より bundle を優先します（ソース確認：<code>llm/server.go</code>）。</li>
-        <li>bundle root: <code>/usr/local/lib/ollama/</code> および <code>/usr/local/lib/ollama/rocm/</code>。</li>
-        <li>確認した主要ライブラリと依存チェーン：</li>
-      </ul>
-      <ul class="en">
-        <li>Ollama's runner sets <code>LD_LIBRARY_PATH</code> and <code>OLLAMA_LIBRARY_PATH</code> to the bundle root ahead of system ROCm (source-confirmed in <code>llm/server.go</code>).</li>
-        <li>Bundle roots: <code>/usr/local/lib/ollama/</code> and <code>/usr/local/lib/ollama/rocm/</code>.</li>
-        <li>Confirmed major libraries and dependency chain:</li>
-      </ul>
+      <h2>
+        <span class="ja">このページの結論</span>
+        <span class="en">Page Conclusion</span>
+      </h2>
+      <div class="callout callout-confirmed">
+        <span class="ja">
+          Ollama runner は bundle-first で動作し、<code>/proc/maps</code> で 12 ライブラリのロードを確認した。
+          依存チェーンの構造は <code>libggml-hip.so</code> を頂点に、BLAS → HIP → HSA → DRM の層として読める。<br>
+          ただし <strong>「ロードされている = 使われている」ではない</strong>。
+          どのライブラリのどの演算が実際に dispatch されたかは、このページだけでは確定しない。
+        </span>
+        <span class="en">
+          Ollama runner operates bundle-first; 12 libraries confirmed loaded via <code>/proc/maps</code>.
+          The dependency chain structure reads as layers: <code>libggml-hip.so</code> at the top, then BLAS → HIP → HSA → DRM.<br>
+          However, <strong>"loaded ≠ dispatched"</strong>.
+          Which library's operations were actually dispatched cannot be determined from this page alone.
+        </span>
+      </div>
+    </section>
+
+    <!-- ── なぜバンドルを確認するのか ───────────────────────────── -->
+    <section class="card">
+      <h2>
+        <span class="ja">なぜバンドルを確認するのか — 調査における bundle の位置づけ</span>
+        <span class="en">Why Confirm the Bundle — Role of Bundle Verification in the Investigation</span>
+      </h2>
+
+      <p class="ja"><strong>観測ポイント：</strong> Ollama は system ROCm とは別の stack を使っているのか？ 使っているとしたらどの層がどこから来るのか？</p>
+      <p class="en"><strong>Observation target:</strong> Does Ollama use a separate stack from system ROCm? If so, which layer comes from where?</p>
+
+      <p class="ja">
+        GPU 推論の経路を調査するうえで、「どのバイナリが実際に実行されているのか」を特定することは不可欠だ。
+        system ROCm の <code>/opt/rocm/</code> と Ollama bundle の <code>/usr/local/lib/ollama/rocm/</code> が共存する環境では、
+        どちらが使われているかを確認しないと、調査の土台が揺らぐ。
+      </p>
+      <p class="en">
+        Identifying "which binary is actually being executed" is essential for any investigation of GPU inference paths.
+        In an environment where system ROCm at <code>/opt/rocm/</code> and Ollama's bundle at <code>/usr/local/lib/ollama/rocm/</code> coexist,
+        failing to confirm which one is used undermines the entire investigation's foundation.
+      </p>
+
+      <div class="callout callout-confirmed">
+        <span class="ja">
+          <strong>確認できたこと：</strong>
+          Ollama runner は <code>llm/server.go</code> 内で <code>LD_LIBRARY_PATH</code> と <code>OLLAMA_LIBRARY_PATH</code> を bundle root で先行設定する。
+          つまり、同名のライブラリが system にあっても bundle 側が優先される。
+          Phase C で <code>/proc/maps</code> を確認し、すべてのロード済みライブラリが bundle 側から来ていることを確認した。
+        </span>
+        <span class="en">
+          <strong>What was confirmed:</strong>
+          Ollama runner sets <code>LD_LIBRARY_PATH</code> and <code>OLLAMA_LIBRARY_PATH</code> to the bundle root in <code>llm/server.go</code>.
+          This means the bundle takes priority over any system library of the same name.
+          Phase C confirmed via <code>/proc/maps</code> that all loaded libraries come from the bundle side.
+        </span>
+      </div>
+
+      <p class="ja">
+        <strong>→ 次の問い：</strong> では bundle には具体的にどのライブラリが含まれ、どんな依存関係があるのか？
+      </p>
+      <p class="en">
+        <strong>→ Next question:</strong> Specifically, which libraries are in the bundle, and how are they related?
+      </p>
+    </section>
+
+    <!-- ── 依存ツリー（グラフ） ──────────────────────────────────── -->
+    <section class="card">
+      <h2>
+        <span class="ja">bundle 依存ツリー（12 ライブラリ）</span>
+        <span class="en">Bundle Dependency Tree (12 Libraries)</span>
+      </h2>
+
+      <a href="../../assets/img/graph/bundle_dep_tree.webp" target="_blank"
+         class="graph-zoom" title="クリックで拡大 / Click to enlarge">
+        <img src="../../assets/img/graph/bundle_dep_tree.webp"
+             alt="ROCm bundle dependency tree — 12 libraries from libggml-hip.so through HSA, DRM layers"
+             class="graph-img" />
+      </a>
+      <p class="graph-caption ja">クリックで拡大 · Phase C で確認した 12 ライブラリの依存関係（有向グラフ）</p>
+      <p class="graph-caption en">Click to enlarge · Dependency graph of 12 libraries confirmed in Phase C</p>
+    </section>
+
+    <!-- ── 確認されたロード（Phase C） ──────────────────────────── -->
+    <section class="card">
+      <h2>
+        <span class="ja">確認されたロード — Phase C の詳細</span>
+        <span class="en">Confirmed Loads — Phase C Details</span>
+      </h2>
+
+      <p class="ja"><strong>観測ポイント：</strong> <code>/proc/&lt;runner&gt;/maps</code> に実際に現れたライブラリは何か。</p>
+      <p class="en"><strong>Observation target:</strong> Which libraries actually appear in <code>/proc/&lt;runner&gt;/maps</code>?</p>
+
       <div class="call-chain">
-<span class="target">libggml-hip.so</span>          <span class="branch ja">（587 MiB .hip_fatbin 含む）</span><span class="branch en">(includes 587 MiB .hip_fatbin)</span>
+<span class="target">libggml-hip.so</span>  <span class="branch ja">（587 MiB .hip_fatbin 含む — gfx1201 custom hsaco を格納）</span><span class="branch en">(includes 587 MiB .hip_fatbin — stores gfx1201 custom hsacos)</span>
   <span class="arrow">→</span> <span class="target">libhipblas.so.2.3.60303</span>
   │     <span class="arrow">→</span> <span class="target">librocsolver.so.0.3.60303</span>
   │     <span class="arrow">→</span> <span class="target">librocblas.so.4.3.60303</span>
@@ -60,53 +162,213 @@
         <span class="arrow">→</span> <span class="target">librocprofiler-register.so.0.4.0</span>
         <span class="arrow">→</span> <span class="target">libdrm.so.2.123.0</span> / <span class="target">libdrm_amdgpu.so.1.123.0</span>
 
-rocblas/library/              <span class="branch ja">（gfx1201 ターゲット 56 ファイル）</span><span class="branch en">(56 gfx1201-targeted files)</span>
+rocblas/library/  <span class="branch ja">（gfx1201 ターゲット 56 ファイル）</span><span class="branch en">(56 gfx1201-targeted files)</span>
   Kernels.so-000-gfx1201.hsaco
-  TensileLibrary_lazy_gfx1201_*.dat / *.so  <span class="branch ja">（variants）</span><span class="branch en">(variants)</span>
+  TensileLibrary_lazy_gfx1201_*.dat / *.so
       </div>
-      <p class="ja" style="margin:8px 0 4px;font-size:.85em;color:var(--muted);">Phase C: /proc/&lt;runner&gt;/maps で確認した全ロード済みライブラリ</p>
-      <p class="en" style="margin:8px 0 4px;font-size:.85em;color:var(--muted);">Phase C: All loaded libraries confirmed in /proc/&lt;runner&gt;/maps</p>
-      <table class="data-table" style="margin-top:4px;">
+
+      <table class="data-table" style="margin-top:14px;">
         <thead>
           <tr>
             <th><span class="ja">ライブラリ</span><span class="en">Library</span></th>
-            <th><span class="ja">経路</span><span class="en">Route</span></th>
+            <th><span class="ja">依存経路</span><span class="en">Load Route</span></th>
+            <th><span class="ja">役割</span><span class="en">Role</span></th>
           </tr>
         </thead>
         <tbody>
-          <tr><td><code>libggml-base.so.0.0.0</code></td><td><span class="ja">/usr/local/lib/ollama/（直接）</span><span class="en">/usr/local/lib/ollama/ (direct)</span></td></tr>
-          <tr><td><code>libggml-hip.so</code></td><td><span class="ja">rocm/ 直接</span><span class="en">rocm/ direct</span></td></tr>
-          <tr><td><code>libhipblas.so.2.3.60303</code></td><td><span class="ja">libggml-hip.so の NEEDED</span><span class="en">NEEDED by libggml-hip.so</span></td></tr>
-          <tr><td><code>librocblas.so.4.3.60303</code></td><td><span class="ja">libggml-hip.so の NEEDED</span><span class="en">NEEDED by libggml-hip.so</span></td></tr>
-          <tr><td><code>libhipblaslt.so.0.10.60303</code></td><td><span class="ja">librocblas.so.4 の NEEDED</span><span class="en">NEEDED by librocblas.so.4</span></td></tr>
-          <tr><td><code>librocsolver.so.0.3.60303</code></td><td><span class="ja">libhipblas.so.2 の NEEDED</span><span class="en">NEEDED by libhipblas.so.2</span></td></tr>
-          <tr><td><code>libamdhip64.so.6.3.60303</code></td><td><span class="ja">libggml-hip.so の NEEDED</span><span class="en">NEEDED by libggml-hip.so</span></td></tr>
-          <tr><td><code>libhsa-runtime64.so.1.14.60303</code></td><td><span class="ja">libamdhip64.so.6 経由</span><span class="en">via libamdhip64.so.6</span></td></tr>
-          <tr><td><code>libamd_comgr.so.2.8.60303</code></td><td><span class="ja">libamdhip64.so.6 経由</span><span class="en">via libamdhip64.so.6</span></td></tr>
-          <tr><td><code>librocprofiler-register.so.0.4.0</code></td><td><span class="ja">libamdhip64.so.6 経由</span><span class="en">via libamdhip64.so.6</span></td></tr>
-          <tr><td><code>libdrm.so.2.123.0</code></td><td><span class="ja">libamdhip64.so.6 経由</span><span class="en">via libamdhip64.so.6</span></td></tr>
-          <tr><td><code>libdrm_amdgpu.so.1.123.0</code></td><td><span class="ja">libamdhip64.so.6 経由</span><span class="en">via libamdhip64.so.6</span></td></tr>
-          <tr><td><code>rocblas/library/</code></td><td><span class="ja">gfx1201 ターゲット 56 ファイル（Kernels.so + TensileLibrary variants）</span><span class="en">56 gfx1201-targeted files (Kernels.so + TensileLibrary variants)</span></td></tr>
+          <tr>
+            <td><code>libggml-base.so.0.0.0</code></td>
+            <td><span class="ja">直接</span><span class="en">Direct</span></td>
+            <td><span class="ja">ggml 基盤ランタイム</span><span class="en">ggml base runtime</span></td>
+          </tr>
+          <tr>
+            <td><code>libggml-hip.so</code></td>
+            <td><span class="ja">直接（rocm/）</span><span class="en">Direct (rocm/)</span></td>
+            <td><span class="ja">HIP backend + .hip_fatbin（587 MiB, gfx1201 hsaco 格納）</span><span class="en">HIP backend + .hip_fatbin (587 MiB, gfx1201 hsacos)</span></td>
+          </tr>
+          <tr>
+            <td><code>libhipblas.so.2.3.60303</code></td>
+            <td><span class="ja">libggml-hip.so NEEDED</span><span class="en">NEEDED by libggml-hip.so</span></td>
+            <td><span class="ja">hipBLAS API 層</span><span class="en">hipBLAS API layer</span></td>
+          </tr>
+          <tr>
+            <td><code>librocblas.so.4.3.60303</code></td>
+            <td><span class="ja">libggml-hip.so NEEDED</span><span class="en">NEEDED by libggml-hip.so</span></td>
+            <td><span class="ja">rocBLAS 本体（Tensile kernel を持つ）</span><span class="en">rocBLAS core (carries Tensile kernels)</span></td>
+          </tr>
+          <tr>
+            <td><code>libhipblaslt.so.0.10.60303</code></td>
+            <td><span class="ja">librocblas.so.4 NEEDED</span><span class="en">NEEDED by librocblas.so.4</span></td>
+            <td><span class="ja">hipBLASLt（大規模 GEMM 向け）</span><span class="en">hipBLASLt (large-scale GEMM)</span></td>
+          </tr>
+          <tr>
+            <td><code>librocsolver.so.0.3.60303</code></td>
+            <td><span class="ja">libhipblas.so.2 NEEDED</span><span class="en">NEEDED by libhipblas.so.2</span></td>
+            <td><span class="ja">rocSOLVER（線形代数ソルバ）</span><span class="en">rocSOLVER (linear algebra solver)</span></td>
+          </tr>
+          <tr>
+            <td><code>libamdhip64.so.6.3.60303</code></td>
+            <td><span class="ja">libggml-hip.so NEEDED</span><span class="en">NEEDED by libggml-hip.so</span></td>
+            <td><span class="ja">HIP runtime 本体</span><span class="en">HIP runtime core</span></td>
+          </tr>
+          <tr>
+            <td><code>libhsa-runtime64.so.1.14.60303</code></td>
+            <td><span class="ja">libamdhip64.so.6 経由</span><span class="en">via libamdhip64.so.6</span></td>
+            <td><span class="ja">HSA ランタイム（GPU dispatch の基盤）</span><span class="en">HSA runtime (basis of GPU dispatch)</span></td>
+          </tr>
+          <tr>
+            <td><code>libamd_comgr.so.2.8.60303</code></td>
+            <td><span class="ja">libamdhip64.so.6 経由</span><span class="en">via libamdhip64.so.6</span></td>
+            <td><span class="ja">Code Object Manager（hsaco ロード等）</span><span class="en">Code Object Manager (hsaco loading, etc.)</span></td>
+          </tr>
+          <tr>
+            <td><code>librocprofiler-register.so.0.4.0</code></td>
+            <td><span class="ja">libamdhip64.so.6 経由</span><span class="en">via libamdhip64.so.6</span></td>
+            <td><span class="ja">profiler 登録 hook（observer 問題と関連）</span><span class="en">Profiler registration hook (related to observer problem)</span></td>
+          </tr>
+          <tr>
+            <td><code>libdrm.so.2.123.0</code></td>
+            <td><span class="ja">libamdhip64.so.6 経由</span><span class="en">via libamdhip64.so.6</span></td>
+            <td><span class="ja">DRM カーネルインターフェース</span><span class="en">DRM kernel interface</span></td>
+          </tr>
+          <tr>
+            <td><code>libdrm_amdgpu.so.1.123.0</code></td>
+            <td><span class="ja">libamdhip64.so.6 経由</span><span class="en">via libamdhip64.so.6</span></td>
+            <td><span class="ja">AMDGPU 固有 DRM</span><span class="en">AMDGPU-specific DRM</span></td>
+          </tr>
+          <tr>
+            <td><code>rocblas/library/</code></td>
+            <td><span class="ja">librocblas.so.4 が参照</span><span class="en">referenced by librocblas.so.4</span></td>
+            <td><span class="ja">gfx1201 ターゲット 56 ファイル（Kernels.so + TensileLibrary variants）</span><span class="en">56 gfx1201-targeted files (Kernels.so + TensileLibrary variants)</span></td>
+          </tr>
         </tbody>
       </table>
     </section>
 
-    <!-- 未確定事項 -->
+    <!-- ── 示せること / 示せないこと ──────────────────────────────── -->
+    <section class="card">
+      <h2>
+        <span class="ja">示せること / 示せないこと</span>
+        <span class="en">What Can and Cannot Be Shown</span>
+      </h2>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th><span class="ja">示せること</span><span class="en">Can Show</span></th>
+            <th><span class="ja">示せないこと</span><span class="en">Cannot Show</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <span class="ja">Ollama が bundle-first で動作し、system ROCm より bundle を優先すること</span>
+              <span class="en">Ollama operates bundle-first, prioritizing the bundle over system ROCm</span>
+            </td>
+            <td>
+              <span class="ja">system ROCm と bundle の version 差異が動作に影響するケース（未観測）</span>
+              <span class="en">Cases where version mismatch between system ROCm and bundle affects behavior (not yet observed)</span>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <span class="ja">12 ライブラリが <code>/proc/maps</code> に現れていること（ロードの事実）</span>
+              <span class="en">12 libraries appear in <code>/proc/maps</code> (the fact of loading)</span>
+            </td>
+            <td>
+              <span class="ja">それぞれのライブラリの演算が実際に dispatch されたか（load ≠ dispatch）</span>
+              <span class="en">Whether each library's operations were actually dispatched (load ≠ dispatch)</span>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <span class="ja">依存チェーンの構造（libggml-hip.so → BLAS → HIP → HSA → DRM の層）</span>
+              <span class="en">Dependency chain structure (libggml-hip.so → BLAS → HIP → HSA → DRM layers)</span>
+            </td>
+            <td>
+              <span class="ja">各ライブラリが推論の何フェーズで、何回呼ばれたか</span>
+              <span class="en">How many times each library was called and in which inference phase</span>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <span class="ja">gfx1201 ターゲットの rocBLAS ファイルが 56 本存在すること</span>
+              <span class="en">56 gfx1201-targeted rocBLAS files exist</span>
+            </td>
+            <td>
+              <span class="ja">そのうち live run で実際に使われたファイルはどれか</span>
+              <span class="en">Which of those files were actually used in a live run</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ── 未確定事項 ─────────────────────────────────────────────── -->
     <section class="card">
       <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
       <ul class="ja">
-        <li>GPU 世代をまたいだ bundle 構成の差異（ファイル数・ライブラリバージョン）は、各世代の実機で個別に確認が必要です。</li>
-        <li>system ROCm と bundle の version 不一致が動作に影響するケースは未観測です。</li>
+        <li>他 GPU 世代（gfx900 / gfx942）での bundle 構成の差異（ファイル数・ライブラリバージョン）は各世代の実機で個別に確認が必要。</li>
+        <li>system ROCm と bundle の version 不一致が動作に影響するケースは未観測。</li>
+        <li>各ライブラリの演算が live run でどの頻度・どのフェーズで dispatch されたか（dispatch-safe observer が必要）。</li>
       </ul>
       <ul class="en">
-        <li>Bundle layout differences across GPU generations (file count, library versions) require per-generation live machine confirmation.</li>
+        <li>Bundle layout differences across GPU generations (gfx900 / gfx942) require per-generation live machine confirmation.</li>
         <li>Cases where version mismatches between system ROCm and bundle affect behavior have not been observed.</li>
+        <li>Dispatch frequency and phase attribution for each library's operations in live runs (requires dispatch-safe observer).</li>
+      </ul>
+    </section>
+
+    <!-- ── 次の観測点 ─────────────────────────────────────────────── -->
+    <section class="card">
+      <h2>
+        <span class="ja">次の観測点</span>
+        <span class="en">Where to Look Next</span>
+      </h2>
+      <ul class="ja">
+        <li>
+          <strong>「ロードされた」の先：</strong>
+          各コンポーネントが実際に dispatch されたかは、
+          <a href="../../gpu-gen/rDNA4/R9070XT/rx9070xt-path.html">経路観測ページ</a>（dispatch 分岐と phase proxy）で追う。
+        </li>
+        <li>
+          <strong>各コンポーネントの詳細：</strong>
+          <a href="../hipBLASLt/hipblasslt-index.html">hipBLASLt</a>・
+          <a href="../rocSOLVER/rocsolver-index.html">rocSOLVER</a>・
+          <a href="../MIOpen/miopen-index.html">MIOpen</a>・
+          <a href="../MIGraphX/migraphx-index.html">MIGraphX</a>
+          の各ページで bundle 内の位置づけと観測状況を確認。
+        </li>
+        <li>
+          <strong>observer 制約：</strong>
+          bundle 内のライブラリをプロファイルしようとするとなぜ壊れるかは
+          <a href="../../gpu-gen/rDNA4/R9070XT/rx9070xt-optimize-method.html">Observer 制約マップ</a>。
+        </li>
+      </ul>
+      <ul class="en">
+        <li>
+          <strong>Beyond "was loaded":</strong>
+          Whether each component was actually dispatched is tracked on the
+          <a href="../../gpu-gen/rDNA4/R9070XT/rx9070xt-path.html">path observation page</a> (dispatch branches and phase proxy).
+        </li>
+        <li>
+          <strong>Per-component details:</strong>
+          <a href="../hipBLASLt/hipblasslt-index.html">hipBLASLt</a>,
+          <a href="../rocSOLVER/rocsolver-index.html">rocSOLVER</a>,
+          <a href="../MIOpen/miopen-index.html">MIOpen</a>,
+          <a href="../MIGraphX/migraphx-index.html">MIGraphX</a> —
+          each page covers that component's role in the bundle and observation status.
+        </li>
+        <li>
+          <strong>Observer constraints:</strong>
+          Why profiling bundle libraries causes breakage is covered in the
+          <a href="../../gpu-gen/rDNA4/R9070XT/rx9070xt-optimize-method.html">observer constraint map</a>.
+        </li>
       </ul>
     </section>
 
     <div class="note">
-      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は確定次第更新します。</span>
-      <span class="en">Content is grounded in observation logs. Open questions are updated as findings solidify.</span>
+      <span class="ja">掲載情報は観測記録に基づきます。「示せないこと」欄は observer 制約による限界であり、調査の欠如ではありません。</span>
+      <span class="en">Content is grounded in observation logs. "Cannot Show" entries reflect observer constraints, not gaps in investigation effort.</span>
     </div>
 
   </div>
