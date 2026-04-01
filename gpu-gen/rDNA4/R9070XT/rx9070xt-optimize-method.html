@@ -178,171 +178,161 @@
     <!-- ── Step 1: rocprofv3 wrap ─────────────────────────────────── -->
     <section class="card">
       <h2>
-        <span class="ja">手段① — rocprofv3 wrap（結果：CPU fallback）</span>
-        <span class="en">Approach 1 — rocprofv3 wrap (Result: CPU fallback)</span>
+        <span class="ja">手段① — 観測ツールをかぶせて起動する（rocprofv3 wrap）<br><small style="font-weight:400;font-size:.8em;opacity:.8;">結果：GPU が止まった（CPU fallback）</small></span>
+        <span class="en">Approach 1 — Launch with observation tool wrapped (rocprofv3 wrap)<br><small style="font-weight:400;font-size:.8em;opacity:.8;">Result: GPU stopped (CPU fallback)</small></span>
       </h2>
 
-      <p class="ja"><strong>観測ポイント：</strong> rocprofv3 で ollama serve をラップすれば、per-kernel dispatch を記録できるか？</p>
-      <p class="en"><strong>Observation target:</strong> Can wrapping ollama serve with rocprofv3 record per-kernel dispatch?</p>
+      <p class="ja"><strong>観測ポイント：</strong> Ollama を起動するとき、外から GPU 観測ツールをかぶせて一緒に動かせば、「どの仕事が GPU に割り当てられたか」を記録できるか？</p>
+      <p class="en"><strong>Observation target:</strong> If we launch Ollama with a GPU observation tool wrapped around it from the start, can we record which jobs get dispatched to the GPU?</p>
 
       <p class="ja">
-        最も直接的な手段として試みた。ROCm の標準プロファイラである <code>rocprofv3</code> で <code>ollama serve</code> を wrap し、
-        GPU kernel の dispatch 記録を取ることが目標だった。
+        最も直接的な手段として試みた。<code>rocprofv3</code>（AMD GPU の標準観測ツール。GPU にどんな仕事が投げられたかをログに残せる）を使って、<code>ollama serve</code>（Ollama をサーバーとして起動するコマンド）を「かぶせた状態で」起動した。つまり「Ollama を単独で動かす」のではなく、「観測ツールに見張らせながら起動する」やり方を試みた。
       </p>
       <p class="en">
-        This was the most direct approach. The goal was to wrap <code>ollama serve</code> with ROCm's standard profiler
-        <code>rocprofv3</code> to capture a record of GPU kernel dispatches.
+        This was the most direct approach. We used <code>rocprofv3</code> (AMD's standard GPU observation tool — it can log which jobs are sent to the GPU) and launched <code>ollama serve</code> (the command that starts Ollama as a server) with the observation tool wrapped around it. Rather than running Ollama standalone, we tried running it while being watched from the start.
       </p>
 
       <div class="callout callout-unresolved">
         <strong class="ja">何が起きたか：</strong><strong class="en">What happened:</strong>
         <span class="ja">
-          <code>rocprofv3</code> の存在が Ollama の bootstrap discovery を壊し、GPU ランタイムの初期化に失敗する。
-          その結果、Ollama は GPU を認識できず CPU fallback に落ちた。
-          つまり、「GPU kernel を記録する」前に「GPU 自体が動かない」状態になった。
+          観測ツールがかぶさっていることで、Ollama の「起動時に GPU を見つけて接続する準備処理（bootstrap discovery）」が失敗した。
+          GPU が認識されないまま、Ollama は GPU を使うのをあきらめて CPU で動き始めた（CPU fallback）。
+          つまり、「GPU の仕事を記録する」より前に「GPU 自体が動かない」状態になってしまった。
         </span>
         <span class="en">
-          The presence of <code>rocprofv3</code> broke Ollama's bootstrap discovery, causing GPU runtime initialization to fail.
-          Ollama fell back to CPU. In other words, before any kernel could be recorded,
-          the GPU itself was no longer being used.
+          The presence of the observation tool caused Ollama's "startup process of finding and connecting to the GPU (bootstrap discovery)" to fail.
+          Without recognizing the GPU, Ollama gave up on GPU use and started running on CPU instead (CPU fallback).
+          In other words, before any GPU job could be recorded, the GPU itself had stopped being used.
         </span>
       </div>
 
       <p class="ja">
         <strong>ここから分かること：</strong>
-        このデータは observer 汚染として扱う。CPU fallback での実行は RX9070XT の経路観測として意味をなさない。
+        この実行で得られたデータは「観測ツールが状況を変えてしまった」ものとして扱う。CPU で動いた記録は、RX9070XT での GPU 経路を観測したことにならない。
         <br>
-        <strong>→ 次の問い：</strong> wrap ではなく attach 方式なら経路を壊さずに記録できるか？
+        <strong>→ 次の問い：</strong> 「最初からかぶせる」のではなく、「起動後に後からくっつける」やり方なら経路を壊さずに記録できるか？
       </p>
       <p class="en">
         <strong>What this tells us:</strong>
-        Any data from this run is treated as observer-contaminated. CPU-fallback execution is not a valid observation of the RX9070XT path.
+        Data from this run is treated as "observation changed the situation." CPU-mode execution does not count as observing the GPU path on the RX9070XT.
         <br>
-        <strong>→ Next question:</strong> Could attach mode avoid disrupting the runtime path?
+        <strong>→ Next question:</strong> Rather than wrapping from the start, can we attach after launch without disrupting the path?
       </p>
     </section>
 
     <!-- ── Step 2: rocprofv3 --attach ────────────────────────────── -->
     <section class="card">
       <h2>
-        <span class="ja">手段② — rocprofv3 --attach（結果：ptrace ブロック）</span>
-        <span class="en">Approach 2 — rocprofv3 --attach (Result: ptrace blocked)</span>
+        <span class="ja">手段② — 起動後に後からくっつける（rocprofv3 --attach）<br><small style="font-weight:400;font-size:.8em;opacity:.8;">結果：OS に止められた（ptrace ブロック）</small></span>
+        <span class="en">Approach 2 — Attach to already-running process (rocprofv3 --attach)<br><small style="font-weight:400;font-size:.8em;opacity:.8;">Result: Blocked by OS (ptrace blocked)</small></span>
       </h2>
 
-      <p class="ja"><strong>観測ポイント：</strong> 既に動いている Ollama プロセスに後からアタッチする方式なら、bootstrap を壊さずに記録できるか？</p>
-      <p class="en"><strong>Observation target:</strong> If attaching to an already-running Ollama process, can we record kernels without breaking bootstrap?</p>
+      <p class="ja"><strong>観測ポイント：</strong> Ollama を先に普通に起動し、動き始めたあとで観測ツールを後からつなげれば、起動処理を壊さずに GPU の仕事を記録できるか？</p>
+      <p class="en"><strong>Observation target:</strong> Start Ollama normally first, then connect the observation tool after it's running — can we record GPU jobs without disrupting startup?</p>
 
       <p class="ja">
-        wrap が bootstrap を壊すなら、Ollama を先に起動してから後でアタッチする方式を試みた。
-        これにより、bootstrap discovery は正常に完了させつつ、実行中の kernel を記録できる可能性があった。
+        手段①では「最初からかぶせる」ことで起動処理が壊れた。ならば、Ollama を先に起動して GPU の準備が終わってから、後で観測ツールをくっつければいい——そう考えて試みた。<br>
+        専門的に言うと：<code>rocprofv3 --attach</code>（動いているプロセスに後からアタッチするオプション）を使おうとした。
       </p>
       <p class="en">
-        Since wrap breaks bootstrap, the next attempt was to start Ollama first, then attach afterward.
-        This would allow bootstrap discovery to complete normally before the profiler touches the process.
+        Approach 1 broke startup by wrapping from the beginning. So the idea was: start Ollama first, wait until GPU setup is done, then attach the observation tool afterward.<br>
+        Technically: we tried using <code>rocprofv3 --attach</code> (the option to attach to an already-running process).
       </p>
 
       <div class="callout callout-unresolved">
         <strong class="ja">何が起きたか：</strong><strong class="en">What happened:</strong>
         <span class="ja">
-          ホストの <code>ptrace_scope = 1</code> 設定により、別プロセスへの ptrace アタッチが拒否された。
-          <code>rocprofv3 --attach</code> はこの制限に依存しており、変更なしには使用できない。
-          ptrace_scope を変更することはシステムセキュリティ設定の変更を意味し、調査環境の前提条件を変えてしまう。
+          OS のセキュリティ設定（<code>ptrace_scope = 1</code>）によって、「別のプログラムに後からくっつく」操作そのものが拒否された。<br>
+          <code>ptrace</code> とは「OS が、別のプログラムの中をのぞいたり制御したりする許可」を管理する仕組み。この設定が「1（制限あり）」だと、無関係なプロセスからのくっつきは断られる。<br>
+          設定を変更すれば動く可能性はあるが、それはシステムのセキュリティ条件を変えることを意味し、「普通の環境での観測」ではなくなる。
         </span>
         <span class="en">
-          The host's <code>ptrace_scope = 1</code> setting rejected ptrace attachment to other processes.
-          <code>rocprofv3 --attach</code> depends on this capability and cannot be used without changing this setting.
-          Changing ptrace_scope means modifying system security settings, which alters the investigation environment's baseline.
+          An OS security setting (<code>ptrace_scope = 1</code>) blocked the act of "attaching to another program after the fact" entirely.<br>
+          <code>ptrace</code> is the mechanism the OS uses to manage permission for "looking inside or controlling another program." When set to 1 (restricted), attachments from unrelated processes are refused.<br>
+          Changing this setting might allow it to work, but that means changing a system security condition — it would no longer be "observation in a normal environment."
         </span>
       </div>
 
       <p class="ja">
         <strong>ここから分かること：</strong>
-        attach 方式は環境依存。ptrace_scope を下げれば動く可能性はあるが、それは「標準環境での観測」ではなくなる。
+        後からくっつける方式は OS の設定に依存しており、標準的な環境では使えない。設定を変えて使うことは選択肢から外した。
         <br>
-        <strong>→ 次の問い：</strong> rocprofv3 以外の環境変数ベースの方法はあるか？
+        <strong>→ 次の問い：</strong> <code>rocprofv3</code> を使わずに、行列計算ライブラリの呼び出しだけを記録する方法はあるか？
       </p>
       <p class="en">
         <strong>What this tells us:</strong>
-        Attach mode is environment-dependent. Lowering ptrace_scope might work, but that would no longer be "observation in standard environment."
+        The attach approach depends on OS settings and is unavailable in a standard environment. Changing the setting to make it work was ruled out.
         <br>
-        <strong>→ Next question:</strong> Are there environment-variable-based approaches that don't require ptrace?
+        <strong>→ Next question:</strong> Without using <code>rocprofv3</code>, is there a way to log just the matrix library calls?
       </p>
     </section>
 
     <!-- ── Step 3: ROCBLAS_LAYER ─────────────────────────────────── -->
     <section class="card">
       <h2>
-        <span class="ja">手段③ — ROCBLAS_LAYER=9（結果：粒度不足）</span>
-        <span class="en">Approach 3 — ROCBLAS_LAYER=9 (Result: insufficient granularity)</span>
+        <span class="ja">手段③ — 行列計算ライブラリの呼び出しだけ記録する（ROCBLAS_LAYER=9）<br><small style="font-weight:400;font-size:.8em;opacity:.8;">結果：「使われた」は分かったが「何をしたか」は分からなかった（粒度不足）</small></span>
+        <span class="en">Approach 3 — Log just the matrix library calls (ROCBLAS_LAYER=9)<br><small style="font-weight:400;font-size:.8em;opacity:.8;">Result: Confirmed "it was used" but not "what it did" (insufficient granularity)</small></span>
       </h2>
 
-      <p class="ja"><strong>観測ポイント：</strong> BLAS 層に絞って、rocBLAS の呼び出しを記録できるか？</p>
-      <p class="en"><strong>Observation target:</strong> Can we at least log rocBLAS calls by targeting the BLAS layer?</p>
+      <p class="ja"><strong>観測ポイント：</strong> GPU 全体を観測するのはあきらめて、行列計算専用ライブラリ（rocBLAS）への呼び出しだけをログに残せるか？</p>
+      <p class="en"><strong>Observation target:</strong> Rather than observing the whole GPU, can we at least log calls made to the matrix computation library (rocBLAS)?</p>
 
       <p class="ja">
-        <code>rocprofv3</code> が使えない状況で、BLAS 層限定の logging を試みた。
-        <code>ROCBLAS_LAYER=9</code> は rocBLAS の API 呼び出しをログに出す環境変数で、
-        runtime を壊さず使える可能性があった。
+        手段①②がどちらも動かせない状況で、もっと範囲を絞ることにした。LLM の推論では「行列のかけ算（GEMM）」が計算の大部分を占めており、そこを担当するのが <code>rocBLAS</code>（AMD 製の行列計算ライブラリ）。<br>
+        専門的に言うと：<code>ROCBLAS_LAYER=9</code> という環境変数を設定すると、rocBLAS への API 呼び出しをログとして出力できる。この方法はプロセス自体を壊さずに使える可能性があった。
       </p>
       <p class="en">
-        With <code>rocprofv3</code> unavailable, we attempted BLAS-layer-only logging.
-        <code>ROCBLAS_LAYER=9</code> is an environment variable that logs rocBLAS API calls,
-        and it potentially could be used without breaking the runtime.
+        With approaches 1 and 2 both unavailable, we narrowed the scope. In LLM inference, "matrix multiplication (GEMM)" dominates the computation, and <code>rocBLAS</code> (AMD's matrix computation library) handles that.<br>
+        Technically: setting the environment variable <code>ROCBLAS_LAYER=9</code> outputs a log of API calls made to rocBLAS, and this approach might work without disrupting the running process.
       </p>
 
       <div class="callout callout-limited">
         <strong class="ja">何が起きたか：</strong><strong class="en">What happened:</strong>
         <span class="ja">
-          <code>rocblas_create_handle</code> の呼び出しは確認できた。しかし per-GEMM のログは出力されなかった。
-          つまり「rocBLAS が使われた（handle が作成された）」ことは分かるが、
-          「具体的にどの GEMM が、何回、どの kernel で実行されたか」は分からない。
+          「rocBLAS が起動した（<code>rocblas_create_handle</code> が呼ばれた）」ことは確認できた。しかし、その後の行列計算ひとつひとつについてのログは出なかった。<br>
+          つまり「この部屋は使われた」は分かったが、「誰が何の作業を何回やったか」は見えなかった——窓が小さすぎた。
         </span>
         <span class="en">
-          The <code>rocblas_create_handle</code> call was confirmed. However, no per-GEMM logging was produced.
-          This tells us "rocBLAS was used (handle was created)" but not
-          "which specific GEMM ran, how many times, or which kernel handled it."
+          We confirmed "rocBLAS started up (<code>rocblas_create_handle</code> was called)." But there was no log for each individual matrix computation afterward.<br>
+          In short: we could tell "this room was in use," but not "who did what work, how many times" — the window was too small.
         </span>
       </div>
 
       <p class="ja">
         <strong>ここから分かること：</strong>
-        BLAS 層にアクセスがあることは確認できた。しかし Q4_K の処理は MMVQ/MMQ 経路（custom kernel）が中心であり、
-        BLAS 経路に入らない限り ROCBLAS_LAYER からは何も見えない。
-        この手段は「BLAS fallback が起きているか」の確認には使えるが、custom kernel の観測には使えない。
+        「行列計算ライブラリにアクセスがあった」ことは確認できた。ただし、LLM の Q4_K の処理は多くの場合、rocBLAS を経由しない独自カーネル（MMVQ/MMQ）が担っており、そのルートには <code>ROCBLAS_LAYER</code> の窓が届かない。rocBLAS が使われる「BLAS fallback」という別ルートに入らない限り、何も見えない。
         <br>
-        <strong>→ 次の問い：</strong> これらすべてを除いた状態で、何か残るか？
+        <strong>→ 次の問い：</strong> この 3 つをすべて除いた後に、何か残るものはあるか？
       </p>
       <p class="en">
         <strong>What this tells us:</strong>
-        BLAS layer access is confirmed. However, since Q4_K processing is dominated by MMVQ/MMQ (custom kernel paths),
-        ROCBLAS_LAYER sees nothing unless the BLAS fallback path is taken.
-        This approach can verify "is BLAS fallback occurring" but cannot observe custom kernels.
+        We confirmed "the matrix library was accessed." However, Q4_K processing in LLM inference mostly takes a custom kernel path (MMVQ/MMQ) that doesn't go through rocBLAS, and <code>ROCBLAS_LAYER</code> can't see that route. It only sees anything when the "BLAS fallback" route is taken.
         <br>
-        <strong>→ Next question:</strong> After eliminating all of these, what remains?
+        <strong>→ Next question:</strong> After ruling out all three of these, is there anything left?
       </p>
     </section>
 
     <!-- ── Step 4: Phase proxy ────────────────────────────────────── -->
     <section class="card">
       <h2>
-        <span class="ja">手段④ — Phase proxy（消去法の末に残った唯一の手段）</span>
-        <span class="en">Approach 4 — Phase Proxy (the last approach standing)</span>
+        <span class="ja">手段④ — 「返ってきた数字」を手がかりに推理する（phase proxy）<br><small style="font-weight:400;font-size:.8em;opacity:.8;">消去法の末に残った唯一の手段</small></span>
+        <span class="en">Approach 4 — Infer from the "number that comes back" (phase proxy)<br><small style="font-weight:400;font-size:.8em;opacity:.8;">The last approach standing</small></span>
       </h2>
 
-      <p class="ja"><strong>観測ポイント：</strong> runtime を一切壊さずに、「どの dispatch 圏で実行しているか」を近似的に読める手段があるか？</p>
-      <p class="en"><strong>Observation target:</strong> Is there any approach that reads the approximate dispatch zone without touching the runtime at all?</p>
+      <p class="ja"><strong>観測ポイント：</strong> Ollama の動作を一切壊さずに、「GPU の中でどの処理ルートを通ったか」をある程度推理できる手段があるか？</p>
+      <p class="en"><strong>Observation target:</strong> Without touching Ollama's runtime at all, is there any way to roughly infer which processing route was taken inside the GPU?</p>
 
       <p class="ja">
-        手段①②③がすべて機能しない状況で、改めてソース側の dispatch 分岐を確認した。
-        MMVQ / MMQ の分岐は <code>ne11</code>（matrix の列数 ≈ prompt token 数）で決まる。
-        では、Ollama の response JSON に含まれる <code>prompt_eval_count</code> は <code>ne11</code> の近似として使えないか？
-        これが phase proxy の発想。
+        手段①〜③がすべて使えない状況で、発想を変えた。<br>
+        ソースコードを読み返すと、GPU の中での「どのカーネル（仕事の担当者）を使うか」の分岐は、行列の列数（<code>ne11</code>）で決まっている。そしてこれは、「プロンプトに含まれるトークン数（単語の数のようなもの）」とほぼ一致する。<br>
+        ならば、Ollama が返す response JSON の中に含まれる <code>prompt_eval_count</code>（プロンプトを何トークン処理したか）を読むことで、<code>ne11</code> の代わりに使えないか？<br>
+        専門的に言うと：これが「phase proxy（間接的な近似指標）」の発想。
       </p>
       <p class="en">
-        With approaches 1–3 all blocked, we revisited the source dispatch logic.
-        The MMVQ/MMQ branch is determined by <code>ne11</code> (matrix columns ≈ prompt token count).
-        Could <code>prompt_eval_count</code> in Ollama's response JSON serve as an approximation for <code>ne11</code>?
-        This was the origin of the phase proxy approach.
+        With approaches 1–3 all blocked, we changed our thinking.<br>
+        Re-reading the source code: the branch that decides "which kernel (worker) to use" inside the GPU is determined by the number of matrix columns (<code>ne11</code>). And this corresponds closely to "the number of tokens (roughly, words) in the prompt."<br>
+        So — could we read <code>prompt_eval_count</code> (how many prompt tokens were processed) from Ollama's response JSON and use it as a stand-in for <code>ne11</code>?<br>
+        Technically: this is the idea behind "phase proxy (an indirect approximate indicator)."
       </p>
 
       <div class="callout callout-confirmed">
@@ -625,16 +615,21 @@
 
       <div class="callout callout-inferred" style="margin-top:12px;">
         <span class="ja">
-          その次の近縁比較対象としての `Q5_K_M` も footing はかなり強い。
-          source 側では `Q5_K` は `MMVQ` / `MMQ` の両方に入り、AMD heuristic でも `Q4_K` と同じ `<= 256` 拡張を共有する。
-          binary 側でも `bundle_0030` に `Q5_K` MMVQ anchor があり、fatbin 全体には `Q5_K` MMQ symbol evidence もある。
-          ただし current Ollama helper path はまだ狭く、`Q5_K_M` の次の実務ボトルネックは local artifact を確保して direct-import/live case を作ること。
+          その次の近縁比較対象としての `Q5_K_M` も、もう footing だけではない。
+          small single-file `Q5_K_M` GGUF の direct import は current host で通り、
+          `ollama create -> show -> api/generate -> ollama ps` まで成立した。
+          bounded probe では short window が `prompt_eval_count = 7`、medium window が `13` で、resident runner も `100% GPU` だった。
+          ただし MMQ 側は fatbin-level symbol evidence まではあるが exact extracted hsaco が未 isolate なので、
+          `13` window は `MMQ-eligible` とまでは言えても exact object ownership はまだ unresolved。
         </span>
         <span class="en">
-          The next near-neighbor comparison target, `Q5_K_M`, already has strong footing as well.
-          In source, `Q5_K` enters both `MMVQ` and `MMQ`, and in the AMD heuristic it shares the same `<= 256` extension as `Q4_K`.
-          On the binary side, `bundle_0030` already gives a `Q5_K` MMVQ anchor, and the full fatbin shows `Q5_K` MMQ symbol evidence too.
-          But the current Ollama helper path is still narrower, so the next practical bottleneck for `Q5_K_M` is to acquire a local artifact and build a direct-import/live case.
+          The next near-neighbor comparison target, `Q5_K_M`, is no longer just source/binary footing.
+          A small single-file `Q5_K_M` GGUF now passes through `ollama create -> show -> api/generate -> ollama ps`
+          on the current host.
+          In the bounded probe, the short window stayed at `prompt_eval_count = 7`, the medium window reached `13`,
+          and the resident runner remained `100% GPU`.
+          But the MMQ side still stops at fatbin-level symbol evidence rather than an exact extracted hsaco, so the
+          `13` window is only `MMQ-eligible`, not exact object ownership.
         </span>
       </div>
     </section>
@@ -658,7 +653,7 @@
         </li>
         <li>
           <strong>observer が blocked な間の次善策：</strong>
-          `Q4_K_M` ケース研究を維持しつつ、direct-import が通ることを確認済みの `IQ1_S` を最初の別枝比較対象に置き、そのうえで `tensor type -> MMVQ / MMQ / BLAS fallback` の量子化横断 dispatch map を広げる。`Q5_K_M` はその次。
+          `Q4_K_M` ケース研究を維持しつつ、direct-import と bounded phase proxy まで進んだ `IQ1_S` / `Q5_K_M` を別枝比較対象として並べ、そのうえで `tensor type -> MMVQ / MMQ / BLAS fallback` の量子化横断 dispatch map を広げる。
         </li>
         <li>
           <strong>このページを読んだ後は：</strong>
@@ -679,7 +674,7 @@
         </li>
         <li>
           <strong>Best next move while observers remain blocked:</strong>
-          Keep the `Q4_K_M` case study, use the now-confirmed direct-import `IQ1_S` case as the first alternative branch, then broaden the source-side `tensor type -> MMVQ / MMQ / BLAS fallback` map before adding more workloads. `Q5_K_M` comes next.
+          Keep the `Q4_K_M` case study, use the now-confirmed `IQ1_S` and `Q5_K_M` direct-import plus bounded-phase-proxy cases as alternative branches, then broaden the source-side `tensor type -> MMVQ / MMQ / BLAS fallback` map before adding more workloads.
         </li>
         <li>
           <strong>After this page:</strong>

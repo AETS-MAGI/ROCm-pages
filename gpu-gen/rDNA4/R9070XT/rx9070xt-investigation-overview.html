@@ -69,6 +69,8 @@
         <span class="badge badge-phase">Phase A–F 完了</span>
         <span class="badge badge-confirmed ja">IQ1_S direct import 確認</span>
         <span class="badge badge-confirmed en">IQ1_S direct import confirmed</span>
+        <span class="badge badge-confirmed ja">Q5_K_M direct import 確認</span>
+        <span class="badge badge-confirmed en">Q5_K_M direct import confirmed</span>
       </div>
     </section>
 
@@ -84,8 +86,8 @@
           ② MI25 で使えた観測ツールは RDNA4 では全滅。「失敗」ではなく「観測可能性の地図」として記録する。<br>
           ③ 消去法の末に残るのは phase proxy（response JSON）だけ。多層証拠の積み上げがこの調査の方法論。<br>
           ④ 「見えない」には2種類ある：observer が壊れているのか、実際に起きていないのか——この切り分けが調査の核心的な知的作業。<br>
-          ⑤ 比較枝としての `IQ1_S` も、small single-file GGUF の direct import なら current Ollama で `100% GPU` resident case
-          まで到達する。
+          ⑤ 比較枝としての `IQ1_S` と `Q5_K_M` も、small single-file GGUF の direct import なら current Ollama で `100% GPU`
+          resident case まで到達する。
         </span>
         <span class="en">
           ① gfx1201 is the one generation where observation is required to determine whether the primary path actually
@@ -96,8 +98,8 @@
           methodology.<br>
           ④ "Invisible" has two causes: a broken observer, or something genuinely not happening — distinguishing these
           is the core intellectual work.<br>
-          ⑤ The comparative `IQ1_S` branch also reaches a `100% GPU` resident case on current Ollama when imported as a
-          small single-file GGUF.
+          ⑤ The comparative `IQ1_S` and `Q5_K_M` branches both reach a `100% GPU` resident case on current Ollama when
+          imported as small single-file GGUFs.
         </span>
       </div>
     </section>
@@ -456,6 +458,26 @@
           `bundle_0030` carries `IQ1_S` MMVQ (`1..8`) while `bundle_0082` carries `IQ1_S` MMQ (`8..128`),
           and in the small direct-import live case the prompt windows read `7` as MMVQ-compatible and `13` as MMQ-eligible.
           Here too, it is important to treat `exists`, `can be imported`, and `owns the live case` as separate stages.
+        </span>
+      </div>
+
+      <div class="callout callout-inferred" style="margin-top:12px;">
+        <span class="ja">
+          `Q5_K_M` も practical path が前進した。current Ollama helper path は依然 narrow だが、
+          existing single-file GGUF の direct import は current host で通り、resident case も `100% GPU` だった。
+          bounded phase proxy では short window が `7`、medium window が `13` で、current best reading は
+          `Q5_K` MMVQ-compatible / MMQ-eligible である。
+          ただし `Q5_K` MMQ 側は exact extracted hsaco ではなく fatbin-level symbol evidence に留まるので、
+          `Q5_K_M` の medium 側 ownership には `IQ1_S` より一段強い保留が残る。
+        </span>
+        <span class="en">
+          `Q5_K_M` has also moved forward on the practical path. The current Ollama helper path remains narrow,
+          but direct import of an existing single-file GGUF now works on the current host, and the resident case stayed
+          `100% GPU`.
+          In bounded phase proxy, the short window was `7` and the medium window was `13`, so the current best reading
+          is `Q5_K` MMVQ-compatible / MMQ-eligible.
+          But the `Q5_K` MMQ side still stops at fatbin-level symbol evidence rather than an exact extracted hsaco, so
+          the medium-window ownership remains one step more tentative than `IQ1_S`.
         </span>
       </div>
     </section>
