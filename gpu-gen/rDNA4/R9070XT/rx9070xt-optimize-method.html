@@ -369,6 +369,40 @@
         </span>
       </div>
 
+      <div class="callout callout-confirmed" style="margin-top:12px;">
+        <span class="ja">
+          <strong>さらに source から詰めると：</strong><br>
+          RDNA4 では `ggml_cuda_should_use_mmq(...)` が `Q4_K` で source-side true になり、
+          non-split の branch order は <code>MMVQ -&gt; MMQ -&gt; BLAS fallback</code> の順で評価される。<br>
+          なので current best reading は、<strong>`9 / 11 / 12` は「MMQ-eligible」なだけでなく、source 上も `mul_mat_q` 側へ寄る</strong>。<br>
+          ただしこれは direct dispatch proof ではなく、live case の split-buffer predicate 自体はまだ runtime から直接読めていない。
+        </span>
+        <span class="en">
+          <strong>Tightening it from source as well:</strong><br>
+          On RDNA4, `ggml_cuda_should_use_mmq(...)` is source-side true for `Q4_K`,
+          and the non-split branch order is evaluated as <code>MMVQ -&gt; MMQ -&gt; BLAS fallback</code>.<br>
+          So the current best reading is that <strong>`9 / 11 / 12` is not merely MMQ-eligible, but also source-leaning toward `mul_mat_q`</strong>.<br>
+          This is still not direct dispatch proof, because the live case's split-buffer predicate is not directly exported by runtime logs.
+        </span>
+      </div>
+
+      <div class="callout callout-confirmed" style="margin-top:10px;">
+        <span class="ja">
+          <strong>追加で binary 側から絞れたこと：</strong><br>
+          prompt-side の `Q4_K` owner 候補の local bundle neighborhood を spot check すると、
+          <code>Q4_1 -> Q4_K -> Q5_0 -> Q5_1 -> Q5_K -> Q6_K -> Q8_0 -> Flash</code> と並んで見える。<br>
+          つまり少なくともこの近傍には、<strong>第2の nearby `Q4_K` MMQ owner は見えていない</strong>。<br>
+          まだ direct dispatch proof ではないが、`9 / 11 / 12` を既知の `Q4_K` artifact に寄せて読む根拠は一段強くなった。
+        </span>
+        <span class="en">
+          <strong>One more thing narrowed from the binary side:</strong><br>
+          A spot check of the local bundle neighborhood around the prompt-side `Q4_K` owner candidate reads as
+          <code>Q4_1 -> Q4_K -> Q5_0 -> Q5_1 -> Q5_K -> Q6_K -> Q8_0 -> Flash</code>.<br>
+          So at least in this local neighborhood, <strong>no second nearby `Q4_K` MMQ owner is visible</strong>.<br>
+          This is still not direct dispatch proof, but it makes the `9 / 11 / 12` reading toward the known `Q4_K` artifact materially stronger.
+        </span>
+      </div>
+
       <!-- なぜ面白いか -->
       <div class="callout callout-inferred" style="margin-top:10px;">
         <span class="ja">

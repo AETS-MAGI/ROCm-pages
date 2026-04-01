@@ -149,6 +149,37 @@
           imported as small single-file GGUFs.
         </span>
       </div>
+
+      <div class="callout callout-confirmed" style="margin-top:12px;">
+        <span class="ja">
+          追加で見えてきたこと：`Q4_K_M` main case の prompt-side MMQ owner 候補を囲む local bundle neighborhood は
+          <code>Q4_1 -> Q4_K -> Q5_0 -> Q5_1 -> Q5_K -> Q6_K -> Q8_0 -> Flash</code> と並ぶ。<br>
+          だからいま残る疑問は「近傍に別の `Q4_K` owner があるか」ではなく、
+          <strong>live `9+` window が既知の `Q4_K` artifact を本当に dispatch したか</strong> になっている。
+        </span>
+        <span class="en">
+          One more thing is now visible: the local bundle neighborhood around the prompt-side MMQ owner candidate in the
+          `Q4_K_M` main case reads as
+          <code>Q4_1 -> Q4_K -> Q5_0 -> Q5_1 -> Q5_K -> Q6_K -> Q8_0 -> Flash</code>.<br>
+          So the remaining question is no longer "is there another nearby `Q4_K` owner?"
+          but <strong>whether the live `9+` window actually dispatched the known `Q4_K` artifact</strong>.
+        </span>
+      </div>
+
+      <div class="callout callout-confirmed" style="margin-top:12px;">
+        <span class="ja">
+          source 側ももう一段詰まっていて、RDNA4 では `ggml_cuda_should_use_mmq(...)` が `Q4_K` で source-side true になり、
+          non-split branch order は <code>MMVQ -&gt; MMQ -&gt; BLAS fallback</code> になる。<br>
+          つまり `Q4_K_M` main case の `9+` window は、いまや「MMQ-eligible」より少し強く、
+          <strong>source 上も `mul_mat_q` 側へ寄る</strong> と読むのが自然になっている。
+        </span>
+        <span class="en">
+          The source side is now tighter too: on RDNA4, `ggml_cuda_should_use_mmq(...)` is source-side true for `Q4_K`,
+          and the non-split branch order becomes <code>MMVQ -&gt; MMQ -&gt; BLAS fallback</code>.<br>
+          In other words, the `9+` window in the `Q4_K_M` main case is now a bit stronger than merely "MMQ-eligible":
+          the source itself leans it toward <strong>`mul_mat_q`</strong>.
+        </span>
+      </div>
     </section>
 
     <!-- ── 世代ごとの世界観 ──────────────────────────────────────── -->
