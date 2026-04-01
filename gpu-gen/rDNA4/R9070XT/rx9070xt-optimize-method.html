@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>RX9070XT Optimization Method | ROCm-pages</title>
+  <title>RX9070XT Observer Constraints | ROCm-pages</title>
   <link rel="stylesheet" href="../../../assets/css/style.css" />
 </head>
 <body>
@@ -19,9 +19,7 @@
         <span class="sep">›</span>
         <a href="rx9070xt-index.html">RX9070XT</a>
         <span class="sep">›</span>
-        <a href="rx9070xt-optimize.html">Optimize</a>
-        <span class="sep">›</span>
-        <span class="current">Method</span>
+        <span class="current">Observer 制約</span>
       </nav>
       <div class="lang-toggle">
         <button class="lang-btn active" data-lang="ja">JA</button>
@@ -30,151 +28,416 @@
     </div>
 
     <section class="hero">
-      <h1>RX9070XT Optimization Method</h1>
-      <p class="ja">RX9070XT への方法論移植の記録です。MI25 で確立した「観測してから最適化する」手順を rDNA4 固有の可視性制約に合わせて調整しています。</p>
-      <p class="en">Records methodology transplantation to RX9070XT. The MI25 "observe first, then optimize" procedure is adapted to rDNA4's specific visibility constraints.</p>
-    </section>
-
-    <!-- 方法論の原則 -->
-    <section class="card">
-      <h2><span class="ja">方法論の原則（MI25 由来・rDNA4 適用）</span><span class="en">Methodology Principles (MI25 Origin, rDNA4 Adaptation)</span></h2>
-      <ul class="ja">
-        <li><strong>観測クラスを先に確立する。</strong>観測できない状態で最適化を始めると、改善を証明できないだけでなく、退化も見逃す。</li>
-        <li><strong>多層証拠で経路を固める。</strong>ソース → 共有ライブラリ → バンドル分離 → 逆アセンブリ → ランタイム相関の順に証拠を積み上げ、各層の限界を明示する。</li>
-        <li><strong>observer の影響を分離する。</strong>observer が runtime path を変えるなら、その observer は無効。observer によって path が変化したことが確認された場合は、そのデータを「observer 汚染」として記録し使用しない。</li>
-        <li><strong>MI25 の signature を rDNA4 に転写しない。</strong>wavefront_size や kernel family が異なるため、MI25 の可視性をそのまま成功条件にしない。RDNA4 固有の見え方を別途確立する。</li>
-        <li><strong>単発 run で再現性を確定しない。</strong>複数 run で条件を明示した上での比較結果のみを観測事実として保持する。</li>
-      </ul>
-      <ul class="en">
-        <li><strong>Establish an observation class first.</strong> Starting optimization without observability means you cannot prove improvements — and cannot detect regressions either.</li>
-        <li><strong>Layer evidence progressively.</strong> Build evidence across source → shared library → bundle isolation → disassembly → runtime correlation, making each layer's limits explicit.</li>
-        <li><strong>Isolate observer effects.</strong> If an observer changes the runtime path, that observer is invalid for measurement. Data from an observer that changes path is recorded as "observer-contaminated" and not used.</li>
-        <li><strong>Do not transfer MI25 signatures to rDNA4.</strong> wavefront_size and kernel families differ; MI25 visibility cannot be used as a success criterion for rDNA4. Establish rDNA4-specific observability separately.</li>
-        <li><strong>Do not confirm reproducibility from a single run.</strong> Only comparison results with stated conditions across multiple runs are retained as observed facts.</li>
-      </ul>
-    </section>
-
-    <!-- 調査フェーズの設計 -->
-    <section class="card">
-      <h2><span class="ja">調査フェーズの設計（C14 pilot 6 層）</span><span class="en">Investigation Phase Design (C14 Pilot 6 Layers)</span></h2>
-      <div class="phase-grid">
-        <div class="phase-item done">
-          <div class="phase-label">Phase A</div>
-          <div class="phase-status ja">ソース footing 確立。一次コードソース・runtime truth・参照ツリーを固定。</div>
-          <div class="phase-status en">Fix primary code source, runtime truth, and reference trees.</div>
-        </div>
-        <div class="phase-item done">
-          <div class="phase-label">Phase B</div>
-          <div class="phase-status ja">ソースレベル経路追跡。呼び出しチェーンと dispatch 分岐候補を確定。実機 runtime 確認も含む。</div>
-          <div class="phase-status en">Source-level path trace. Fix call chain and dispatch branch candidates. Includes live runtime confirmation.</div>
-        </div>
-        <div class="phase-item done">
-          <div class="phase-label">Phase C</div>
-          <div class="phase-status ja">共有ライブラリ依存追跡。ldd で依存チェーンと bundle root を確定。</div>
-          <div class="phase-status en">Shared library dependency map. Fix dependency chain and bundle root via ldd.</div>
-        </div>
-        <div class="phase-item done">
-          <div class="phase-label">Phase D</div>
-          <div class="phase-status ja">コードオブジェクト目録。libggml-hip.so fatbin と rocBLAS library 内の gfx1201 オブジェクト family を列挙。</div>
-          <div class="phase-status en">Code object inventory. Enumerate gfx1201 object families in libggml-hip.so fatbin and rocBLAS library.</div>
-        </div>
-        <div class="phase-item done">
-          <div class="phase-label">Phase E</div>
-          <div class="phase-status ja">逆アセンブリによる絞り込み。Q4_K 候補 bundle を isolate し、register footprint・命令パターンを確定。</div>
-          <div class="phase-status en">Disassembly-assisted narrowing. Isolate Q4_K candidate bundles and fix register footprints and instruction patterns.</div>
-        </div>
-        <div class="phase-item done">
-          <div class="phase-label">Phase F</div>
-          <div class="phase-status ja">ランタイム・逆アセンブリ相関。Phase B–E 証拠を統合し、live case との相関を取る。Phase proxy probe を追加。</div>
-          <div class="phase-status en">Runtime–disassembly correlation. Integrate Phase B–E evidence and correlate against live case. Add phase proxy probe.</div>
-        </div>
+      <h1>
+        <span class="ja">なぜ直接観測できないのか</span>
+        <span class="en">Why Direct Observation Is Blocked</span>
+      </h1>
+      <p class="ja">
+        このページが追う問いは一つ。<strong>RX9070XT 上の Ollama で、どの GPU kernel が使われているかを直接読める手段は存在するのか？</strong><br>
+        答えは「現時点では No」。このページでは、その「No」に至るまでに試したすべての手段と、
+        それぞれが何を壊し、何を教えてくれたかを記録する。
+        <em>observer が壊れることは失敗ではなく、gfx1201 における観測可能性の地図である。</em>
+      </p>
+      <p class="en">
+        One question drives this page: <strong>is there any means to directly read which GPU kernel is active on Ollama running on RX9070XT?</strong><br>
+        The answer is currently No. This page documents every approach tried, what each one broke,
+        and what each failure revealed.
+        <em>A broken observer is not a failure — it is a map of observability on gfx1201.</em>
+      </p>
+      <div class="hero-meta">
+        <span class="badge badge-env">gfx1201</span>
+        <span class="badge badge-unresolved ja">直接 observer: 全滅</span>
+        <span class="badge badge-unresolved en">Direct observers: all blocked</span>
+        <span class="badge badge-confirmed ja">phase proxy: 唯一の有効手段</span>
+        <span class="badge badge-confirmed en">phase proxy: only viable method</span>
       </div>
     </section>
 
-    <!-- Observer 制約と対処 -->
+    <!-- ── このページの結論 ──────────────────────────────────────── -->
     <section class="card">
-      <h2><span class="ja">Observer 制約と現在の対処</span><span class="en">Observer Constraints and Current Workarounds</span></h2>
+      <h2>
+        <span class="ja">このページの結論</span>
+        <span class="en">Page Conclusion</span>
+      </h2>
+      <div class="callout callout-confirmed">
+        <span class="ja">
+          試した直接 observer はすべて機能しない（wrap → CPU fallback、--attach → ptrace ブロック、ROCBLAS_LAYER → 粒度不足）。
+          消去法の末、<strong>phase proxy（response JSON の <code>prompt_eval_count</code>）が runtime を壊さない唯一の観測手段</strong>として残る。
+          これは「観測の失敗」ではなく「gfx1201 + Ollama の環境における observer 問題の確認」として記録する。
+        </span>
+        <span class="en">
+          All direct observer approaches tried are non-functional (wrap → CPU fallback, --attach → ptrace blocked, ROCBLAS_LAYER → insufficient granularity).
+          By elimination, <strong>the phase proxy (<code>prompt_eval_count</code> from response JSON) is the only runtime-safe observation method</strong>.
+          This is documented not as a failure, but as a confirmed map of the observer problem on gfx1201 + Ollama.
+        </span>
+      </div>
+    </section>
+
+    <!-- ── Observer 制約マップ（図） ──────────────────────────────── -->
+    <section class="card">
+      <h2>
+        <span class="ja">Observer 制約マップ（全手段の比較）</span>
+        <span class="en">Observer Constraint Map (all approaches)</span>
+      </h2>
+      <a href="../../../assets/img/graph/observer_constraints.webp" target="_blank"
+         class="graph-zoom" title="クリックで拡大 / Click to enlarge">
+        <img src="../../../assets/img/graph/observer_constraints.webp"
+             alt="Observer constraint map — rocprofv3 wrap Invalid, --attach Blocked, ROCBLAS_LAYER Partial, phase proxy Valid"
+             class="graph-img" />
+      </a>
+      <p class="graph-caption ja">クリックで拡大 · 2026-03-28 時点での各 observer の状態</p>
+      <p class="graph-caption en">Click to enlarge · Observer status as of 2026-03-28</p>
+    </section>
+
+    <!-- ── Step 1: rocprofv3 wrap ─────────────────────────────────── -->
+    <section class="card">
+      <h2>
+        <span class="ja">手段① — rocprofv3 wrap（結果：CPU fallback）</span>
+        <span class="en">Approach 1 — rocprofv3 wrap (Result: CPU fallback)</span>
+      </h2>
+
+      <p class="ja"><strong>観測ポイント：</strong> rocprofv3 で ollama serve をラップすれば、per-kernel dispatch を記録できるか？</p>
+      <p class="en"><strong>Observation target:</strong> Can wrapping ollama serve with rocprofv3 record per-kernel dispatch?</p>
+
+      <p class="ja">
+        最も直接的な手段として試みた。ROCm の標準プロファイラである <code>rocprofv3</code> で <code>ollama serve</code> を wrap し、
+        GPU kernel の dispatch 記録を取ることが目標だった。
+      </p>
+      <p class="en">
+        This was the most direct approach. The goal was to wrap <code>ollama serve</code> with ROCm's standard profiler
+        <code>rocprofv3</code> to capture a record of GPU kernel dispatches.
+      </p>
+
+      <div class="callout callout-unresolved">
+        <strong class="ja">何が起きたか：</strong><strong class="en">What happened:</strong>
+        <span class="ja">
+          <code>rocprofv3</code> の存在が Ollama の bootstrap discovery を壊し、GPU ランタイムの初期化に失敗する。
+          その結果、Ollama は GPU を認識できず CPU fallback に落ちた。
+          つまり、「GPU kernel を記録する」前に「GPU 自体が動かない」状態になった。
+        </span>
+        <span class="en">
+          The presence of <code>rocprofv3</code> broke Ollama's bootstrap discovery, causing GPU runtime initialization to fail.
+          Ollama fell back to CPU. In other words, before any kernel could be recorded,
+          the GPU itself was no longer being used.
+        </span>
+      </div>
+
+      <p class="ja">
+        <strong>ここから分かること：</strong>
+        このデータは observer 汚染として扱う。CPU fallback での実行は RX9070XT の経路観測として意味をなさない。
+        <br>
+        <strong>→ 次の問い：</strong> wrap ではなく attach 方式なら経路を壊さずに記録できるか？
+      </p>
+      <p class="en">
+        <strong>What this tells us:</strong>
+        Any data from this run is treated as observer-contaminated. CPU-fallback execution is not a valid observation of the RX9070XT path.
+        <br>
+        <strong>→ Next question:</strong> Could attach mode avoid disrupting the runtime path?
+      </p>
+    </section>
+
+    <!-- ── Step 2: rocprofv3 --attach ────────────────────────────── -->
+    <section class="card">
+      <h2>
+        <span class="ja">手段② — rocprofv3 --attach（結果：ptrace ブロック）</span>
+        <span class="en">Approach 2 — rocprofv3 --attach (Result: ptrace blocked)</span>
+      </h2>
+
+      <p class="ja"><strong>観測ポイント：</strong> 既に動いている Ollama プロセスに後からアタッチする方式なら、bootstrap を壊さずに記録できるか？</p>
+      <p class="en"><strong>Observation target:</strong> If attaching to an already-running Ollama process, can we record kernels without breaking bootstrap?</p>
+
+      <p class="ja">
+        wrap が bootstrap を壊すなら、Ollama を先に起動してから後でアタッチする方式を試みた。
+        これにより、bootstrap discovery は正常に完了させつつ、実行中の kernel を記録できる可能性があった。
+      </p>
+      <p class="en">
+        Since wrap breaks bootstrap, the next attempt was to start Ollama first, then attach afterward.
+        This would allow bootstrap discovery to complete normally before the profiler touches the process.
+      </p>
+
+      <div class="callout callout-unresolved">
+        <strong class="ja">何が起きたか：</strong><strong class="en">What happened:</strong>
+        <span class="ja">
+          ホストの <code>ptrace_scope = 1</code> 設定により、別プロセスへの ptrace アタッチが拒否された。
+          <code>rocprofv3 --attach</code> はこの制限に依存しており、変更なしには使用できない。
+          ptrace_scope を変更することはシステムセキュリティ設定の変更を意味し、調査環境の前提条件を変えてしまう。
+        </span>
+        <span class="en">
+          The host's <code>ptrace_scope = 1</code> setting rejected ptrace attachment to other processes.
+          <code>rocprofv3 --attach</code> depends on this capability and cannot be used without changing this setting.
+          Changing ptrace_scope means modifying system security settings, which alters the investigation environment's baseline.
+        </span>
+      </div>
+
+      <p class="ja">
+        <strong>ここから分かること：</strong>
+        attach 方式は環境依存。ptrace_scope を下げれば動く可能性はあるが、それは「標準環境での観測」ではなくなる。
+        <br>
+        <strong>→ 次の問い：</strong> rocprofv3 以外の環境変数ベースの方法はあるか？
+      </p>
+      <p class="en">
+        <strong>What this tells us:</strong>
+        Attach mode is environment-dependent. Lowering ptrace_scope might work, but that would no longer be "observation in standard environment."
+        <br>
+        <strong>→ Next question:</strong> Are there environment-variable-based approaches that don't require ptrace?
+      </p>
+    </section>
+
+    <!-- ── Step 3: ROCBLAS_LAYER ─────────────────────────────────── -->
+    <section class="card">
+      <h2>
+        <span class="ja">手段③ — ROCBLAS_LAYER=9（結果：粒度不足）</span>
+        <span class="en">Approach 3 — ROCBLAS_LAYER=9 (Result: insufficient granularity)</span>
+      </h2>
+
+      <p class="ja"><strong>観測ポイント：</strong> BLAS 層に絞って、rocBLAS の呼び出しを記録できるか？</p>
+      <p class="en"><strong>Observation target:</strong> Can we at least log rocBLAS calls by targeting the BLAS layer?</p>
+
+      <p class="ja">
+        <code>rocprofv3</code> が使えない状況で、BLAS 層限定の logging を試みた。
+        <code>ROCBLAS_LAYER=9</code> は rocBLAS の API 呼び出しをログに出す環境変数で、
+        runtime を壊さず使える可能性があった。
+      </p>
+      <p class="en">
+        With <code>rocprofv3</code> unavailable, we attempted BLAS-layer-only logging.
+        <code>ROCBLAS_LAYER=9</code> is an environment variable that logs rocBLAS API calls,
+        and it potentially could be used without breaking the runtime.
+      </p>
+
+      <div class="callout callout-limited">
+        <strong class="ja">何が起きたか：</strong><strong class="en">What happened:</strong>
+        <span class="ja">
+          <code>rocblas_create_handle</code> の呼び出しは確認できた。しかし per-GEMM のログは出力されなかった。
+          つまり「rocBLAS が使われた（handle が作成された）」ことは分かるが、
+          「具体的にどの GEMM が、何回、どの kernel で実行されたか」は分からない。
+        </span>
+        <span class="en">
+          The <code>rocblas_create_handle</code> call was confirmed. However, no per-GEMM logging was produced.
+          This tells us "rocBLAS was used (handle was created)" but not
+          "which specific GEMM ran, how many times, or which kernel handled it."
+        </span>
+      </div>
+
+      <p class="ja">
+        <strong>ここから分かること：</strong>
+        BLAS 層にアクセスがあることは確認できた。しかし Q4_K の処理は MMVQ/MMQ 経路（custom kernel）が中心であり、
+        BLAS 経路に入らない限り ROCBLAS_LAYER からは何も見えない。
+        この手段は「BLAS fallback が起きているか」の確認には使えるが、custom kernel の観測には使えない。
+        <br>
+        <strong>→ 次の問い：</strong> これらすべてを除いた状態で、何か残るか？
+      </p>
+      <p class="en">
+        <strong>What this tells us:</strong>
+        BLAS layer access is confirmed. However, since Q4_K processing is dominated by MMVQ/MMQ (custom kernel paths),
+        ROCBLAS_LAYER sees nothing unless the BLAS fallback path is taken.
+        This approach can verify "is BLAS fallback occurring" but cannot observe custom kernels.
+        <br>
+        <strong>→ Next question:</strong> After eliminating all of these, what remains?
+      </p>
+    </section>
+
+    <!-- ── Step 4: Phase proxy ────────────────────────────────────── -->
+    <section class="card">
+      <h2>
+        <span class="ja">手段④ — Phase proxy（消去法の末に残った唯一の手段）</span>
+        <span class="en">Approach 4 — Phase Proxy (the last approach standing)</span>
+      </h2>
+
+      <p class="ja"><strong>観測ポイント：</strong> runtime を一切壊さずに、「どの dispatch 圏で実行しているか」を近似的に読める手段があるか？</p>
+      <p class="en"><strong>Observation target:</strong> Is there any approach that reads the approximate dispatch zone without touching the runtime at all?</p>
+
+      <p class="ja">
+        手段①②③がすべて機能しない状況で、改めてソース側の dispatch 分岐を確認した。
+        MMVQ / MMQ の分岐は <code>ne11</code>（matrix の列数 ≈ prompt token 数）で決まる。
+        では、Ollama の response JSON に含まれる <code>prompt_eval_count</code> は <code>ne11</code> の近似として使えないか？
+        これが phase proxy の発想。
+      </p>
+      <p class="en">
+        With approaches 1–3 all blocked, we revisited the source dispatch logic.
+        The MMVQ/MMQ branch is determined by <code>ne11</code> (matrix columns ≈ prompt token count).
+        Could <code>prompt_eval_count</code> in Ollama's response JSON serve as an approximation for <code>ne11</code>?
+        This was the origin of the phase proxy approach.
+      </p>
+
+      <div class="callout callout-confirmed">
+        <strong class="ja">何が起きたか（Phase F probe 結果）：</strong><strong class="en">What happened (Phase F probe results):</strong>
+        <span class="ja">
+          <code>prompt_eval_count = 3</code> → MMVQ 圏（ne11 ≤ 8 に対応）。
+          <code>prompt_eval_count = 11</code> → MMQ-eligible 圏（8 &lt; ne11 ≤ 256 に対応）。
+          runtime は壊れず、GPU 上で正常に実行された。
+        </span>
+        <span class="en">
+          <code>prompt_eval_count = 3</code> → MMVQ zone (maps to ne11 ≤ 8).
+          <code>prompt_eval_count = 11</code> → MMQ-eligible zone (maps to 8 &lt; ne11 ≤ 256).
+          The runtime was not disrupted; execution proceeded on GPU normally.
+        </span>
+      </div>
+
+      <p class="ja">
+        <strong>ここから分かること：</strong>
+        phase proxy は「dispatch の直接確認」ではなく「dispatch 圏の近似推定」。
+        それでも、runtime を壊さずに dispatch 圏を区別できる現時点で唯一の手段であることが確認できた。
+      </p>
+      <p class="en">
+        <strong>What this tells us:</strong>
+        The phase proxy is not direct dispatch confirmation — it is an approximate inference of the dispatch zone.
+        However, it has been confirmed as the only currently available means to distinguish dispatch zones without disrupting the runtime.
+      </p>
+    </section>
+
+    <!-- ── 示せること / 示せないこと ──────────────────────────────── -->
+    <section class="card">
+      <h2>
+        <span class="ja">この制約のもとで示せること / 示せないこと</span>
+        <span class="en">What Can and Cannot Be Shown Under These Constraints</span>
+      </h2>
       <table class="data-table">
         <thead>
           <tr>
-            <th><span class="ja">手段</span><span class="en">Approach</span></th>
-            <th><span class="ja">状態</span><span class="en">Status</span></th>
-            <th><span class="ja">理由</span><span class="en">Reason</span></th>
+            <th><span class="ja">示せること</span><span class="en">Can Show</span></th>
+            <th><span class="ja">示せないこと</span><span class="en">Cannot Show</span></th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><code>rocprofv3 --runtime-trace</code> wrap</td>
-            <td><span class="badge badge-unresolved ja">無効</span><span class="badge badge-unresolved en">Invalid</span></td>
-            <td class="ja"><code>ollama serve</code> の bootstrap discovery を壊し CPU fallback に落ちる</td>
-            <td class="en">Breaks <code>ollama serve</code> bootstrap discovery, causes CPU fallback</td>
+            <td>
+              <span class="ja">rocprofv3 wrap が CPU fallback を引き起こすこと（observer 汚染の確認）</span>
+              <span class="en">rocprofv3 wrap causes CPU fallback (observer contamination confirmed)</span>
+            </td>
+            <td>
+              <span class="ja">CPU fallback 時の実行内容（計測対象が変わっている）</span>
+              <span class="en">What ran during CPU fallback (the measurement target has changed)</span>
+            </td>
           </tr>
           <tr>
-            <td><code>rocprofv3 --attach</code></td>
-            <td><span class="badge badge-unresolved ja">ブロック</span><span class="badge badge-unresolved en">Blocked</span></td>
-            <td class="ja">ホストの <code>ptrace_scope = 1</code> によりブロック</td>
-            <td class="en">Blocked by host <code>ptrace_scope = 1</code></td>
+            <td>
+              <span class="ja">ptrace_scope=1 が --attach をブロックすること</span>
+              <span class="en">ptrace_scope=1 blocks --attach</span>
+            </td>
+            <td>
+              <span class="ja">ptrace_scope を下げた環境での attach の挙動（調査環境の前提を変えてしまう）</span>
+              <span class="en">Attach behavior with ptrace_scope lowered (alters the investigation baseline)</span>
+            </td>
           </tr>
           <tr>
-            <td><code>ROCBLAS_LAYER=9</code></td>
-            <td><span class="badge badge-limited ja">部分的</span><span class="badge badge-limited en">Partial</span></td>
-            <td class="ja"><code>rocblas_create_handle</code> のみ。per-GEMM attribution には不足</td>
-            <td class="en">Only <code>rocblas_create_handle</code> visible. Insufficient for per-GEMM attribution</td>
+            <td>
+              <span class="ja">rocBLAS の handle が作成されていること（ROCBLAS_LAYER=9 で確認）</span>
+              <span class="en">rocBLAS handle is created (confirmed via ROCBLAS_LAYER=9)</span>
+            </td>
+            <td>
+              <span class="ja">per-GEMM の dispatch 帰属（ROCBLAS_LAYER では粒度不足）</span>
+              <span class="en">Per-GEMM dispatch attribution (ROCBLAS_LAYER lacks sufficient granularity)</span>
+            </td>
           </tr>
           <tr>
-            <td><code>rocm-smi</code> 1秒サンプリング</td>
-            <td><span class="badge badge-limited ja">粗い</span><span class="badge badge-limited en">Coarse</span></td>
-            <td class="ja">GPU 残留確認には十分だが、prefill vs decode や per-op dispatch の分解には不足</td>
-            <td class="en">Sufficient for GPU residency confirmation, but cannot separate prefill vs decode or per-op dispatch</td>
-          </tr>
-          <tr>
-            <td><span class="ja">Phase proxy（response JSON）</span><span class="en">Phase proxy (response JSON)</span></td>
-            <td><span class="badge badge-confirmed ja">有効（proxy）</span><span class="badge badge-confirmed en">Valid (proxy)</span></td>
-            <td class="ja"><code>prompt_eval_count / eval_count / eval_duration</code> を MMVQ/MMQ 閾値と照合できる。直接 dispatch 帰属ではないが observer を壊さない</td>
-            <td class="en">Can cross-reference <code>prompt_eval_count / eval_count / eval_duration</code> against MMVQ/MMQ thresholds. Not direct dispatch attribution, but does not distort the runtime path</td>
+            <td>
+              <span class="ja">phase proxy で dispatch 圏の近似を読めること</span>
+              <span class="en">Phase proxy can approximate the dispatch zone</span>
+            </td>
+            <td>
+              <span class="ja">kernel launch 時の正確な ne11 値（response JSON からは直接取れない）</span>
+              <span class="en">Exact ne11 value at kernel launch (not directly readable from response JSON)</span>
+            </td>
           </tr>
         </tbody>
       </table>
     </section>
 
-    <!-- 最適化への移行条件 -->
+    <!-- ── 調査フェーズの設計 ─────────────────────────────────────── -->
     <section class="card">
-      <h2><span class="ja">観測クラスから最適化へ移行する条件</span><span class="en">Prerequisites for Moving from Observation Class to Optimization</span></h2>
-      <div class="callout callout-unresolved">
-        <strong class="ja">現在未達の条件：</strong><strong class="en">Currently unmet prerequisite:</strong>
-        <span class="ja"> dispatch-safe observer（runtime path を壊さずに per-dispatch kernel attribution ができる手段）の確保。</span>
-        <span class="en"> dispatch-safe observer (a method that can attribute per-dispatch kernels without distorting the runtime path).</span>
+      <h2>
+        <span class="ja">調査フェーズ設計の意図（C14 pilot: Phase A–F）</span>
+        <span class="en">Investigation Phase Design Rationale (C14 Pilot: Phase A–F)</span>
+      </h2>
+
+      <p class="ja">
+        observer が軒並みブロックされる状況を受けて、調査は「直接観測」ではなく「多層証拠の積み上げ」で進めることになった。
+        Phase A–F はその積み上げの設計。各層で「何を固定したか」を確認できる。
+      </p>
+      <p class="en">
+        Facing blocked direct observers, the investigation shifted to building multi-layer evidence rather than direct observation.
+        Phase A–F is the design for that process — each phase fixes a specific layer.
+      </p>
+
+      <div class="phase-grid">
+        <div class="phase-item done">
+          <div class="phase-label">Phase A</div>
+          <div class="phase-status ja">ソース footing。dispatch 分岐の閾値（ne11 ≤ 8 / ≤ 256）をソースで確定。</div>
+          <div class="phase-status en">Source footing. Fix dispatch thresholds (ne11 ≤ 8 / ≤ 256) in source.</div>
+        </div>
+        <div class="phase-item done">
+          <div class="phase-label">Phase B</div>
+          <div class="phase-status ja">呼び出しチェーン確定。Ollama → ggml → hipBLAS / custom の経路をソースで追跡。</div>
+          <div class="phase-status en">Fix call chain. Trace Ollama → ggml → hipBLAS / custom path through source.</div>
+        </div>
+        <div class="phase-item done">
+          <div class="phase-label">Phase C</div>
+          <div class="phase-status ja">ライブラリロード確認。<code>/proc/maps</code> で 12 ライブラリのロードを確認。</div>
+          <div class="phase-status en">Library load confirmation. Verify 12 libraries loaded via <code>/proc/maps</code>.</div>
+        </div>
+        <div class="phase-item done">
+          <div class="phase-label">Phase D</div>
+          <div class="phase-status ja">binary 目録。fatbin 内の gfx1201 hsaco を列挙し、MMVQ/MMQ/BLAS の binary が存在することを確認。</div>
+          <div class="phase-status en">Binary inventory. Enumerate gfx1201 hsacos in fatbin; confirm MMVQ/MMQ/BLAS binaries exist.</div>
+        </div>
+        <div class="phase-item done">
+          <div class="phase-label">Phase E</div>
+          <div class="phase-status ja">逆アセンブリ。Q4_K 候補 bundle を isolate し、register footprint・命令パターンを確定。</div>
+          <div class="phase-status en">Disassembly. Isolate Q4_K candidate bundles; fix register footprints and instruction patterns.</div>
+        </div>
+        <div class="phase-item done">
+          <div class="phase-label">Phase F</div>
+          <div class="phase-status ja">Phase proxy probe。runtime 相関を phase proxy で取得。現在の frontier。</div>
+          <div class="phase-status en">Phase proxy probe. Obtain runtime correlation via phase proxy. Current frontier.</div>
+        </div>
       </div>
-      <ul class="ja">
-        <li>dispatch-safe observer が確保できた後、比較単位（anchor workload・anchor conditions）を固定します。</li>
-        <li>single-knob 比較：knob を一つ変えて eval_duration / prompt_eval_duration の変化を記録します。</li>
-        <li>複数 run で再現性を確認し、改善量を条件付きで記録します（「条件 X のもとで Y ms 改善」の形式）。</li>
-        <li>改善の帰属先（kernel family / BLAS vs custom）を、observer の限界を明示した上で記録します。</li>
-      </ul>
-      <ul class="en">
-        <li>After a dispatch-safe observer is secured, fix the comparison unit (anchor workload + anchor conditions).</li>
-        <li>Single-knob comparisons: change one knob and record changes in eval_duration / prompt_eval_duration.</li>
-        <li>Confirm reproducibility across multiple runs; record improvement with stated conditions ("Y ms improvement under condition X").</li>
-        <li>Record attribution of improvements (kernel family / BLAS vs custom) with explicit observer limitations stated.</li>
-      </ul>
     </section>
 
-    <!-- 未確定事項 -->
+    <!-- ── 次の観測点 ─────────────────────────────────────────────── -->
     <section class="card">
-      <h2><span class="ja">未確定事項</span><span class="en">Open Questions</span></h2>
+      <h2>
+        <span class="ja">次の観測点</span>
+        <span class="en">Where to Look Next</span>
+      </h2>
       <ul class="ja">
-        <li>移植手順の有効性を RDNA4 以外の GPU 世代すべてへ一般化して確定しません。</li>
-        <li>kernel レベルの因果や solver 選択の断定は、この方法論文書だけからは行いません。</li>
+        <li>
+          <strong>dispatch-safe observer が得られたら：</strong>
+          ptrace_scope の制約が解除された環境、または rocprofv3 の将来バージョンで
+          bootstrap を壊さない attach が可能になった場合、per-dispatch kernel attribution を再試行する。
+        </li>
+        <li>
+          <strong>optimization フェーズへの移行条件：</strong>
+          dispatch-safe observer の確保が前提。それなしに最適化を始めると、
+          改善を証明できないだけでなく退化も見逃す。
+        </li>
+        <li>
+          <strong>このページを読んだ後は：</strong>
+          <a href="rx9070xt-path.html">経路観測ページ</a>（どの kernel が存在し、phase proxy で何を読んだか）と
+          <a href="rx9070xt-investigation-overview.html">調査概観</a>（C14 portability pilot 全体像）。
+        </li>
       </ul>
       <ul class="en">
-        <li>The validity of the transplant procedure is not generalized to all GPU generations outside RDNA4.</li>
-        <li>Kernel-level causality and solver selection are not determined from this methodology document alone.</li>
+        <li>
+          <strong>When a dispatch-safe observer becomes available:</strong>
+          If ptrace_scope restrictions are lifted, or a future version of rocprofv3 allows bootstrap-safe attach,
+          retry per-dispatch kernel attribution.
+        </li>
+        <li>
+          <strong>Prerequisite for optimization phase:</strong>
+          A dispatch-safe observer must be secured first. Starting optimization without it means
+          you cannot prove improvements — and cannot detect regressions.
+        </li>
+        <li>
+          <strong>After this page:</strong>
+          See the <a href="rx9070xt-path.html">path observation page</a> (which kernels exist and what the phase proxy read)
+          and the <a href="rx9070xt-investigation-overview.html">investigation overview</a> (C14 portability pilot framing).
+        </li>
       </ul>
     </section>
 
     <div class="note">
-      <span class="ja">掲載情報は観測記録に基づきます。未確定事項は確定次第更新します。</span>
-      <span class="en">Content is grounded in observation logs. Open questions are updated as findings solidify.</span>
+      <span class="ja">掲載情報は観測記録に基づきます。「示せないこと」欄は調査の欠如ではなく observer 制約による限界です。</span>
+      <span class="en">Content is grounded in observation logs. "Cannot Show" entries reflect observer constraints, not gaps in investigation effort.</span>
     </div>
 
   </div>
