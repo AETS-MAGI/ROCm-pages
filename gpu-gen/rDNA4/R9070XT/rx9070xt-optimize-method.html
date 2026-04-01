@@ -359,6 +359,48 @@
         </span>
       </div>
 
+      <!-- 実際の手順（手の動き） -->
+      <div class="callout callout-confirmed" style="margin-top:14px;">
+        <span class="ja">
+          <strong>実際にやっていること（手順）：</strong><br><br>
+          ① 短いプロンプトを Ollama に投げる（例：3トークン）<br>
+          ② response JSON を受け取り、<code>prompt_eval_count</code> を読む → <code>3</code><br>
+          ③ これは <code>ne11 = 3 ≤ 8</code> → <strong>MMVQ 圏に入っているはず</strong> と推理<br><br>
+          ④ 長いプロンプトを投げる（例：11トークン）<br>
+          ⑤ <code>prompt_eval_count</code> を読む → <code>11</code><br>
+          ⑥ これは <code>8 &lt; ne11 = 11 ≤ 256</code> → <strong>MMQ 圏に入っているはず</strong> と推理<br><br>
+          → runtime は壊れず、GPU 上で正常実行。「どのトークン数がどの分岐を踏むか」が分かった。
+        </span>
+        <span class="en">
+          <strong>Concrete steps (what you actually do):</strong><br><br>
+          ① Send a short prompt to Ollama (e.g., 3 tokens)<br>
+          ② Read <code>prompt_eval_count</code> from response JSON → <code>3</code><br>
+          ③ Since <code>ne11 = 3 ≤ 8</code> → infer <strong>"it's in the MMVQ zone"</strong><br><br>
+          ④ Send a long prompt (e.g., 11 tokens)<br>
+          ⑤ Read <code>prompt_eval_count</code> → <code>11</code><br>
+          ⑥ Since <code>8 &lt; ne11 = 11 ≤ 256</code> → infer <strong>"it's in the MMQ zone"</strong><br><br>
+          → Runtime intact, GPU running normally. We can now see which token count triggers which branch.
+        </span>
+      </div>
+
+      <!-- なぜ面白いか -->
+      <div class="callout callout-inferred" style="margin-top:10px;">
+        <span class="ja">
+          <strong>なぜこれが研究として面白いのか：</strong><br>
+          phase proxy は「読む」だけでなく、<strong>「分岐を意図的に踏ませる操作手段」でもある</strong>。<br>
+          プロンプトの長さを変えることで、GPU 内の分岐を自分でコントロールできる。<br>
+          「見えないものを外から操作して反応を見る」——これは実験科学の基本。<br>
+          direct observer が全滅したからこそ、この方法の「操作可能性」が光る。
+        </span>
+        <span class="en">
+          <strong>Why this is interesting as research:</strong><br>
+          Phase proxy is not just "reading" — it is also <strong>"a controllable tool for deliberately triggering a branch."</strong><br>
+          By varying prompt length, we can directly control which internal GPU branch runs.<br>
+          "Controlling the invisible from outside and watching its response" — this is the basis of experimental science.<br>
+          Precisely because all direct observers failed, this approach's controllability stands out.
+        </span>
+      </div>
+
       <p class="ja">
         <strong>ここから分かること：</strong>
         phase proxy は「dispatch の直接確認」ではなく「dispatch 圏の近似推定」。
