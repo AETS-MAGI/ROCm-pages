@@ -483,12 +483,12 @@
       <p class="ja" style="margin-top:14px;">
         この一般 map を広げる最初の別枝としては <strong>IQ1_S</strong> を先に置く。
         理由は、source 上で `MMVQ` / `MMQ` の両方に entry があり、しかも既存の RDNA4 fatbin には `bundle_0082` という `gfx1201` `mul_mat_q` anchor がすでに見えているから。
-        `Q5_K_M` はその次に回す。
+        さらに practical path を分解すると、`ollama create -q IQ1_S` のような requantize route は狭いが、existing GGUF の direct import path は別経路で残っている。`Q5_K_M` はその次に回す。
       </p>
       <p class="en" style="margin-top:14px;">
         The first branch to broaden this general map with is <strong>IQ1_S</strong>.
         The reason is that it already has source-side entry into both `MMVQ` and `MMQ`, and the current RDNA4 fatbin already exposes a `gfx1201` `mul_mat_q` anchor in `bundle_0082`.
-        `Q5_K_M` comes after that.
+        Practical-path analysis also split further: the `ollama create -q IQ1_S` requantize route is narrow, while direct import of an existing GGUF appears to remain a separate path. `Q5_K_M` comes after that.
       </p>
     </section>
 
