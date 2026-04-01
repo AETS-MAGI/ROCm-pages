@@ -668,7 +668,7 @@
           <strong>proxy の限界：</strong> <code>prompt_eval_count</code> は response JSON の値であり、kernel launch 時の実際の
           <code>ne11</code> を直接読んでいない。
           chunked prefill や KV cache の挙動によって同じトークン数でも ne11 が変わりうる。
-          上の読みは「最も筋のいい解釈」であり、dispatch-safe observer による直接確認が本来必要。
+          上の読みは「最も筋のいい解釈」であり、本来は dispatch-safe observer による直接確認が必要。
         </span>
         <span class="en">
           <strong>Proxy limitations:</strong> <code>prompt_eval_count</code> is from the response JSON — not a direct
