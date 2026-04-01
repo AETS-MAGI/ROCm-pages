@@ -1,11 +1,13 @@
 <!doctype html>
 <html lang="ja" data-lang="ja">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>調査の読み方 | RX9070XT | ROCm-pages</title>
   <link rel="stylesheet" href="../../../assets/css/style.css" />
 </head>
+
 <body>
   <div class="wrap">
 
@@ -19,7 +21,8 @@
         <span class="sep">›</span>
         <a href="rx9070xt-index.html">RX9070XT</a>
         <span class="sep">›</span>
-        <span class="current"><span class="ja">調査の読み方</span><span class="en">How to Read This Investigation</span></span>
+        <span class="current"><span class="ja">調査の読み方</span><span class="en">How to Read This
+            Investigation</span></span>
       </nav>
       <div class="lang-toggle">
         <button class="lang-btn active" data-lang="ja">JA</button>
@@ -37,7 +40,8 @@
         このページで得られる理解：<em>RX9070XT 調査が「何を問い、何が見えて、何が見えないのか」——データページを読む前に、この文脈を掴む。</em>
       </p>
       <p class="en" style="font-size:1.05rem;font-weight:600;color:#fff;margin-bottom:10px;">
-        What you'll gain here: <em>what the RX9070XT investigation is asking, what can be seen, and what cannot — context to grasp before reading the data pages.</em>
+        What you'll gain here: <em>what the RX9070XT investigation is asking, what can be seen, and what cannot —
+          context to grasp before reading the data pages.</em>
       </p>
 
       <p class="ja">
@@ -49,11 +53,13 @@
         fallback だけの世代でも、本命だけの世代でもない——観測しなければ分からない。
       </p>
       <p class="en">
-        This investigation (C14 portability pilot) is an attempt to transplant the observation methodology established for MI25 onto RDNA4.
+        This investigation (C14 portability pilot) is an attempt to transplant the observation methodology established
+        for MI25 onto RDNA4.
         But the observation tools that worked naturally for MI25 fail across the board on RDNA4.
         That fact — "it doesn't work" — is itself the research finding.
         <br>
-        RDNA4 / gfx1201 is particularly interesting because, as a GPU generation, it sits right at the boundary of "does the primary path actually run?"
+        RDNA4 / gfx1201 is particularly interesting because, as a GPU generation, it sits right at the boundary of "does
+        the primary path actually run?"
         Neither pure-fallback nor pure-primary — you have to observe to know.
       </p>
 
@@ -67,7 +73,7 @@
     <!-- ── このページの結論 ──────────────────────────────────────── -->
     <section class="card">
       <h2>
-        <span class="ja">このページの結論（先に読む）</span>
+        <span class="ja">このページの結論（最初にお読みください）</span>
         <span class="en">Page Conclusion (read this first)</span>
       </h2>
       <div class="callout callout-confirmed">
@@ -78,10 +84,14 @@
           ④ 「見えない」には2種類ある：observer が壊れているのか、実際に起きていないのか——この切り分けが調査の核心的な知的作業。
         </span>
         <span class="en">
-          ① gfx1201 is the one generation where observation is required to determine whether the primary path actually runs — that is this investigation's research significance.<br>
-          ② Observation tools that worked for MI25 fail entirely on RDNA4. Documented not as failure, but as a map of observability.<br>
-          ③ By elimination, only the phase proxy (response JSON) remains. Multi-layer evidence accumulation is the methodology.<br>
-          ④ "Invisible" has two causes: a broken observer, or something genuinely not happening — distinguishing these is the core intellectual work.
+          ① gfx1201 is the one generation where observation is required to determine whether the primary path actually
+          runs — that is this investigation's research significance.<br>
+          ② Observation tools that worked for MI25 fail entirely on RDNA4. Documented not as failure, but as a map of
+          observability.<br>
+          ③ By elimination, only the phase proxy (response JSON) remains. Multi-layer evidence accumulation is the
+          methodology.<br>
+          ④ "Invisible" has two causes: a broken observer, or something genuinely not happening — distinguishing these
+          is the core intellectual work.
         </span>
       </div>
     </section>
@@ -124,27 +134,37 @@
             <td><code>gfx900</code></td>
             <td>
               <span class="ja"><strong>fallback が主戦場。</strong>本命経路は通らない前提で観測する。fallback の構造を正確に記録することが研究の価値。</span>
-              <span class="en"><strong>Fallback is the main stage.</strong> Observe under the assumption the primary path won't run. Accurately mapping the fallback structure is the research value.</span>
+              <span class="en"><strong>Fallback is the main stage.</strong> Observe under the assumption the primary
+                path won't run. Accurately mapping the fallback structure is the research value.</span>
             </td>
-            <td><span class="badge badge-limited ja">fallback 観測</span><span class="badge badge-limited en">Fallback observation</span></td>
+            <td><span class="badge badge-limited ja">fallback 観測</span><span class="badge badge-limited en">Fallback
+                observation</span></td>
           </tr>
           <tr style="background:#fef9f0;">
             <td><strong><span class="ja">RDNA4 / RX9070XT</span><span class="en">RDNA4 / RX9070XT</span></strong></td>
             <td><code>gfx1201</code></td>
             <td>
-              <span class="ja"><strong>通るものと通らないものが混在。観測しないと分からない。</strong>fallback でも本命でもない——"分岐そのもの"を観測する世代。研究として最も面白い。</span>
-              <span class="en"><strong>Mixed: some paths run, some don't. Must observe to know.</strong> Neither pure-fallback nor pure-primary — this generation observes "the branching itself." Most interesting as research.</span>
+              <span class="ja"><strong>通るものと通らないものが混在。観測しないと分からない。</strong>fallback
+                でも本命でもない——"分岐そのもの"を観測する世代。研究として最も面白い。</span>
+              <span class="en"><strong>Mixed: some paths run, some don't. Must observe to know.</strong> Neither
+                pure-fallback nor pure-primary — this generation observes "the branching itself." Most interesting as
+                research.</span>
             </td>
-            <td><span class="badge badge-inferred ja">分岐観測 ← 今ここ</span><span class="badge badge-inferred en">Branch observation ← here</span></td>
+            <td><span class="badge badge-inferred ja">分岐観測 ← 今ここ</span><span class="badge badge-inferred en">Branch
+                observation ← here</span></td>
           </tr>
           <tr>
             <td><span class="ja">MI300X</span><span class="en">MI300X</span></td>
             <td><code>gfx942</code></td>
             <td>
-              <span class="ja"><strong>ほぼ本命が通ると見られる（要確認）。</strong>正規ルートの確認が主。fallback 観測は副次的。ただし MI400X 登場も噂されており、陳腐化は不可避。</span>
-              <span class="en"><strong>Primary path expected to run (needs confirmation).</strong> Verifying the canonical path is the main work. Fallback is secondary. However, MI400X rumors make obsolescence inevitable.</span>
+              <span class="ja"><strong>ほぼ本命が通ると見られる（要確認）。</strong>正規ルートの確認が主。fallback 観測は副次的。ただし MI400X
+                登場も噂されており、陳腐化は不可避。</span>
+              <span class="en"><strong>Primary path expected to run (needs confirmation).</strong> Verifying the
+                canonical path is the main work. Fallback is secondary. However, MI400X rumors make obsolescence
+                inevitable.</span>
             </td>
-            <td><span class="badge badge-confirmed ja">本命確認（予定）</span><span class="badge badge-confirmed en">Primary confirmation (planned)</span></td>
+            <td><span class="badge badge-confirmed ja">本命確認（予定）</span><span class="badge badge-confirmed en">Primary
+                confirmation (planned)</span></td>
           </tr>
         </tbody>
       </table>
@@ -156,20 +176,22 @@
           だからこそ観測が難しく、だからこそ研究として面白い。
         </span>
         <span class="en">
-          gfx1201 is "neither fallback nor primary" — <strong>the generation that observes the branching itself</strong>.
-          For MI25, fallback was the answer. For MI300X, primary is expected. gfx1201 is the only generation where "which one?" must be confirmed at runtime.
+          gfx1201 is "neither fallback nor primary" — <strong>the generation that observes the branching
+            itself</strong>.
+          For MI25, fallback was the answer. For MI300X, primary is expected. gfx1201 is the only generation where
+          "which one?" must be confirmed at runtime.
           That is why observing it is hard — and why it's interesting as research.
         </span>
       </div>
 
-      <a href="../../../assets/img/graph/gpu_gen_worldview.webp" target="_blank"
-         class="graph-zoom" title="クリックで拡大 / Click to enlarge">
+      <a href="../../../assets/img/graph/gpu_gen_worldview.webp" target="_blank" class="graph-zoom"
+        title="クリックで拡大 / Click to enlarge">
         <img src="../../../assets/img/graph/gpu_gen_worldview.webp"
-             alt="GPU generation worldview — gfx900 fallback / gfx1201 mixed / gfx942 primary"
-             class="graph-img" />
+          alt="GPU generation worldview — gfx900 fallback / gfx1201 mixed / gfx942 primary" class="graph-img" />
       </a>
       <p class="graph-caption ja">クリックで拡大 · gfx900 / gfx1201 / gfx942 の観測世界観の違い</p>
-      <p class="graph-caption en">Click to enlarge · Observation worldview differences across gfx900 / gfx1201 / gfx942</p>
+      <p class="graph-caption en">Click to enlarge · Observation worldview differences across gfx900 / gfx1201 / gfx942
+      </p>
     </section>
 
     <!-- ── C14 pilot とは何か ─────────────────────────────────────── -->
@@ -180,7 +202,8 @@
       </h2>
 
       <p class="ja"><strong>観測ポイント：</strong> MI25 で確立した方法論は RDNA4 でそのまま使えるのか？</p>
-      <p class="en"><strong>Observation target:</strong> Does the methodology established for MI25 work directly on RDNA4?</p>
+      <p class="en"><strong>Observation target:</strong> Does the methodology established for MI25 work directly on
+        RDNA4?</p>
 
       <p class="ja">
         MI25 調査では「observe first, then optimize」の手順で観測クラスを確立した。
@@ -189,7 +212,8 @@
       </p>
       <p class="en">
         The MI25 investigation established an observation class using an "observe first, then optimize" procedure.
-        Three pillars — rocprofv3 kernel tracing, ROCBLAS_LAYER logging, and process map observation — allowed direct confirmation of what was executed.
+        Three pillars — rocprofv3 kernel tracing, ROCBLAS_LAYER logging, and process map observation — allowed direct
+        confirmation of what was executed.
         C14 pilot is the attempt to bring this methodology to RX9070XT.
       </p>
 
@@ -203,7 +227,8 @@
         <span class="en">
           <strong>The question shifts:</strong>
           Not "can we do in RDNA4 what we did in MI25?"
-          But "in a situation where MI25's standard observation windows are unavailable, can we distinguish what is observable from what is not?" — that is what C14 asks.
+          But "in a situation where MI25's standard observation windows are unavailable, can we distinguish what is
+          observable from what is not?" — that is what C14 asks.
           Even if the answer is "no," identifying what cannot be observed and why is a research finding, not a failure.
         </span>
       </div>
@@ -215,15 +240,15 @@
       </p>
       <p class="en">
         Phase A–F is the design for this disambiguation.
-        Fix theoretical branches in source (A/B), confirm library and binary existence (C/D), grasp substance via disassembly (E), get approximate correlation via runtime proxy (F).
+        Fix theoretical branches in source (A/B), confirm library and binary existence (C/D), grasp substance via
+        disassembly (E), get approximate correlation via runtime proxy (F).
         <strong>→ Next question:</strong> But when we try to execute this procedure on RDNA4, what breaks?
       </p>
 
-      <a href="../../../assets/img/graph/phase_flow.webp" target="_blank"
-         class="graph-zoom" title="クリックで拡大 / Click to enlarge">
+      <a href="../../../assets/img/graph/phase_flow.webp" target="_blank" class="graph-zoom"
+        title="クリックで拡大 / Click to enlarge">
         <img src="../../../assets/img/graph/phase_flow.webp"
-             alt="Phase A–F investigation flow — source footing through runtime correlation"
-             class="graph-img" />
+          alt="Phase A–F investigation flow — source footing through runtime correlation" class="graph-img" />
       </a>
       <p class="graph-caption ja">クリックで拡大 · Phase A–F の調査フロー（現在の frontier: Phase F）</p>
       <p class="graph-caption en">Click to enlarge · Phase A–F investigation flow (current frontier: Phase F)</p>
@@ -241,8 +266,10 @@
         これを追うために Phase A〜F を設計した。各フェーズで「何が知りたかったか」「何をしたか」「期待と結果のギャップ」を平易にまとめる。
       </p>
       <p class="en">
-        The investigation starts from a simple question: <strong>"When Ollama runs a Q4_K_M model on RX9070XT, what is happening inside the GPU?"</strong>
-        Phases A–F were designed to pursue this. Below is a plain-language summary of what each phase wanted to know, what was done, and where expectation and reality diverged.
+        The investigation starts from a simple question: <strong>"When Ollama runs a Q4_K_M model on RX9070XT, what is
+          happening inside the GPU?"</strong>
+        Phases A–F were designed to pursue this. Below is a plain-language summary of what each phase wanted to know,
+        what was done, and where expectation and reality diverged.
       </p>
 
       <table class="data-table">
@@ -259,14 +286,18 @@
             <td><strong>A</strong></td>
             <td>
               <span class="ja">ソースの dispatch 分岐はどこにあるか？どんな条件で kernel が切り替わるか？</span>
-              <span class="en">Where are the dispatch branches in source? Under what conditions do kernels switch?</span>
+              <span class="en">Where are the dispatch branches in source? Under what conditions do kernels
+                switch?</span>
             </td>
             <td>
-              <span class="ja">ggml / Ollama のソースを追跡し、<code>ggml_cuda_mul_mat()</code> の ne11 閾値（≤ 8 / ≤ 256）を特定した。</span>
-              <span class="en">Traced ggml / Ollama source and identified ne11 thresholds (≤ 8 / ≤ 256) in <code>ggml_cuda_mul_mat()</code>.</span>
+              <span class="ja">ggml / Ollama のソースを追跡し、<code>ggml_cuda_mul_mat()</code> の ne11 閾値（≤ 8 / ≤
+                256）を特定した。</span>
+              <span class="en">Traced ggml / Ollama source and identified ne11 thresholds (≤ 8 / ≤ 256) in
+                <code>ggml_cuda_mul_mat()</code>.</span>
             </td>
             <td>
-              <span class="badge badge-confirmed ja">期待通り確定</span><span class="badge badge-confirmed en">Confirmed as expected</span><br>
+              <span class="badge badge-confirmed ja">期待通り確定</span><span class="badge badge-confirmed en">Confirmed as
+                expected</span><br>
               <span class="ja">分岐はソースで明確に読めた。</span>
               <span class="en">Branches were clearly readable in source.</span>
             </td>
@@ -282,7 +313,8 @@
               <span class="en">Traced Ollama → ggml → hipBLAS / custom kernel path through source.</span>
             </td>
             <td>
-              <span class="badge badge-confirmed ja">期待通り確定</span><span class="badge badge-confirmed en">Confirmed as expected</span><br>
+              <span class="badge badge-confirmed ja">期待通り確定</span><span class="badge badge-confirmed en">Confirmed as
+                expected</span><br>
               <span class="ja">呼び出しチェーンをソースで完全に追えた。</span>
               <span class="en">Full call chain confirmed through source.</span>
             </td>
@@ -298,7 +330,8 @@
               <span class="en">Checked <code>/proc/&lt;runner&gt;/maps</code> and confirmed 12 libraries loaded.</span>
             </td>
             <td>
-              <span class="badge badge-confirmed ja">確定（ただし load ≠ dispatch）</span><span class="badge badge-confirmed en">Confirmed (but load ≠ dispatch)</span><br>
+              <span class="badge badge-confirmed ja">確定（ただし load ≠ dispatch）</span><span
+                class="badge badge-confirmed en">Confirmed (but load ≠ dispatch)</span><br>
               <span class="ja">ロードは確認できた。しかし「ロードされている = 使われている」ではないことも同時に発見。</span>
               <span class="en">Loading confirmed. Also discovered simultaneously that "loaded ≠ dispatched."</span>
             </td>
@@ -310,11 +343,14 @@
               <span class="en">Are gfx1201 binaries actually present in the fatbin? Which kernels exist?</span>
             </td>
             <td>
-              <span class="ja"><code>libggml-hip.so</code> の <code>.hip_fatbin</code>（587 MiB）を解析し、gfx1201 向け hsaco を列挙した。</span>
-              <span class="en">Analyzed the <code>.hip_fatbin</code> (587 MiB) in <code>libggml-hip.so</code> and enumerated gfx1201 hsacos.</span>
+              <span class="ja"><code>libggml-hip.so</code> の <code>.hip_fatbin</code>（587 MiB）を解析し、gfx1201 向け hsaco
+                を列挙した。</span>
+              <span class="en">Analyzed the <code>.hip_fatbin</code> (587 MiB) in <code>libggml-hip.so</code> and
+                enumerated gfx1201 hsacos.</span>
             </td>
             <td>
-              <span class="badge badge-confirmed ja">期待通り確定</span><span class="badge badge-confirmed en">Confirmed as expected</span><br>
+              <span class="badge badge-confirmed ja">期待通り確定</span><span class="badge badge-confirmed en">Confirmed as
+                expected</span><br>
               <span class="ja">MMVQ / MMQ / BLAS の gfx1201 binary はすべて存在した。</span>
               <span class="en">gfx1201 binaries for MMVQ / MMQ / BLAS all exist.</span>
             </td>
@@ -323,14 +359,17 @@
             <td><strong>E</strong></td>
             <td>
               <span class="ja">Q4_K を担う具体的な kernel の register footprint・命令パターンは？</span>
-              <span class="en">What are the register footprints and instruction patterns of the specific Q4_K kernels?</span>
+              <span class="en">What are the register footprints and instruction patterns of the specific Q4_K
+                kernels?</span>
             </td>
             <td>
               <span class="ja">Q4_K 候補 bundle を isolate し逆アセンブルした（bundle_0030 / bundle_0096 等）。</span>
-              <span class="en">Isolated and disassembled Q4_K candidate bundles (bundle_0030 / bundle_0096, etc.).</span>
+              <span class="en">Isolated and disassembled Q4_K candidate bundles (bundle_0030 / bundle_0096,
+                etc.).</span>
             </td>
             <td>
-              <span class="badge badge-confirmed ja">期待通り確定</span><span class="badge badge-confirmed en">Confirmed as expected</span><br>
+              <span class="badge badge-confirmed ja">期待通り確定</span><span class="badge badge-confirmed en">Confirmed as
+                expected</span><br>
               <span class="ja">gfx1201 固有の wavefront_size=32 を確認。v_mfma は検出されず。</span>
               <span class="en">gfx1201-specific wavefront_size=32 confirmed. No v_mfma detected.</span>
             </td>
@@ -339,16 +378,22 @@
             <td><strong>F</strong></td>
             <td>
               <span class="ja">live run で実際にどの dispatch 圏に入っているか？runtime を壊さずに確認できるか？</span>
-              <span class="en">Which dispatch zone does a live run actually enter? Can this be confirmed without breaking the runtime?</span>
+              <span class="en">Which dispatch zone does a live run actually enter? Can this be confirmed without
+                breaking the runtime?</span>
             </td>
             <td>
-              <span class="ja">rocprofv3・--attach・ROCBLAS_LAYER を試みたが全滅。消去法で phase proxy（response JSON）を採用し probe を実施した。</span>
-              <span class="en">Tried rocprofv3, --attach, and ROCBLAS_LAYER — all blocked. By elimination, adopted phase proxy (response JSON) and ran probes.</span>
+              <span class="ja">rocprofv3・--attach・ROCBLAS_LAYER を試みたが全滅。消去法で phase proxy（response JSON）を採用し probe
+                を実施した。</span>
+              <span class="en">Tried rocprofv3, --attach, and ROCBLAS_LAYER — all blocked. By elimination, adopted phase
+                proxy (response JSON) and ran probes.</span>
             </td>
             <td>
-              <span class="badge badge-inferred ja">近似のみ確定・直接確認は不可</span><span class="badge badge-inferred en">Approximate only — direct confirmation blocked</span><br>
-              <span class="ja">short case は MMVQ 圏と読むのが最も筋がいい。ただし dispatch-safe observer がなく、直接確認はできない。<strong>これが現在の frontier。</strong></span>
-              <span class="en">Short case most naturally reads as MMVQ zone. However, without a dispatch-safe observer, direct confirmation is impossible. <strong>This is the current frontier.</strong></span>
+              <span class="badge badge-inferred ja">近似のみ確定・直接確認は不可</span><span
+                class="badge badge-inferred en">Approximate only — direct confirmation blocked</span><br>
+              <span class="ja">short case は MMVQ 圏と読むのが最も筋がいい。ただし dispatch-safe observer がなく、直接確認はできない。<strong>これが現在の
+                  frontier。</strong></span>
+              <span class="en">Short case most naturally reads as MMVQ zone. However, without a dispatch-safe observer,
+                direct confirmation is impossible. <strong>This is the current frontier.</strong></span>
             </td>
           </tr>
         </tbody>
@@ -387,7 +432,8 @@
       </p>
       <p class="en">
         The first obstacle in the RDNA4 investigation is that observation tools fail across the board.
-        This is not "the investigation failed" — it is the discovery that RDNA4's runtime model differs from what the toolchain assumes.
+        This is not "the investigation failed" — it is the discovery that RDNA4's runtime model differs from what the
+        toolchain assumes.
         Results from each attempt:
       </p>
 
@@ -402,34 +448,45 @@
         <tbody>
           <tr>
             <td><code>rocprofv3</code> wrap</td>
-            <td><span class="badge badge-unresolved ja">無効（CPU fallback）</span><span class="badge badge-unresolved en">Invalid (CPU fallback)</span></td>
+            <td><span class="badge badge-unresolved ja">無効（CPU fallback）</span><span
+                class="badge badge-unresolved en">Invalid (CPU fallback)</span></td>
             <td>
-              <span class="ja">profiler の介在が Ollama の GPU bootstrap discovery を壊す。GPU 自体が使われなくなる。この状態のデータは observer 汚染として扱う。</span>
-              <span class="en">Profiler interposition breaks Ollama's GPU bootstrap discovery. The GPU stops being used. Data in this state is treated as observer-contaminated.</span>
+              <span class="ja">profiler の介在が Ollama の GPU bootstrap discovery を壊す。GPU 自体が使われなくなる。この状態のデータは observer
+                汚染として扱う。</span>
+              <span class="en">Profiler interposition breaks Ollama's GPU bootstrap discovery. The GPU stops being used.
+                Data in this state is treated as observer-contaminated.</span>
             </td>
           </tr>
           <tr>
             <td><code>rocprofv3 --attach</code></td>
-            <td><span class="badge badge-unresolved ja">ブロック</span><span class="badge badge-unresolved en">Blocked</span></td>
+            <td><span class="badge badge-unresolved ja">ブロック</span><span
+                class="badge badge-unresolved en">Blocked</span></td>
             <td>
               <span class="ja">ホストの <code>ptrace_scope=1</code> が ptrace attach を拒否。OS のカーネルセキュリティ設定であり、変更はスコープ外。</span>
-              <span class="en">Host <code>ptrace_scope=1</code> rejects ptrace attach. OS kernel security setting — changing it is out of scope.</span>
+              <span class="en">Host <code>ptrace_scope=1</code> rejects ptrace attach. OS kernel security setting —
+                changing it is out of scope.</span>
             </td>
           </tr>
           <tr>
             <td><code>ROCBLAS_LAYER=9</code></td>
-            <td><span class="badge badge-limited ja">部分のみ</span><span class="badge badge-limited en">Partial only</span></td>
+            <td><span class="badge badge-limited ja">部分のみ</span><span class="badge badge-limited en">Partial only</span>
+            </td>
             <td>
-              <span class="ja"><code>rocblas_create_handle</code> のみ記録。per-GEMM の dispatch 追跡には不足。Q4_K の custom kernel 経路は見えない。</span>
-              <span class="en">Only <code>rocblas_create_handle</code> logged. Insufficient for per-GEMM dispatch tracking. Custom kernel paths for Q4_K are invisible.</span>
+              <span class="ja"><code>rocblas_create_handle</code> のみ記録。per-GEMM の dispatch 追跡には不足。Q4_K の custom kernel
+                経路は見えない。</span>
+              <span class="en">Only <code>rocblas_create_handle</code> logged. Insufficient for per-GEMM dispatch
+                tracking. Custom kernel paths for Q4_K are invisible.</span>
             </td>
           </tr>
           <tr>
-            <td><span class="ja">phase proxy（response JSON）</span><span class="en">phase proxy (response JSON)</span></td>
-            <td><span class="badge badge-confirmed ja">有効（近似）</span><span class="badge badge-confirmed en">Valid (approximate)</span></td>
+            <td><span class="ja">phase proxy（response JSON）</span><span class="en">phase proxy (response JSON)</span>
+            </td>
+            <td><span class="badge badge-confirmed ja">有効（近似）</span><span class="badge badge-confirmed en">Valid
+                (approximate)</span></td>
             <td>
               <span class="ja">runtime を壊さない唯一の現実的な手段。他が全滅した消去法の結果として残った。</span>
-              <span class="en">The only practical means that doesn't break the runtime. What remains by elimination after all others failed.</span>
+              <span class="en">The only practical means that doesn't break the runtime. What remains by elimination
+                after all others failed.</span>
             </td>
           </tr>
         </tbody>
@@ -443,9 +500,11 @@
       </p>
       <p class="en" style="margin-top:12px;">
         <strong>What this tells us:</strong>
-        Being able to identify why tools fail is what matters. These are "confirmed structural limits of the observation window," not "observation failures."
+        Being able to identify why tools fail is what matters. These are "confirmed structural limits of the observation
+        window," not "observation failures."
         <br>
-        <strong>→ Next question:</strong> When an observer is broken, "invisible" has two possible causes. How do we distinguish them?
+        <strong>→ Next question:</strong> When an observer is broken, "invisible" has two possible causes. How do we
+        distinguish them?
       </p>
     </section>
 
@@ -463,14 +522,18 @@
         <strong class="ja">原因A — 観測窓の問題（observer が壊れている）：</strong>
         <strong class="en">Cause A — Observation window limit (observer is broken):</strong>
         <span class="ja"> 起きていることが見えない。例：rocprofv3 が CPU fallback を引き起こすため、GPU 側の実行を追跡できない。</span>
-        <span class="en"> What is happening cannot be seen. Example: rocprofv3 causes CPU fallback, so GPU-side execution cannot be traced.</span>
+        <span class="en"> What is happening cannot be seen. Example: rocprofv3 causes CPU fallback, so GPU-side
+          execution cannot be traced.</span>
       </div>
 
       <div class="callout callout-confirmed">
         <strong class="ja">原因B — target 固有の特徴（実際に起きていない）：</strong>
         <strong class="en">Cause B — Target-specific characteristic (genuinely not happening):</strong>
-        <span class="ja"> 実際に起きていない、または起きる経路に入っていない。例：MIOpen が <code>/proc/maps</code> に現れないのは、Ollama の LLM 推論経路が MIOpen を使用しないから（bundle にも含まれていない）。</span>
-        <span class="en"> It is genuinely not happening, or the path leading to it is not entered. Example: MIOpen not appearing in <code>/proc/maps</code> can be read as Ollama's LLM inference path not using MIOpen (it is also absent from the bundle).</span>
+        <span class="ja"> 実際に起きていない、または起きる経路に入っていない。例：MIOpen が <code>/proc/maps</code> に現れないのは、Ollama の LLM 推論経路が MIOpen
+          を使用しないから（bundle にも含まれていない）。</span>
+        <span class="en"> It is genuinely not happening, or the path leading to it is not entered. Example: MIOpen not
+          appearing in <code>/proc/maps</code> can be read as Ollama's LLM inference path not using MIOpen (it is also
+          absent from the bundle).</span>
       </div>
 
       <p class="ja">
@@ -483,7 +546,8 @@
       <p class="en">
         This distinction is the central intellectual work of this investigation.
         Without a dispatch-safe observer, cause A and cause B cannot be distinguished for many "invisibles."
-        Honestly recording which cases could be distinguished and which could not is where this investigation's value lies.
+        Honestly recording which cases could be distinguished and which could not is where this investigation's value
+        lies.
         <br>
         <strong>→ Next question:</strong> When a library is loaded, does that mean it is being used?
       </p>
@@ -497,7 +561,8 @@
       </h2>
 
       <p class="ja"><strong>観測ポイント：</strong> <code>/proc/maps</code> でライブラリが見えるとき、そのライブラリの演算は実行されているのか。</p>
-      <p class="en"><strong>Observation target:</strong> When a library appears in <code>/proc/maps</code>, is that library's compute actually being dispatched?</p>
+      <p class="en"><strong>Observation target:</strong> When a library appears in <code>/proc/maps</code>, is that
+        library's compute actually being dispatched?</p>
 
       <p class="ja">
         Phase C の調査で、Ollama runner の <code>/proc/maps</code> に <code>libhipblaslt.so.0.10.60303</code> が記録されていることを確認した。
@@ -505,9 +570,11 @@
         しかしここから「hipBLASLt の演算が LLM 推論ループで dispatch された」とは言えない。
       </p>
       <p class="en">
-        Phase C confirmed that <code>libhipblaslt.so.0.10.60303</code> appears in the Ollama runner's <code>/proc/maps</code>.
+        Phase C confirmed that <code>libhipblaslt.so.0.10.60303</code> appears in the Ollama runner's
+        <code>/proc/maps</code>.
         This is the fact: "hipBLASLt is loaded."
-        From this, however, it cannot be stated that "hipBLASLt operations were dispatched during the LLM inference loop."
+        From this, however, it cannot be stated that "hipBLASLt operations were dispatched during the LLM inference
+        loop."
       </p>
 
       <p class="ja">
@@ -516,9 +583,12 @@
         BLAS fallback（hipBLAS → rocBLAS → hipBLASLt）は ne11 が大きい prefill か、特定 shape の場合に限られる可能性がある。
       </p>
       <p class="en">
-        Why does the distinction matter? In Q4_K_M inference, kernels branch based on <code>ne11</code> (analogous to batch size).
-        Most of the decode phase (token generation) likely has small ne11, where MMVQ and MMQ custom HIP kernels are the primary paths.
-        The BLAS fallback (hipBLAS → rocBLAS → hipBLASLt) may only be reached during the large-ne11 prefill phase, or for specific shapes.
+        Why does the distinction matter? In Q4_K_M inference, kernels branch based on <code>ne11</code> (analogous to
+        batch size).
+        Most of the decode phase (token generation) likely has small ne11, where MMVQ and MMQ custom HIP kernels are the
+        primary paths.
+        The BLAS fallback (hipBLAS → rocBLAS → hipBLASLt) may only be reached during the large-ne11 prefill phase, or
+        for specific shapes.
       </p>
 
       <div class="callout callout-unresolved">
@@ -541,7 +611,8 @@
       </h2>
 
       <p class="ja"><strong>観測ポイント：</strong> runtime を一切壊さずに、dispatch 圏の近似を読める手段があるか。</p>
-      <p class="en"><strong>Observation target:</strong> Is there any means to approximate the dispatch zone without touching the runtime at all?</p>
+      <p class="en"><strong>Observation target:</strong> Is there any means to approximate the dispatch zone without
+        touching the runtime at all?</p>
 
       <p class="ja">
         wrap も attach も layer log も機能しない状況で、改めてソース側の dispatch 分岐を確認した。
@@ -551,7 +622,8 @@
       <p class="en">
         With wrap, attach, and layer log all non-functional, we revisited the source dispatch logic.
         The MMVQ/MMQ branch is determined by <code>ne11</code> (≈ prompt token count).
-        Could <code>prompt_eval_count</code> in Ollama's response JSON serve as a proxy for <code>ne11</code>? — that is the phase proxy.
+        Could <code>prompt_eval_count</code> in Ollama's response JSON serve as a proxy for <code>ne11</code>? — that is
+        the phase proxy.
       </p>
 
       <table class="data-table">
@@ -566,36 +638,43 @@
           <tr>
             <td><span class="ja">最小 prompt</span><span class="en">Minimal prompt</span></td>
             <td>3</td>
-            <td><span class="badge badge-confirmed ja">MMVQ 圏（ne11 ≤ 8）</span><span class="badge badge-confirmed en">MMVQ zone (ne11 ≤ 8)</span></td>
+            <td><span class="badge badge-confirmed ja">MMVQ 圏（ne11 ≤ 8）</span><span
+                class="badge badge-confirmed en">MMVQ zone (ne11 ≤ 8)</span></td>
           </tr>
           <tr>
             <td><span class="ja">短文 prompt</span><span class="en">Short prompt</span></td>
             <td>11</td>
-            <td><span class="badge badge-inferred ja">MMQ-eligible 圏（bundle_0096 候補）</span><span class="badge badge-inferred en">MMQ-eligible zone (bundle_0096 candidate)</span></td>
+            <td><span class="badge badge-inferred ja">MMQ-eligible 圏（bundle_0096 候補）</span><span
+                class="badge badge-inferred en">MMQ-eligible zone (bundle_0096 candidate)</span></td>
           </tr>
           <tr>
             <td><span class="ja">boundary 候補</span><span class="en">Boundary candidate</span></td>
             <td>290</td>
-            <td><span class="badge badge-unresolved ja">MMQ/BLAS 境界付近（未確定）</span><span class="badge badge-unresolved en">Near MMQ/BLAS boundary (unresolved)</span></td>
+            <td><span class="badge badge-unresolved ja">MMQ/BLAS 境界付近（未確定）</span><span
+                class="badge badge-unresolved en">Near MMQ/BLAS boundary (unresolved)</span></td>
           </tr>
           <tr>
             <td><span class="ja">decode-heavy</span><span class="en">Decode-heavy</span></td>
             <td>3</td>
-            <td><span class="badge badge-confirmed ja">eval_count=16 / 0.1479s（decode ベースライン）</span><span class="badge badge-confirmed en">eval_count=16 / 0.1479s (decode baseline)</span></td>
+            <td><span class="badge badge-confirmed ja">eval_count=16 / 0.1479s（decode ベースライン）</span><span
+                class="badge badge-confirmed en">eval_count=16 / 0.1479s (decode baseline)</span></td>
           </tr>
         </tbody>
       </table>
 
       <div class="callout callout-inferred">
         <span class="ja">
-          <strong>proxy の限界：</strong> <code>prompt_eval_count</code> は response JSON の値であり、kernel launch 時の実際の <code>ne11</code> を直接読んでいない。
+          <strong>proxy の限界：</strong> <code>prompt_eval_count</code> は response JSON の値であり、kernel launch 時の実際の
+          <code>ne11</code> を直接読んでいない。
           chunked prefill や KV cache の挙動によって同じトークン数でも ne11 が変わりうる。
           上の読みは「最も筋のいい解釈」であり、dispatch-safe observer による直接確認が本来必要。
         </span>
         <span class="en">
-          <strong>Proxy limitations:</strong> <code>prompt_eval_count</code> is from the response JSON — not a direct reading of <code>ne11</code> at kernel launch.
+          <strong>Proxy limitations:</strong> <code>prompt_eval_count</code> is from the response JSON — not a direct
+          reading of <code>ne11</code> at kernel launch.
           Chunked prefill or KV cache behavior could cause ne11 to differ even for the same token count.
-          The readings above are "strongest current interpretations" — direct confirmation by a dispatch-safe observer is the proper requirement.
+          The readings above are "strongest current interpretations" — direct confirmation by a dispatch-safe observer
+          is the proper requirement.
         </span>
       </div>
     </section>
@@ -607,8 +686,11 @@
         <span class="en">A Note on Reading This Investigation — Badge and Callout Meanings</span>
       </h2>
 
-      <p class="ja">各ページで使われているバッジと callout は、情報の確度を色で示す。<strong>「未確定が多い」ことは品質の低さではない——未確定を正直に記録することがこの調査の品質基準。</strong></p>
-      <p class="en">Badges and callouts across pages indicate confidence level by color. <strong>"Many unresolved items" does not indicate low quality — honestly recording what is unresolved is the quality standard of this investigation.</strong></p>
+      <p class="ja">各ページで使われているバッジと callout は、情報の確度を色で示す。<strong>「未確定が多い」ことは品質の低さではない——未確定を正直に記録することがこの調査の品質基準。</strong>
+      </p>
+      <p class="en">Badges and callouts across pages indicate confidence level by color. <strong>"Many unresolved items"
+          does not indicate low quality — honestly recording what is unresolved is the quality standard of this
+          investigation.</strong></p>
 
       <table class="data-table">
         <thead>
@@ -620,19 +702,23 @@
         <tbody>
           <tr>
             <td><span class="badge badge-confirmed">確認済み / Confirmed</span></td>
-            <td><span class="ja">実機コマンド・ログ・ファイル存在・逆アセンブリ等で直接確認した事実</span><span class="en">Directly confirmed via live commands, logs, file presence, or disassembly</span></td>
+            <td><span class="ja">実機コマンド・ログ・ファイル存在・逆アセンブリ等で直接確認した事実</span><span class="en">Directly confirmed via live
+                commands, logs, file presence, or disassembly</span></td>
           </tr>
           <tr>
             <td><span class="badge badge-inferred">推論 / Inferred</span></td>
-            <td><span class="ja">確認した事実から論理的に導かれる解釈。直接確認はしていない</span><span class="en">Interpretation logically derived from confirmed facts. Not directly confirmed</span></td>
+            <td><span class="ja">確認した事実から論理的に導かれる解釈。直接確認はしていない</span><span class="en">Interpretation logically derived
+                from confirmed facts. Not directly confirmed</span></td>
           </tr>
           <tr>
             <td><span class="badge badge-unresolved">未確定 / Unresolved</span></td>
-            <td><span class="ja">現時点では確定できない事項。observer 制約または未実施の観測による</span><span class="en">Cannot be determined at this stage, due to observer constraints or observations not yet performed</span></td>
+            <td><span class="ja">現時点では確定できない事項。observer 制約または未実施の観測による</span><span class="en">Cannot be determined at
+                this stage, due to observer constraints or observations not yet performed</span></td>
           </tr>
           <tr>
             <td><span class="badge badge-limited">制約あり / Limited</span></td>
-            <td><span class="ja">部分的に確認できているが、tool 制限により完全ではない</span><span class="en">Partially confirmed, but incomplete due to tool limitations</span></td>
+            <td><span class="ja">部分的に確認できているが、tool 制限により完全ではない</span><span class="en">Partially confirmed, but
+                incomplete due to tool limitations</span></td>
           </tr>
         </tbody>
       </table>
@@ -645,7 +731,8 @@
         <span class="en">Where to Go Next</span>
       </h2>
       <p class="ja">このページで文脈を掴んだら、以下の順で読むと調査の流れを追いやすい。</p>
-      <p class="en">Now that you have the context, reading in the following order makes the investigation flow easiest to follow.</p>
+      <p class="en">Now that you have the context, reading in the following order makes the investigation flow easiest
+        to follow.</p>
       <ul class="ja">
         <li>
           <strong><a href="rx9070xt-path.html">経路観測ページ</a> — 「どの kernel が選ばれるのか」</strong><br>
@@ -666,11 +753,14 @@
       <ul class="en">
         <li>
           <strong><a href="rx9070xt-path.html">Path Observation</a> — "Which kernel gets selected?"</strong><br>
-          Dispatch branch theory (source) → binary existence confirmation → what the phase proxy read: three steps tracing the path.
+          Dispatch branch theory (source) → binary existence confirmation → what the phase proxy read: three steps
+          tracing the path.
         </li>
         <li>
-          <strong><a href="rx9070xt-optimize-method.html">Observer Constraint Map</a> — "Why is direct observation blocked?"</strong><br>
-          Experimental record of each observer tried. The elimination path from wrap → attach → layer log to phase proxy.
+          <strong><a href="rx9070xt-optimize-method.html">Observer Constraint Map</a> — "Why is direct observation
+            blocked?"</strong><br>
+          Experimental record of each observer tried. The elimination path from wrap → attach → layer log to phase
+          proxy.
         </li>
         <li>
           <strong><a href="rx9070xt-overview.html">RX9070XT Overview</a> — investigation framing</strong><br>
@@ -684,10 +774,12 @@
 
     <div class="note">
       <span class="ja">本ページは本調査への入口として機能します。各データページは <a href="rx9070xt-index.html">RX9070XT インデックス</a> から参照できます。</span>
-      <span class="en">This page serves as the entry point to this investigation. Individual data pages are accessible from the <a href="rx9070xt-index.html">RX9070XT index</a>.</span>
+      <span class="en">This page serves as the entry point to this investigation. Individual data pages are accessible
+        from the <a href="rx9070xt-index.html">RX9070XT index</a>.</span>
     </div>
 
   </div>
   <script src="../../../assets/js/main.js"></script>
 </body>
+
 </html>
