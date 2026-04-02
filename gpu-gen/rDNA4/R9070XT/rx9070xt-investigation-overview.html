@@ -180,6 +180,23 @@
           the source itself leans it toward <strong>`mul_mat_q`</strong>.
         </span>
       </div>
+
+      <div class="callout callout-confirmed" style="margin-top:12px;">
+        <span class="ja">
+          さらに、current Ollama path は llama.cpp の default <code>LLAMA_SPLIT_MODE_LAYER</code> をそのまま使っていて、
+          ROW-mode split buffer を source 上 request していない。<br>
+          だから runtime の <code>graph splits = 2</code> は、そのまま source-side split-buffer の証拠にはならない。
+          いま残る問いは「split だったか」ではなく、
+          <strong>live <code>9+</code> window が既知の <code>Q4_K</code> owner を本当に dispatch したか</strong> になっている。
+        </span>
+        <span class="en">
+          In addition, the current Ollama path keeps llama.cpp at its default <code>LLAMA_SPLIT_MODE_LAYER</code> and
+          does not request ROW-mode split buffers in source.<br>
+          So runtime <code>graph splits = 2</code> should not be read as direct evidence of source-side split-buffer mode.
+          The remaining question is no longer "was it split?"
+          but <strong>whether the live <code>9+</code> window actually dispatched the known <code>Q4_K</code> owner</strong>.
+        </span>
+      </div>
     </section>
 
     <!-- ── 世代ごとの世界観 ──────────────────────────────────────── -->

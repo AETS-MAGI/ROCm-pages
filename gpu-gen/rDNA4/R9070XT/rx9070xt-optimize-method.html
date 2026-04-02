@@ -97,6 +97,22 @@
           This is the direct explanation for why the C14 pilot proceeds via multi-layer inference rather than direct observation.
         </span>
       </div>
+
+      <div class="callout callout-confirmed" style="margin-top:12px;">
+        <span class="ja">
+          最近の source trace でさらに分かったこと：current Ollama path は llama.cpp の default
+          <code>LLAMA_SPLIT_MODE_LAYER</code> を維持していて、ROW-mode split buffer を source 上 request していない。<br>
+          そのため runtime の <code>graph splits = 2</code> は split-buffer mode の直接証拠ではなく、
+          current phase-proxy 読みでは <strong>observer 制約</strong> と <strong>source-side branch facts</strong> を分けて扱う必要がある。
+        </span>
+        <span class="en">
+          One more thing recent source tracing clarified: the current Ollama path keeps llama.cpp at the default
+          <code>LLAMA_SPLIT_MODE_LAYER</code> and does not request ROW-mode split buffers in source.<br>
+          So runtime <code>graph splits = 2</code> is not direct evidence of split-buffer mode,
+          and the current phase-proxy reading must explicitly separate <strong>observer constraints</strong> from
+          <strong>source-side branch facts</strong>.
+        </span>
+      </div>
     </section>
 
     <!-- ── やさしく言うと（たとえ話） ────────────────────────────── -->
