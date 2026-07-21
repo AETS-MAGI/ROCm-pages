@@ -20,7 +20,7 @@ GitHub Pages 用の公開ディレクトリです。
 
 - GCN5 / MI25 は記述が最も進んでいる
 - rDNA4 / RX9070XT は portability pilot の観測結果を反映中
-- cDNA4 / MI300X は方法論移植の準備段階
+- cDNA3 / MI300X は方法論移植の準備段階
 - LLVM は参照導線を整備中
 
 ## 更新時の注意

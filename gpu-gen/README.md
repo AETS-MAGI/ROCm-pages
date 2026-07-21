@@ -11,13 +11,13 @@ GPU 世代別の調査ページをまとめるセクションです。
 
 - GCN5: `GCN5/gcn5-index.html`
 - rDNA4: `rDNA4/rdna4-index.html`
-- cDNA4: `cDNA4/cdna4-index.html`
+- cDNA3: `cDNA3/cdna3-index.html`
 
 ## 現時点の状態
 
 - GCN5（特に MI25）は観測記録が最も豊富
 - rDNA4（RX9070XT）は methods 移植の pilot を反映中
-- cDNA4（MI300X）はページ構造と記録テンプレートを先行整備中
+- cDNA3（MI300X）はページ構造と記録テンプレートを先行整備中
 
 ## 方針
 

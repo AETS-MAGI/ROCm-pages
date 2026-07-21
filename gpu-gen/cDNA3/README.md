@@ -4,7 +4,7 @@ cDNA3 世代の入口ディレクトリです。
 
 ## 入口
 
-- `cdna4-index.html`
+- `cdna3-index.html`
 
 ## 配下
 
